@@ -25,6 +25,7 @@
   .badge-green { background: #eaf3de; color: #27500a; }
   .badge-amber { background: #faeeda; color: #633806; }
   .badge-red { background: #fcebeb; color: #791f1f; }
+  .badge-gray { background: #f0f0ee; color: #555; }
   .metric-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; margin-bottom: 1.25rem; }
   .metric { background: #f0f0ee; border-radius: 8px; padding: 0.875rem 1rem; text-align: center; }
   .metric .val { font-size: 22px; font-weight: 500; margin-top: 4px; }
@@ -67,7 +68,8 @@
   .hidden { display: none !important; }
   .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #3b6d11; display: inline-block; margin-right: 4px; }
   .sync-dot.syncing { background: #854f0b; animation: pulse 1s infinite; }
-  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+  @keyframes pulse { 0%,100%{opacity:1;}50%{opacity:0.3;} }
+  .day-tag { font-size: 11px; padding: 2px 8px; border-radius: 99px; background: #e6f1fb; color: #0c447c; font-weight: 500; margin-left: 6px; }
 </style>
 </head>
 <body>
@@ -77,7 +79,6 @@
     <p>Loading tracker...</p>
   </div>
 </div>
-
 <script>
 const SUPABASE_URL = "https://vqfvklqdexakwjjyvwod.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxZnZrbHFkZXhha3dqanl2d29kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAwNjQsImV4cCI6MjA5MTMxNjA2NH0.JETvur4VrrIWPCwK3MbQ4zzmOiX1Tc7F_xFWC2OR93M";
@@ -85,10 +86,22 @@ const DIRECTOR_PIN = "1234";
 const SITE_COLORS = ["#378ADD","#1D9E75","#D85A30"];
 const POLL_INTERVAL = 15000;
 
+const DAY_CHECKLISTS = {
+  1: [{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"eon",name:"EON complete"},{id:"midweek",name:"Midweek cleaning"}],
+  2: [{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"eon",name:"EON complete"},{id:"midweek",name:"Midweek cleaning"}],
+  3: [{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"eon",name:"EON complete"},{id:"eow",name:"EOW complete"}],
+  4: [{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"eon",name:"EON complete"},{id:"cellar",name:"Cellar checklist"}],
+  5: [{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"eon",name:"EON complete"},{id:"stocks",name:"Stocks accepted"}],
+  6: [{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"eon",name:"EON complete"}],
+  0: [{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"eon",name:"EON complete"},{id:"maintenance",name:"Maintenance checklist"},{id:"timesheets",name:"Timesheets approved"}]
+};
+
+const DAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+
 const defaultSites = [
-  { id:"s1", name:"Site A", checklists:[{id:"c1",name:"Opening checks"},{id:"c2",name:"Safety inspection"},{id:"c3",name:"Equipment check"},{id:"c4",name:"Staff briefing"},{id:"c5",name:"Inventory count"},{id:"c6",name:"Quality control"},{id:"c7",name:"Closing checks"}] },
-  { id:"s2", name:"Site B", checklists:[{id:"c1",name:"Opening checks"},{id:"c2",name:"Safety inspection"},{id:"c3",name:"Equipment check"},{id:"c4",name:"Staff briefing"},{id:"c5",name:"Inventory count"},{id:"c6",name:"Quality control"},{id:"c7",name:"Closing checks"}] },
-  { id:"s3", name:"Site C", checklists:[{id:"c1",name:"Opening checks"},{id:"c2",name:"Safety inspection"},{id:"c3",name:"Equipment check"},{id:"c4",name:"Staff briefing"},{id:"c5",name:"Inventory count"},{id:"c6",name:"Quality control"},{id:"c7",name:"Closing checks"}] }
+  {id:"s1",name:"Site A"},
+  {id:"s2",name:"Site B"},
+  {id:"s3",name:"Site C"}
 ];
 
 const state = {
@@ -98,18 +111,22 @@ const state = {
 };
 
 const today = () => new Date().toISOString().split("T")[0];
+const todayDow = () => new Date().getDay();
+const getChecklists = (dateStr) => {
+  const dow = new Date(dateStr + "T12:00:00").getDay();
+  return DAY_CHECKLISTS[dow] || [];
+};
+
 let pollTimer = null;
 let dashChart = null;
 
-async function sbFetch(path, opts = {}) {
+async function sbFetch(path, opts={}) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
     ...opts,
     headers: {
-      "apikey": SUPABASE_KEY,
-      "Authorization": `Bearer ${SUPABASE_KEY}`,
-      "Content-Type": "application/json",
-      "Prefer": opts.prefer || "return=representation",
-      ...(opts.headers || {})
+      "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`,
+      "Content-Type": "application/json", "Prefer": opts.prefer || "return=representation",
+      ...(opts.headers||{})
     }
   });
   if (!res.ok) { const t = await res.text(); throw new Error(t); }
@@ -119,7 +136,7 @@ async function sbFetch(path, opts = {}) {
 
 async function loadConfig() {
   try {
-    const rows = await sbFetch("config?config_key=eq.sites_v1&select=config_value");
+    const rows = await sbFetch("config?config_key=eq.sites_v2&select=config_value");
     if (rows && rows.length) state.sites = JSON.parse(rows[0].config_value);
   } catch(e) { console.warn("Config load failed", e); }
 }
@@ -127,11 +144,11 @@ async function loadConfig() {
 async function saveConfig() {
   const val = JSON.stringify(state.sites);
   try {
-    const existing = await sbFetch("config?config_key=eq.sites_v1&select=id");
+    const existing = await sbFetch("config?config_key=eq.sites_v2&select=id");
     if (existing && existing.length) {
-      await sbFetch("config?config_key=eq.sites_v1", { method:"PATCH", body: JSON.stringify({ config_value: val }) });
+      await sbFetch("config?config_key=eq.sites_v2", {method:"PATCH", body:JSON.stringify({config_value:val})});
     } else {
-      await sbFetch("config", { method:"POST", body: JSON.stringify({ config_key:"sites_v1", config_value: val }) });
+      await sbFetch("config", {method:"POST", body:JSON.stringify({config_key:"sites_v2", config_value:val})});
     }
   } catch(e) { console.error("Config save failed", e); }
 }
@@ -140,7 +157,7 @@ async function loadCompletions(date) {
   try {
     const rows = await sbFetch(`completions?completion_date=eq.${date}&select=site_id,check_id,completed`);
     const comp = {};
-    (rows || []).forEach(r => { if (r.completed) comp[`${r.site_id}-${r.check_id}`] = true; });
+    (rows||[]).forEach(r => { if(r.completed) comp[`${r.site_id}-${r.check_id}`] = true; });
     return comp;
   } catch(e) { console.error("Load completions failed", e); return {}; }
 }
@@ -154,8 +171,8 @@ async function pollCompletions() {
   state.completions = comp;
   updateOverallBadge();
   const v = state.activeView;
-  if (v === "overview") renderOverview();
-  else { const s = state.sites.find(x => x.id === v); if(s) renderSite(s); }
+  if (v==="overview") renderOverview();
+  else { const s = state.sites.find(x=>x.id===v); if(s) renderSite(s); }
 }
 
 async function toggleCheck(siteId, checkId) {
@@ -167,12 +184,12 @@ async function toggleCheck(siteId, checkId) {
   try {
     const existing = await sbFetch(`completions?completion_date=eq.${today()}&site_id=eq.${siteId}&check_id=eq.${checkId}&select=id`);
     if (existing && existing.length) {
-      await sbFetch(`completions?completion_date=eq.${today()}&site_id=eq.${siteId}&check_id=eq.${checkId}`, { method:"PATCH", body: JSON.stringify({ completed: newVal }) });
+      await sbFetch(`completions?completion_date=eq.${today()}&site_id=eq.${siteId}&check_id=eq.${checkId}`, {method:"PATCH", body:JSON.stringify({completed:newVal})});
     } else {
-      await sbFetch("completions", { method:"POST", body: JSON.stringify({ site_id: siteId, check_id: checkId, completion_date: today(), completed: newVal }) });
+      await sbFetch("completions", {method:"POST", body:JSON.stringify({site_id:siteId, check_id:checkId, completion_date:today(), completed:newVal})});
     }
-    state.lastSaved = new Date().toLocaleTimeString("en-GB", { hour:"2-digit", minute:"2-digit" });
-  } catch(e) { console.error("Save failed", e); state.completions[key] = !newVal; }
+    state.lastSaved = new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+  } catch(e) { console.error("Save failed",e); state.completions[key]=!newVal; }
   setSaving(false);
   renderCurrentView();
 }
@@ -181,28 +198,30 @@ function setSaving(v) {
   state.saving = v;
   const dot = document.getElementById("sync-dot");
   const note = document.getElementById("save-note");
-  if (dot) dot.className = "sync-dot" + (v ? " syncing" : "");
-  if (note) note.textContent = v ? "Saving..." : state.lastSaved ? `Saved ${state.lastSaved}` : "Live sync on";
+  if(dot) dot.className = "sync-dot"+(v?" syncing":"");
+  if(note) note.textContent = v ? "Saving..." : state.lastSaved ? `Saved ${state.lastSaved}` : "Live sync on";
 }
 
 function getWeekDates(offset) {
   const now = new Date(); const day = now.getDay();
   const monday = new Date(now);
-  monday.setDate(now.getDate() - ((day + 6) % 7) + offset * 7);
-  return Array.from({ length: 7 }, (_, i) => { const d = new Date(monday); d.setDate(monday.getDate() + i); return d.toISOString().split("T")[0]; });
+  monday.setDate(now.getDate()-((day+6)%7)+offset*7);
+  return Array.from({length:7},(_,i)=>{const d=new Date(monday);d.setDate(monday.getDate()+i);return d.toISOString().split("T")[0];});
 }
 function weekLabel(dates) {
   const fmt = d => new Date(d+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"});
-  return fmt(dates[0]) + " – " + fmt(dates[6]);
+  return fmt(dates[0])+" – "+fmt(dates[6]);
 }
-function sitePct(site, comp) {
-  if (!site.checklists.length) return {done:0,total:0,pct:0};
-  const done = site.checklists.filter(c => comp[site.id+"-"+c.id]).length;
-  return {done, total:site.checklists.length, pct:Math.round(done/site.checklists.length*100)};
+function sitePct(site, comp, date) {
+  const checklists = getChecklists(date || today());
+  if (!checklists.length) return {done:0,total:0,pct:0};
+  const done = checklists.filter(c=>comp[site.id+"-"+c.id]).length;
+  return {done, total:checklists.length, pct:Math.round(done/checklists.length*100)};
 }
-function allPct(comp) {
-  const total = state.sites.reduce((a,s)=>a+s.checklists.length,0);
-  const done = state.sites.reduce((a,s)=>a+s.checklists.filter(c=>comp[s.id+"-"+c.id]).length,0);
+function allPct(comp, date) {
+  const checklists = getChecklists(date || today());
+  const total = state.sites.length * checklists.length;
+  const done = state.sites.reduce((a,s)=>a+checklists.filter(c=>comp[s.id+"-"+c.id]).length,0);
   return total ? Math.round(done/total*100) : 0;
 }
 function badgeClass(pct) { return pct===100?"badge-green":pct>=50?"badge-amber":"badge-red"; }
@@ -212,21 +231,22 @@ function barHtml(pct) { return `<div class="bar-wrap"><div class="bar-fill" styl
 
 function updateOverallBadge() {
   const el = document.getElementById("overall-badge");
-  if (!el) return;
+  if(!el) return;
   const ap = allPct(state.completions);
-  el.textContent = ap + "% complete";
-  el.className = "badge " + badgeClass(ap);
+  el.textContent = ap+"% complete";
+  el.className = "badge "+badgeClass(ap);
 }
 
 function renderCurrentView() {
   const v = state.activeView;
-  if (v === "overview") renderOverview();
-  else if (v === "history") renderHistory();
-  else if (v === "dashboard") renderDashboard();
-  else { const s = state.sites.find(x=>x.id===v); if(s) renderSite(s); }
+  if(v==="overview") renderOverview();
+  else if(v==="history") renderHistory();
+  else if(v==="dashboard") renderDashboard();
+  else { const s=state.sites.find(x=>x.id===v); if(s) renderSite(s); }
 }
 
 function renderApp() {
+  const todayChecklists = DAY_CHECKLISTS[todayDow()];
   document.getElementById("app").innerHTML = `
     <div id="pin-overlay" class="pin-overlay hidden">
       <div class="pin-modal">
@@ -243,7 +263,7 @@ function renderApp() {
     <div class="header">
       <div>
         <h1>Daily checklist tracker</h1>
-        <p class="muted" style="font-size:13px;margin-top:2px;">${new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</p>
+        <p class="muted" style="font-size:13px;margin-top:2px;">${new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}<span class="day-tag">${todayChecklists.length} tasks today</span></p>
       </div>
       <div class="row" style="flex-wrap:wrap;gap:8px;">
         <span class="sync-dot" id="sync-dot"></span><span class="save-note" id="save-note">Live sync on</span>
@@ -260,7 +280,7 @@ function renderApp() {
   updateOverallBadge();
   renderTabs();
   renderCurrentView();
-  if (pollTimer) clearInterval(pollTimer);
+  if(pollTimer) clearInterval(pollTimer);
   pollTimer = setInterval(pollCompletions, POLL_INTERVAL);
 }
 
@@ -271,23 +291,24 @@ function renderTabs() {
     ...(state.role==="director"?[{id:"history",label:"History"},{id:"dashboard",label:"Dashboard"}]:[])
   ];
   const el = document.getElementById("tabs");
-  if (el) el.innerHTML = tabs.map(t=>`<button class="tab${state.activeView===t.id?" active":""}" onclick="setView('${t.id}')">${t.label}</button>`).join("");
+  if(el) el.innerHTML = tabs.map(t=>`<button class="tab${state.activeView===t.id?" active":""}" onclick="setView('${t.id}')">${t.label}</button>`).join("");
 }
 
 async function setView(id) {
-  state.activeView = id; state.historyDay = null;
+  state.activeView=id; state.historyDay=null;
   renderTabs();
-  if (id==="history") { document.getElementById("main-content").innerHTML=`<div class="loading-screen"><div class="spinner"></div><p>Loading history...</p></div>`; await loadHistoryWeek(); }
-  if (id==="dashboard") { document.getElementById("main-content").innerHTML=`<div class="loading-screen"><div class="spinner"></div><p>Loading dashboard...</p></div>`; await loadDashWeek(); }
+  if(id==="history"){document.getElementById("main-content").innerHTML=`<div class="loading-screen"><div class="spinner"></div><p>Loading history...</p></div>`;await loadHistoryWeek();}
+  if(id==="dashboard"){document.getElementById("main-content").innerHTML=`<div class="loading-screen"><div class="spinner"></div><p>Loading dashboard...</p></div>`;await loadDashWeek();}
   renderCurrentView();
 }
 
 function renderOverview() {
   updateOverallBadge();
-  const total = state.sites.reduce((a,s)=>a+s.checklists.length,0);
-  const done = state.sites.reduce((a,s)=>a+s.checklists.filter(c=>state.completions[s.id+"-"+c.id]).length,0);
+  const checklists = DAY_CHECKLISTS[todayDow()];
+  const total = state.sites.length * checklists.length;
+  const done = state.sites.reduce((a,s)=>a+checklists.filter(c=>state.completions[s.id+"-"+c.id]).length,0);
   let html = `<div class="metric-grid">
-    <div class="metric"><div class="lbl">Total checklists</div><div class="val">${total}</div></div>
+    <div class="metric"><div class="lbl">Total tasks today</div><div class="val">${total}</div></div>
     <div class="metric"><div class="lbl">Completed</div><div class="val">${done}</div></div>
     <div class="metric"><div class="lbl">Remaining</div><div class="val">${total-done}</div></div>
   </div>`;
@@ -297,77 +318,63 @@ function renderOverview() {
       <div class="row"><span style="font-weight:500;font-size:15px;">${s.name}</span><span class="spacer"></span>${badge(pct,done+"/"+total+" done")}</div>
       ${barHtml(pct)}</div>`;
   });
-  const el = document.getElementById("main-content"); if(el) el.innerHTML = html;
+  const el = document.getElementById("main-content"); if(el) el.innerHTML=html;
 }
 
 function renderSite(site) {
   updateOverallBadge();
+  const checklists = DAY_CHECKLISTS[todayDow()];
   const {pct} = sitePct(site,state.completions);
   const nameHtml = state.editMode
     ? `<div class="row"><input id="rename-input-${site.id}" class="input" value="${site.name}" style="font-size:15px;width:160px;" onkeydown="if(event.key==='Enter')saveSiteName('${site.id}')"><button class="btn" onclick="saveSiteName('${site.id}')">Save</button><button class="btn" onclick="setView('${site.id}')">Cancel</button></div>`
     : `<h2>${site.name}</h2>`;
-  let rows = site.checklists.map(c => {
+  const rows = checklists.map(c => {
     const done = !!state.completions[site.id+"-"+c.id];
     return `<div class="check-row">
       <input type="checkbox" ${done?"checked":""} onchange="toggleCheck('${site.id}','${c.id}')">
       <span class="check-label${done?" done":""}" onclick="toggleCheck('${site.id}','${c.id}')">${c.name}</span>
-      ${state.editMode?`<button class="btn btn-danger" onclick="removeChecklist('${site.id}','${c.id}')">Remove</button>`:""}
     </div>`;
   }).join("");
-  const addRow = state.editMode ? `<div class="row" style="margin-top:12px;"><input id="new-cl-${site.id}" class="input" style="flex:1;" placeholder="New checklist name..." onkeydown="if(event.key==='Enter')addChecklist('${site.id}')"><button class="btn" onclick="addChecklist('${site.id}')">Add</button></div>` : "";
-  const staffNote = state.role==="staff" ? `<p style="font-size:12px;color:#999;text-align:center;margin-top:8px;">Updates sync live to all users every 15 seconds.</p>` : "";
+  const staffNote = state.role==="staff"?`<p style="font-size:12px;color:#999;text-align:center;margin-top:8px;">Updates sync live to all users every 15 seconds.</p>`:"";
   const el = document.getElementById("main-content");
-  if (el) el.innerHTML = `<div class="row" style="justify-content:space-between;margin-bottom:1rem;">${nameHtml}<span class="spacer"></span>${badge(pct,pct+"%")}</div><div class="card">${rows}${addRow}</div>${staffNote}`;
+  if(el) el.innerHTML=`<div class="row" style="justify-content:space-between;margin-bottom:1rem;">${nameHtml}<span class="spacer"></span>${badge(pct,pct+"%")}</div><div class="card">${rows}</div>${staffNote}`;
 }
 
 async function saveSiteName(siteId) {
   const inp = document.getElementById("rename-input-"+siteId);
-  if (!inp||!inp.value.trim()) return;
-  state.sites = state.sites.map(s=>s.id===siteId?{...s,name:inp.value.trim()}:s);
+  if(!inp||!inp.value.trim()) return;
+  state.sites=state.sites.map(s=>s.id===siteId?{...s,name:inp.value.trim()}:s);
   await saveConfig(); renderTabs(); renderCurrentView();
 }
 
-async function addChecklist(siteId) {
-  const inp = document.getElementById("new-cl-"+siteId);
-  if (!inp||!inp.value.trim()) return;
-  state.sites = state.sites.map(s=>s.id===siteId?{...s,checklists:[...s.checklists,{id:"c"+Date.now(),name:inp.value.trim()}]}:s);
-  await saveConfig(); renderCurrentView();
-}
-
-async function removeChecklist(siteId, checkId) {
-  state.sites = state.sites.map(s=>s.id===siteId?{...s,checklists:s.checklists.filter(c=>c.id!==checkId)}:s);
-  delete state.completions[siteId+"-"+checkId];
-  await saveConfig(); renderCurrentView();
-}
-
 function toggleEdit() {
-  state.editMode = !state.editMode;
-  const btn = document.getElementById("edit-btn");
-  if (btn) btn.textContent = state.editMode ? "Done editing" : "Edit";
+  state.editMode=!state.editMode;
+  const btn=document.getElementById("edit-btn");
+  if(btn) btn.textContent=state.editMode?"Done editing":"Edit";
   renderCurrentView();
 }
 
 async function loadHistoryWeek() {
   const dates = getWeekDates(state.historyWeekOffset);
-  state.historyData = {};
-  for (const d of dates) {
-    const comp = await loadCompletions(d);
-    state.historyData[d] = Object.keys(comp).length > 0 ? comp : (d === today() ? comp : null);
+  state.historyData={};
+  for(const d of dates){
+    const comp=await loadCompletions(d);
+    state.historyData[d]=Object.keys(comp).length>0?comp:(d===today()?comp:null);
   }
 }
 
 async function loadDashWeek() {
-  const dates = getWeekDates(state.dashWeekOffset);
-  state.dashData = {};
-  for (const d of dates) {
-    const comp = await loadCompletions(d);
-    state.dashData[d] = Object.keys(comp).length > 0 ? comp : null;
+  const dates=getWeekDates(state.dashWeekOffset);
+  state.dashData={};
+  for(const d of dates){
+    const comp=await loadCompletions(d);
+    state.dashData[d]=Object.keys(comp).length>0?comp:null;
   }
 }
 
 function renderHistory() {
-  const dates = getWeekDates(state.historyWeekOffset);
-  let html = `<div class="row" style="justify-content:space-between;margin-bottom:1rem;">
+  const dates=getWeekDates(state.historyWeekOffset);
+  let html=`<div class="row" style="justify-content:space-between;margin-bottom:1rem;">
     <h2>History</h2>
     <div class="week-nav">
       <button class="btn" onclick="historyPrev()">← Prev</button>
@@ -375,46 +382,48 @@ function renderHistory() {
       ${state.historyWeekOffset<0?`<button class="btn" onclick="historyNext()">Next →</button>`:""}
     </div>
   </div><div class="day-grid">`;
-  dates.forEach(d => {
-    const comp = state.historyData[d]; const isToday = d===today();
-    const hasData = comp!==null&&comp!==undefined;
-    const pct = hasData ? allPct(comp) : null;
-    const sel = state.historyDay===d;
-    html += `<div class="day-cell${hasData?" has-data":""}${sel?" selected":""}" onclick="${hasData?`selectHistoryDay('${d}')`:""}">
+  dates.forEach(d=>{
+    const comp=state.historyData[d]; const isToday=d===today();
+    const hasData=comp!==null&&comp!==undefined;
+    const pct=hasData?allPct(comp,d):null;
+    const sel=state.historyDay===d;
+    html+=`<div class="day-cell${hasData?" has-data":""}${sel?" selected":""}" onclick="${hasData?`selectHistoryDay('${d}')`:""}">
       <div class="day-name" style="${isToday?"color:#185fa5;font-weight:500;":""}">${new Date(d+"T12:00:00").toLocaleDateString("en-GB",{weekday:"short"})}</div>
       <div class="day-num">${new Date(d+"T12:00:00").getDate()}</div>
       <div class="day-pct" style="color:${pct!==null?fillColor(pct):"#bbb"}">${pct!==null?pct+"%":"—"}</div>
     </div>`;
   });
-  html += `</div>`;
-  if (state.historyDay && state.historyData[state.historyDay]) {
-    const comp = state.historyData[state.historyDay];
-    html += `<p style="font-size:14px;font-weight:500;margin-bottom:10px;">${new Date(state.historyDay+"T12:00:00").toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"})}</p>`;
-    state.sites.forEach(s => {
-      const {done,total,pct} = sitePct(s,comp);
-      html += `<div class="card" style="margin-bottom:8px;"><div class="row" style="margin-bottom:8px;"><span style="font-weight:500;font-size:14px;">${s.name}</span><span class="spacer"></span>${badge(pct,done+"/"+total+" done")}</div>
-        ${s.checklists.map(c=>{const d=!!comp[s.id+"-"+c.id];return`<div class="history-item"><div class="tick-box ${d?"done":"undone"}">${d?"✓":""}</div><span style="font-size:13px;color:${d?"#999":"#1a1a1a"};text-decoration:${d?"line-through":"none"};">${c.name}</span></div>`;}).join("")}</div>`;
+  html+=`</div>`;
+  if(state.historyDay&&state.historyData[state.historyDay]){
+    const comp=state.historyData[state.historyDay];
+    const checklists=getChecklists(state.historyDay);
+    html+=`<p style="font-size:14px;font-weight:500;margin-bottom:10px;">${new Date(state.historyDay+"T12:00:00").toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"})}</p>`;
+    state.sites.forEach(s=>{
+      const done=checklists.filter(c=>comp[s.id+"-"+c.id]).length;
+      const pct=checklists.length?Math.round(done/checklists.length*100):0;
+      html+=`<div class="card" style="margin-bottom:8px;"><div class="row" style="margin-bottom:8px;"><span style="font-weight:500;font-size:14px;">${s.name}</span><span class="spacer"></span>${badge(pct,done+"/"+checklists.length+" done")}</div>
+        ${checklists.map(c=>{const d=!!comp[s.id+"-"+c.id];return`<div class="history-item"><div class="tick-box ${d?"done":"undone"}">${d?"✓":""}</div><span style="font-size:13px;color:${d?"#999":"#1a1a1a"};text-decoration:${d?"line-through":"none"};">${c.name}</span></div>`;}).join("")}</div>`;
     });
   }
-  const el = document.getElementById("main-content"); if(el) el.innerHTML = html;
+  const el=document.getElementById("main-content"); if(el) el.innerHTML=html;
 }
 
-function selectHistoryDay(d) { state.historyDay = state.historyDay===d?null:d; renderHistory(); }
-async function historyPrev() { state.historyWeekOffset--; state.historyDay=null; document.getElementById("main-content").innerHTML=`<div class="loading-screen"><div class="spinner"></div><p>Loading...</p></div>`; await loadHistoryWeek(); renderHistory(); }
-async function historyNext() { state.historyWeekOffset++; state.historyDay=null; document.getElementById("main-content").innerHTML=`<div class="loading-screen"><div class="spinner"></div><p>Loading...</p></div>`; await loadHistoryWeek(); renderHistory(); }
+function selectHistoryDay(d){state.historyDay=state.historyDay===d?null:d;renderHistory();}
+async function historyPrev(){state.historyWeekOffset--;state.historyDay=null;document.getElementById("main-content").innerHTML=`<div class="loading-screen"><div class="spinner"></div><p>Loading...</p></div>`;await loadHistoryWeek();renderHistory();}
+async function historyNext(){state.historyWeekOffset++;state.historyDay=null;document.getElementById("main-content").innerHTML=`<div class="loading-screen"><div class="spinner"></div><p>Loading...</p></div>`;await loadHistoryWeek();renderHistory();}
 
 function renderDashboard() {
-  const dates = getWeekDates(state.dashWeekOffset);
-  const labels = dates.map(d=>new Date(d+"T12:00:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric"}));
-  const summaryCards = state.sites.map((site,si) => {
-    const pcts = dates.map(d=>{const comp=state.dashData[d];if(!comp)return null;return sitePct(site,comp).pct;}).filter(p=>p!==null);
-    const avg = pcts.length?Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length):null;
-    const fullDays = pcts.filter(p=>p===100).length;
+  const dates=getWeekDates(state.dashWeekOffset);
+  const labels=dates.map(d=>new Date(d+"T12:00:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric"}));
+  const summaryCards=state.sites.map((site,si)=>{
+    const pcts=dates.map(d=>{const comp=state.dashData[d];if(!comp)return null;return sitePct(site,comp,d).pct;}).filter(p=>p!==null);
+    const avg=pcts.length?Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length):null;
+    const fullDays=pcts.filter(p=>p===100).length;
     return `<div class="metric"><div class="lbl">${site.name}</div><div class="val" style="color:${avg!==null?fillColor(avg):"#bbb"}">${avg!==null?avg+"%":"—"}</div><div style="font-size:11px;color:#999;margin-top:2px;">avg · ${fullDays} full days</div></div>`;
   }).join("");
-  const legendHtml = state.sites.map((s,si)=>`<div class="legend-item"><div class="legend-swatch" style="background:${SITE_COLORS[si]}"></div>${s.name}</div>`).join("");
-  const el = document.getElementById("main-content");
-  if (el) el.innerHTML = `
+  const legendHtml=state.sites.map((s,si)=>`<div class="legend-item"><div class="legend-swatch" style="background:${SITE_COLORS[si]}"></div>${s.name}</div>`).join("");
+  const el=document.getElementById("main-content");
+  if(el) el.innerHTML=`
     <div class="row" style="justify-content:space-between;margin-bottom:1rem;">
       <h2>Weekly dashboard</h2>
       <div class="week-nav">
@@ -427,42 +436,41 @@ function renderDashboard() {
     <div class="card"><div class="legend">${legendHtml}</div>
       <div style="position:relative;width:100%;height:260px;"><canvas id="dash-chart" role="img" aria-label="Weekly completion rates per site">Weekly completion rates</canvas></div>
     </div>`;
-  if (dashChart) { dashChart.destroy(); dashChart = null; }
-  const canvas = document.getElementById("dash-chart");
-  if (canvas && window.Chart) {
-    dashChart = new Chart(canvas, {
+  if(dashChart){dashChart.destroy();dashChart=null;}
+  const canvas=document.getElementById("dash-chart");
+  if(canvas&&window.Chart){
+    dashChart=new Chart(canvas,{
       type:"bar",
-      data:{ labels, datasets: state.sites.map((site,si)=>({ label:site.name, data:dates.map(d=>{const comp=state.dashData[d];if(!comp)return null;return sitePct(site,comp).pct;}), backgroundColor:SITE_COLORS[si], borderRadius:4, borderSkipped:false })) },
-      options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>ctx.dataset.label+": "+(ctx.parsed.y!==null?ctx.parsed.y+"%":"No data")}} }, scales:{ x:{grid:{display:false},ticks:{font:{size:11},autoSkip:false}}, y:{min:0,max:100,ticks:{callback:v=>v+"%",font:{size:11},stepSize:25},grid:{color:"rgba(0,0,0,0.06)"}} } }
+      data:{labels,datasets:state.sites.map((site,si)=>({label:site.name,data:dates.map(d=>{const comp=state.dashData[d];if(!comp)return null;return sitePct(site,comp,d).pct;}),backgroundColor:SITE_COLORS[si],borderRadius:4,borderSkipped:false}))},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+": "+(ctx.parsed.y!==null?ctx.parsed.y+"%":"No data")}}},scales:{x:{grid:{display:false},ticks:{font:{size:11},autoSkip:false}},y:{min:0,max:100,ticks:{callback:v=>v+"%",font:{size:11},stepSize:25},grid:{color:"rgba(0,0,0,0.06)"}}}}
     });
   }
 }
 
-async function dashPrev() { state.dashWeekOffset--; document.getElementById("main-content").innerHTML=`<div class="loading-screen"><div class="spinner"></div><p>Loading...</p></div>`; await loadDashWeek(); renderDashboard(); }
-async function dashNext() { state.dashWeekOffset++; document.getElementById("main-content").innerHTML=`<div class="loading-screen"><div class="spinner"></div><p>Loading...</p></div>`; await loadDashWeek(); renderDashboard(); }
+async function dashPrev(){state.dashWeekOffset--;document.getElementById("main-content").innerHTML=`<div class="loading-screen"><div class="spinner"></div><p>Loading...</p></div>`;await loadDashWeek();renderDashboard();}
+async function dashNext(){state.dashWeekOffset++;document.getElementById("main-content").innerHTML=`<div class="loading-screen"><div class="spinner"></div><p>Loading...</p></div>`;await loadDashWeek();renderDashboard();}
 
-function openPinModal() { document.getElementById("pin-overlay").classList.remove("hidden"); setTimeout(()=>document.getElementById("pin-input").focus(),50); }
-function closePinModal() { document.getElementById("pin-overlay").classList.add("hidden"); document.getElementById("pin-input").value=""; document.getElementById("pin-error").classList.add("hidden"); }
-function submitPin() {
-  if (document.getElementById("pin-input").value===DIRECTOR_PIN) {
-    state.role="director"; closePinModal();
+function openPinModal(){document.getElementById("pin-overlay").classList.remove("hidden");setTimeout(()=>document.getElementById("pin-input").focus(),50);}
+function closePinModal(){document.getElementById("pin-overlay").classList.add("hidden");document.getElementById("pin-input").value="";document.getElementById("pin-error").classList.add("hidden");}
+function submitPin(){
+  if(document.getElementById("pin-input").value===DIRECTOR_PIN){
+    state.role="director";closePinModal();
     document.getElementById("director-btns").classList.remove("hidden");
     document.getElementById("login-btn").classList.add("hidden");
-    renderTabs(); renderCurrentView();
-  } else { document.getElementById("pin-error").classList.remove("hidden"); document.getElementById("pin-input").value=""; }
+    renderTabs();renderCurrentView();
+  } else {document.getElementById("pin-error").classList.remove("hidden");document.getElementById("pin-input").value="";}
 }
-function signOut() { state.role="staff"; state.editMode=false; state.activeView="overview"; document.getElementById("director-btns").classList.add("hidden"); document.getElementById("login-btn").classList.remove("hidden"); renderTabs(); renderCurrentView(); }
+function signOut(){state.role="staff";state.editMode=false;state.activeView="overview";document.getElementById("director-btns").classList.add("hidden");document.getElementById("login-btn").classList.remove("hidden");renderTabs();renderCurrentView();}
 
-async function init() {
-  try {
+async function init(){
+  try{
     await loadConfig();
     await loadTodayCompletions();
     renderApp();
-  } catch(e) {
-    document.getElementById("loading-screen").innerHTML = `<div style="text-align:center;"><p style="color:#c0392b;font-size:14px;">Failed to connect to database.</p><p style="font-size:12px;color:#999;margin-top:8px;">${e.message}</p><button class="btn" style="margin-top:16px;" onclick="init()">Retry</button></div>`;
+  } catch(e){
+    document.getElementById("loading-screen").innerHTML=`<div style="text-align:center;"><p style="color:#c0392b;font-size:14px;">Failed to connect to database.</p><p style="font-size:12px;color:#999;margin-top:8px;">${e.message}</p><button class="btn" style="margin-top:16px;" onclick="init()">Retry</button></div>`;
   }
 }
-
 init();
 </script>
 </body>
