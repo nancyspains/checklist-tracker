@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Daily Checklist Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f5f3; color: #1a1a1a; font-size: 15px; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 1.5rem 1.25rem; }
+  h1 { font-size: 20px; font-weight: 500; }
+  h2 { font-size: 17px; font-weight: 500; }
+  .muted { color: #666; }
+  .card { background: #fff; border: 0.5px solid rgba(0,0,0,0.12); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 10px; }
+  .btn { font-size: 12px; padding: 5px 12px; border-radius: 8px; border: 0.5px solid rgba(0,0,0,0.25); background: transparent; color: #555; cursor: pointer; font-family: inherit; }
+  .btn:hover { background: #f0f0ee; }
+  .btn-danger { color: #c0392b; border-color: rgba(0,0,0,0.12); }
+  .input { font-size: 14px; padding: 6px 10px; border-radius: 8px; border: 0.5px solid rgba(0,0,0,0.25); background: #fff; color: #1a1a1a; font-family: inherit; }
+  .input:focus { outline: none; border-color: rgba(0,0,0,0.45); }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; border-bottom: 0.5px solid rgba(0,0,0,0.1); padding-bottom: 12px; margin-bottom: 1.25rem; }
+  .tab { font-size: 14px; padding: 6px 14px; border-radius: 8px; border: 0.5px solid transparent; background: transparent; color: #666; cursor: pointer; font-family: inherit; }
+  .tab.active { border-color: rgba(0,0,0,0.2); background: #f0f0ee; color: #1a1a1a; font-weight: 500; }
+  .badge { font-size: 12px; padding: 2px 10px; border-radius: 8px; font-weight: 500; }
+  .badge-green { background: #eaf3de; color: #27500a; }
+  .badge-amber { background: #faeeda; color: #633806; }
+  .badge-red { background: #fcebeb; color: #791f1f; }
+  .metric-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; margin-bottom: 1.25rem; }
+  .metric { background: #f0f0ee; border-radius: 8px; padding: 0.875rem 1rem; text-align: center; }
+  .metric .val { font-size: 22px; font-weight: 500; margin-top: 4px; }
+  .metric .lbl { font-size: 12px; color: #666; }
+  .bar-wrap { height: 6px; border-radius: 99px; background: rgba(0,0,0,0.1); position: relative; overflow: hidden; margin-top: 8px; }
+  .bar-fill { position: absolute; left: 0; top: 0; height: 100%; border-radius: 99px; transition: width 0.3s ease; }
+  .check-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 0.5px solid rgba(0,0,0,0.08); }
+  .check-row:last-child { border-bottom: none; }
+  .check-row input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; accent-color: #3b6d11; flex-shrink: 0; }
+  .check-label { font-size: 14px; flex: 1; cursor: pointer; }
+  .check-label.done { color: #999; text-decoration: line-through; }
+  .row { display: flex; align-items: center; gap: 8px; }
+  .spacer { flex: 1; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 1.25rem; }
+  .pin-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; z-index: 100; }
+  .pin-modal { background: #fff; border-radius: 12px; border: 0.5px solid rgba(0,0,0,0.12); padding: 1.5rem; width: 300px; }
+  .pin-error { color: #c0392b; font-size: 12px; margin: 0 0 8px; }
+  .day-grid { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap: 6px; margin-bottom: 1rem; }
+  .day-cell { background: #fff; border: 0.5px solid rgba(0,0,0,0.12); border-radius: 8px; padding: 10px 4px; text-align: center; cursor: default; }
+  .day-cell.has-data { cursor: pointer; }
+  .day-cell.selected { background: #f0f0ee; border-color: rgba(0,0,0,0.3); }
+  .day-cell .day-name { font-size: 11px; color: #666; margin-bottom: 3px; }
+  .day-cell .day-num { font-size: 12px; color: #666; margin-bottom: 5px; }
+  .day-cell .day-pct { font-size: 11px; font-weight: 500; }
+  .week-nav { display: flex; align-items: center; gap: 8px; }
+  .week-nav span { font-size: 13px; color: #666; }
+  .history-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 0.5px solid rgba(0,0,0,0.08); }
+  .history-item:last-child { border-bottom: none; }
+  .tick-box { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+  .tick-box.done { background: #eaf3de; border: 0.5px solid #97c459; color: #27500a; }
+  .tick-box.undone { background: #f0f0ee; border: 0.5px solid rgba(0,0,0,0.12); }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #666; }
+  .legend-swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  .save-note { font-size: 12px; color: #999; }
+  .loading-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 300px; gap: 12px; }
+  .loading-screen p { color: #666; font-size: 14px; }
+  .spinner { width: 28px; height: 28px; border: 2px solid rgba(0,0,0,0.1); border-top-color: #185fa5; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .hidden { display: none !important; }
+  .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #3b6d11; display: inline-block; margin-right: 4px; }
+  .sync-dot.syncing { background: #854f0b; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="loading-screen" id="loading-screen">
+    <div class="spinner"></div>
+    <p>Loading tracker...</p>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://vqfvklqdexakwjjyvwod.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxZnZrbHFkZXhha3dqanl2d29kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAwNjQsImV4cCI6MjA5MTMxNjA2NH0.JETvur4VrrIWPCwK3MbQ4zzmOiX1Tc7F_xFWC2OR93M";
+const DIRECTOR_PIN = "1234";
+const SITE_COLORS = ["#378ADD","#1D9E75","#D85A30"];
+const POLL_INTERVAL = 15000;
+
+const defaultSites = [
+  { id:"s1", name:"Site A", checklists:[{id:"c1",name:"Opening checks"},{id:"c2",name:"Safety inspection"},{id:"c3",name:"Equipment check"},{id:"c4",name:"Staff briefing"},{id:"c5",name:"Inventory count"},{id:"c6",name:"Quality control"},{id:"c7",name:"Closing checks"}] },
+  { id:"s2", name:"Site B", checklists:[{id:"c1",name:"Opening checks"},{id:"c2",name:"Safety inspection"},{id:"c3",name:"Equipment check"},{id:"c4",name:"Staff briefing"},{id:"c5",name:"Inventory count"},{id:"c6",name:"Quality control"},{id:"c7",name:"Closing checks"}] },
+  { id:"s3", name:"Site C", checklists:[{id:"c1",name:"Opening checks"},{id:"c2",name:"Safety inspection"},{id:"c3",name:"Equipment check"},{id:"c4",name:"Staff briefing"},{id:"c5",name:"Inventory count"},{id:"c6",name:"Quality control"},{id:"c7",name:"Closing checks"}] }
+];
+
+const state = {
+  sites: defaultSites, completions: {}, role: "staff", editMode: false,
+  activeView: "overview", historyWeekOffset: 0, dashWeekOffset: 0,
+  historyDay: null, historyData: {}, dashData: {}, saving: false, lastSaved: null
+};
+
+const today = () => new Date().toISOString().split("T")[0];
+let pollTimer = null;
+let dashChart = null;
+
+async function sbFetch(path, opts = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    ...opts,
+    headers: {
+      "apikey": SUPABASE_KEY,
+      "Authorization": `Bearer ${SUPABASE_KEY}`,
+      "Content-Type": "application/json",
+      "Prefer": opts.prefer || "return=representation",
+      ...(opts.headers || {})
+    }
+  });
+  if (!res.ok) { const t = await res.text(); throw new Error(t); }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+async function loadConfig() {
+  try {
+    const rows = await sbFetch("config?config_key=eq.sites_v1&select=config_value");
+    if (rows && rows.length) state.sites = JSON.parse(rows[0].config_value);
+  } catch(e) { console.warn("Config load failed", e); }
+}
+
+async function saveConfig() {
+  const val = JSON.stringify(state.sites);
+  try {
+    const existing = await sbFetch("config?config_key=eq.sites_v1&select=id");
+    if (existing && existing.length) {
+      await sbFetch("config?config_key=eq.sites_v1", { method:"PATCH", body: JSON.stringify({ config_value: val }) });
+    } else {
+      await sbFetch("config", { method:"POST", body: JSON.stringify({ config_key:"sites_v1", config_value: val }) });
+    }
+  } catch(e) { console.error("Config save failed", e); }
+}
+
+async function loadCompletions(date) {
+  try {
+    const rows = await sbFetch(`completions?completion_date=eq.${date}&select=site_id,check_id,completed`);
+    const comp = {};
+    (rows || []).forEach(r => { if (r.completed) comp[`${r.site_id}-${r.check_id}`] = true; });
+    return comp;
+  } catch(e) { console.error("Load completions failed", e); return {}; }
+}
+
+async function loadTodayCompletions() {
+  state.completions = await loadCompletions(today());
+}
+
+async function pollCompletions() {
+  const comp = await loadCompletions(today());
+  state.completions = comp;
+  updateOverallBadge();
+  const v = state.activeView;
+  if (v === "overview") renderOverview();
+  else { const s = state.sites.find(x => x.id === v); if(s) renderSite(s); }
+}
+
+async function toggleCheck(siteId, checkId) {
+  const key = `${siteId}-${checkId}`;
+  const newVal = !state.completions[key];
+  state.completions[key] = newVal;
+  renderCurrentView();
+  setSaving(true);
+  try {
+    const existing = await sbFetch(`completions?completion_date=eq.${today()}&site_id=eq.${siteId}&check_id=eq.${checkId}&select=id`);
+    if (existing && existing.length) {
+      await sbFetch(`completions?completion_date=eq.${today()}&site_id=eq.${siteId}&check_id=eq.${checkId}`, { method:"PATCH", body: JSON.stringify({ completed: newVal }) });
+    } else {
+      await sbFetch("completions", { method:"POST", body: JSON.stringify({ site_id: siteId, check_id: checkId, completion_date: today(), completed: newVal }) });
+    }
+    state.lastSaved = new Date().toLocaleTimeString("en-GB", { hour:"2-digit", minute:"2-digit" });
+  } catch(e) { console.error("Save failed", e); state.completions[key] = !newVal; }
+  setSaving(false);
+  renderCurrentView();
+}
+
+function setSaving(v) {
+  state.saving = v;
+  const dot = document.getElementById("sync-dot");
+  const note = document.getElementById("save-note");
+  if (dot) dot.className = "sync-dot" + (v ? " syncing" : "");
+  if (note) note.textContent = v ? "Saving..." : state.lastSaved ? `Saved ${state.lastSaved}` : "Live sync on";
+}
+
+function getWeekDates(offset) {
+  const now = new Date(); const day = now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - ((day + 6) % 7) + offset * 7);
+  return Array.from({ length: 7 }, (_, i) => { const d = new Date(monday); d.setDate(monday.getDate() + i); return d.toISOString().split("T")[0]; });
+}
+function weekLabel(dates) {
+  const fmt = d => new Date(d+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"});
+  return fmt(dates[0]) + " – " + fmt(dates[6]);
+}
+function sitePct(site, comp) {
+  if (!site.checklists.length) return {done:0,total:0,pct:0};
+  const done = site.checklists.filter(c => comp[site.id+"-"+c.id]).length;
+  return {done, total:site.checklists.length, pct:Math.round(done/site.checklists.length*100)};
+}
+function allPct(comp) {
+  const total = state.sites.reduce((a,s)=>a+s.checklists.length,0);
+  const done = state.sites.reduce((a,s)=>a+s.checklists.filter(c=>comp[s.id+"-"+c.id]).length,0);
+  return total ? Math.round(done/total*100) : 0;
+}
+function badgeClass(pct) { return pct===100?"badge-green":pct>=50?"badge-amber":"badge-red"; }
+function fillColor(pct) { return pct===100?"#3b6d11":pct>=50?"#854f0b":"#a32d2d"; }
+function badge(pct, label) { return `<span class="badge ${badgeClass(pct)}">${label}</span>`; }
+function barHtml(pct) { return `<div class="bar-wrap"><div class="bar-fill" style="width:${pct}%;background:${fillColor(pct)};"></div></div>`; }
+
+function updateOverallBadge() {
+  const el = document.getElementById("overall-badge");
+  if (!el) return;
+  const ap = allPct(state.completions);
+  el.textContent = ap + "% complete";
+  el.className = "badge " + badgeClass(ap);
+}
+
+function renderCurrentView() {
+  const v = state.activeView;
+  if (v === "overview") renderOverview();
+  else if (v === "history") renderHistory();
+  else if (v === "dashboard") renderDashboard();
+  else { const s = state.sites.find(x=>x.id===v); if(s) renderSite(s); }
+}
+
+function renderApp() {
+  document.getElementById("app").innerHTML = `
+    <div id="pin-overlay" class="pin-overlay hidden">
+      <div class="pin-modal">
+        <strong style="font-size:15px;">Director access</strong>
+        <p style="color:#666;font-size:13px;margin:4px 0 16px;">Enter your PIN to unlock history, dashboard and editing</p>
+        <input id="pin-input" type="password" inputmode="numeric" maxlength="6" placeholder="PIN" class="input" style="width:100%;margin-bottom:8px;" onkeydown="if(event.key==='Enter')submitPin()" />
+        <p id="pin-error" class="pin-error hidden">Incorrect PIN</p>
+        <div class="row" style="justify-content:flex-end;gap:8px;">
+          <button class="btn" onclick="closePinModal()">Cancel</button>
+          <button class="btn" onclick="submitPin()">Unlock</button>
+        </div>
+      </div>
+    </div>
+    <div class="header">
+      <div>
+        <h1>Daily checklist tracker</h1>
+        <p class="muted" style="font-size:13px;margin-top:2px;">${new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</p>
+      </div>
+      <div class="row" style="flex-wrap:wrap;gap:8px;">
+        <span class="sync-dot" id="sync-dot"></span><span class="save-note" id="save-note">Live sync on</span>
+        <span class="badge" id="overall-badge"></span>
+        <span id="director-btns" class="hidden row" style="gap:6px;">
+          <button id="edit-btn" class="btn" onclick="toggleEdit()">Edit</button>
+          <button class="btn" onclick="signOut()">Sign out</button>
+        </span>
+        <button id="login-btn" class="btn" onclick="openPinModal()">Director login</button>
+      </div>
+    </div>
+    <div class="tabs" id="tabs"></div>
+    <div id="main-content"></div>`;
+  updateOverallBadge();
+  renderTabs();
+  renderCurrentView();
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(pollCompletions, POLL_INTERVAL);
+}
+
+function renderTabs() {
+  const tabs = [
+    {id:"overview",label:"Overview"},
+    ...state.sites.map(s=>({id:s.id,label:s.name})),
+    ...(state.role==="director"?[{id:"history",label:"History"},{id:"dashboard",label:"Dashboard"}]:[])
+  ];
+  const el = document.getElementById("tabs");
+  if (el) el.innerHTML = tabs.map(t=>`<button class="tab${state.activeView===t.id?" active":""}" onclick="setView('${t.id}')">${t.label}</button>`).join("");
+}
+
+async function setView(id) {
+  state.activeView = id; state.historyDay = null;
+  renderTabs();
+  if (id==="history") { document.getElementById("main-content").innerHTML=`<div class="loading-screen"><div class="spinner"></div><p>Loading history...</p></div>`; await loadHistoryWeek(); }
+  if (id==="dashboard") { document.getElementById("main-content").innerHTML=`<div class="loading-screen"><div class="spinner"></div><p>Loading dashboard...</p></div>`; await loadDashWeek(); }
+  renderCurrentView();
+}
+
+function renderOverview() {
+  updateOverallBadge();
+  const total = state.sites.reduce((a,s)=>a+s.checklists.length,0);
+  const done = state.sites.reduce((a,s)=>a+s.checklists.filter(c=>state.completions[s.id+"-"+c.id]).length,0);
+  let html = `<div class="metric-grid">
+    <div class="metric"><div class="lbl">Total checklists</div><div class="val">${total}</div></div>
+    <div class="metric"><div class="lbl">Completed</div><div class="val">${done}</div></div>
+    <div class="metric"><div class="lbl">Remaining</div><div class="val">${total-done}</div></div>
+  </div>`;
+  state.sites.forEach(s => {
+    const {done,total,pct} = sitePct(s,state.completions);
+    html += `<div class="card" style="cursor:pointer;" onclick="setView('${s.id}')">
+      <div class="row"><span style="font-weight:500;font-size:15px;">${s.name}</span><span class="spacer"></span>${badge(pct,done+"/"+total+" done")}</div>
+      ${barHtml(pct)}</div>`;
+  });
+  const el = document.getElementById("main-content"); if(el) el.innerHTML = html;
+}
+
+function renderSite(site) {
+  updateOverallBadge();
+  const {pct} = sitePct(site,state.completions);
+  const nameHtml = state.editMode
+    ? `<div class="row"><input id="rename-input-${site.id}" class="input" value="${site.name}" style="font-size:15px;width:160px;" onkeydown="if(event.key==='Enter')saveSiteName('${site.id}')"><button class="btn" onclick="saveSiteName('${site.id}')">Save</button><button class="btn" onclick="setView('${site.id}')">Cancel</button></div>`
+    : `<h2>${site.name}</h2>`;
+  let rows = site.checklists.map(c => {
+    const done = !!state.completions[site.id+"-"+c.id];
+    return `<div class="check-row">
+      <input type="checkbox" ${done?"checked":""} onchange="toggleCheck('${site.id}','${c.id}')">
+      <span class="check-label${done?" done":""}" onclick="toggleCheck('${site.id}','${c.id}')">${c.name}</span>
+      ${state.editMode?`<button class="btn btn-danger" onclick="removeChecklist('${site.id}','${c.id}')">Remove</button>`:""}
+    </div>`;
+  }).join("");
+  const addRow = state.editMode ? `<div class="row" style="margin-top:12px;"><input id="new-cl-${site.id}" class="input" style="flex:1;" placeholder="New checklist name..." onkeydown="if(event.key==='Enter')addChecklist('${site.id}')"><button class="btn" onclick="addChecklist('${site.id}')">Add</button></div>` : "";
+  const staffNote = state.role==="staff" ? `<p style="font-size:12px;color:#999;text-align:center;margin-top:8px;">Updates sync live to all users every 15 seconds.</p>` : "";
+  const el = document.getElementById("main-content");
+  if (el) el.innerHTML = `<div class="row" style="justify-content:space-between;margin-bottom:1rem;">${nameHtml}<span class="spacer"></span>${badge(pct,pct+"%")}</div><div class="card">${rows}${addRow}</div>${staffNote}`;
+}
+
+async function saveSiteName(siteId) {
+  const inp = document.getElementById("rename-input-"+siteId);
+  if (!inp||!inp.value.trim()) return;
+  state.sites = state.sites.map(s=>s.id===siteId?{...s,name:inp.value.trim()}:s);
+  await saveConfig(); renderTabs(); renderCurrentView();
+}
+
+async function addChecklist(siteId) {
+  const inp = document.getElementById("new-cl-"+siteId);
+  if (!inp||!inp.value.trim()) return;
+  state.sites = state.sites.map(s=>s.id===siteId?{...s,checklists:[...s.checklists,{id:"c"+Date.now(),name:inp.value.trim()}]}:s);
+  await saveConfig(); renderCurrentView();
+}
+
+async function removeChecklist(siteId, checkId) {
+  state.sites = state.sites.map(s=>s.id===siteId?{...s,checklists:s.checklists.filter(c=>c.id!==checkId)}:s);
+  delete state.completions[siteId+"-"+checkId];
+  await saveConfig(); renderCurrentView();
+}
+
+function toggleEdit() {
+  state.editMode = !state.editMode;
+  const btn = document.getElementById("edit-btn");
+  if (btn) btn.textContent = state.editMode ? "Done editing" : "Edit";
+  renderCurrentView();
+}
+
+async function loadHistoryWeek() {
+  const dates = getWeekDates(state.historyWeekOffset);
+  state.historyData = {};
+  for (const d of dates) {
+    const comp = await loadCompletions(d);
+    state.historyData[d] = Object.keys(comp).length > 0 ? comp : (d === today() ? comp : null);
+  }
+}
+
+async function loadDashWeek() {
+  const dates = getWeekDates(state.dashWeekOffset);
+  state.dashData = {};
+  for (const d of dates) {
+    const comp = await loadCompletions(d);
+    state.dashData[d] = Object.keys(comp).length > 0 ? comp : null;
+  }
+}
+
+function renderHistory() {
+  const dates = getWeekDates(state.historyWeekOffset);
+  let html = `<div class="row" style="justify-content:space-between;margin-bottom:1rem;">
+    <h2>History</h2>
+    <div class="week-nav">
+      <button class="btn" onclick="historyPrev()">← Prev</button>
+      <span>${weekLabel(dates)}</span>
+      ${state.historyWeekOffset<0?`<button class="btn" onclick="historyNext()">Next →</button>`:""}
+    </div>
+  </div><div class="day-grid">`;
+  dates.forEach(d => {
+    const comp = state.historyData[d]; const isToday = d===today();
+    const hasData = comp!==null&&comp!==undefined;
+    const pct = hasData ? allPct(comp) : null;
+    const sel = state.historyDay===d;
+    html += `<div class="day-cell${hasData?" has-data":""}${sel?" selected":""}" onclick="${hasData?`selectHistoryDay('${d}')`:""}">
+      <div class="day-name" style="${isToday?"color:#185fa5;font-weight:500;":""}">${new Date(d+"T12:00:00").toLocaleDateString("en-GB",{weekday:"short"})}</div>
+      <div class="day-num">${new Date(d+"T12:00:00").getDate()}</div>
+      <div class="day-pct" style="color:${pct!==null?fillColor(pct):"#bbb"}">${pct!==null?pct+"%":"—"}</div>
+    </div>`;
+  });
+  html += `</div>`;
+  if (state.historyDay && state.historyData[state.historyDay]) {
+    const comp = state.historyData[state.historyDay];
+    html += `<p style="font-size:14px;font-weight:500;margin-bottom:10px;">${new Date(state.historyDay+"T12:00:00").toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"})}</p>`;
+    state.sites.forEach(s => {
+      const {done,total,pct} = sitePct(s,comp);
+      html += `<div class="card" style="margin-bottom:8px;"><div class="row" style="margin-bottom:8px;"><span style="font-weight:500;font-size:14px;">${s.name}</span><span class="spacer"></span>${badge(pct,done+"/"+total+" done")}</div>
+        ${s.checklists.map(c=>{const d=!!comp[s.id+"-"+c.id];return`<div class="history-item"><div class="tick-box ${d?"done":"undone"}">${d?"✓":""}</div><span style="font-size:13px;color:${d?"#999":"#1a1a1a"};text-decoration:${d?"line-through":"none"};">${c.name}</span></div>`;}).join("")}</div>`;
+    });
+  }
+  const el = document.getElementById("main-content"); if(el) el.innerHTML = html;
+}
+
+function selectHistoryDay(d) { state.historyDay = state.historyDay===d?null:d; renderHistory(); }
+async function historyPrev() { state.historyWeekOffset--; state.historyDay=null; document.getElementById("main-content").innerHTML=`<div class="loading-screen"><div class="spinner"></div><p>Loading...</p></div>`; await loadHistoryWeek(); renderHistory(); }
+async function historyNext() { state.historyWeekOffset++; state.historyDay=null; document.getElementById("main-content").innerHTML=`<div class="loading-screen"><div class="spinner"></div><p>Loading...</p></div>`; await loadHistoryWeek(); renderHistory(); }
+
+function renderDashboard() {
+  const dates = getWeekDates(state.dashWeekOffset);
+  const labels = dates.map(d=>new Date(d+"T12:00:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric"}));
+  const summaryCards = state.sites.map((site,si) => {
+    const pcts = dates.map(d=>{const comp=state.dashData[d];if(!comp)return null;return sitePct(site,comp).pct;}).filter(p=>p!==null);
+    const avg = pcts.length?Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length):null;
+    const fullDays = pcts.filter(p=>p===100).length;
+    return `<div class="metric"><div class="lbl">${site.name}</div><div class="val" style="color:${avg!==null?fillColor(avg):"#bbb"}">${avg!==null?avg+"%":"—"}</div><div style="font-size:11px;color:#999;margin-top:2px;">avg · ${fullDays} full days</div></div>`;
+  }).join("");
+  const legendHtml = state.sites.map((s,si)=>`<div class="legend-item"><div class="legend-swatch" style="background:${SITE_COLORS[si]}"></div>${s.name}</div>`).join("");
+  const el = document.getElementById("main-content");
+  if (el) el.innerHTML = `
+    <div class="row" style="justify-content:space-between;margin-bottom:1rem;">
+      <h2>Weekly dashboard</h2>
+      <div class="week-nav">
+        <button class="btn" onclick="dashPrev()">← Prev</button>
+        <span>${weekLabel(dates)}</span>
+        ${state.dashWeekOffset<0?`<button class="btn" onclick="dashNext()">Next →</button>`:""}
+      </div>
+    </div>
+    <div class="metric-grid">${summaryCards}</div>
+    <div class="card"><div class="legend">${legendHtml}</div>
+      <div style="position:relative;width:100%;height:260px;"><canvas id="dash-chart" role="img" aria-label="Weekly completion rates per site">Weekly completion rates</canvas></div>
+    </div>`;
+  if (dashChart) { dashChart.destroy(); dashChart = null; }
+  const canvas = document.getElementById("dash-chart");
+  if (canvas && window.Chart) {
+    dashChart = new Chart(canvas, {
+      type:"bar",
+      data:{ labels, datasets: state.sites.map((site,si)=>({ label:site.name, data:dates.map(d=>{const comp=state.dashData[d];if(!comp)return null;return sitePct(site,comp).pct;}), backgroundColor:SITE_COLORS[si], borderRadius:4, borderSkipped:false })) },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>ctx.dataset.label+": "+(ctx.parsed.y!==null?ctx.parsed.y+"%":"No data")}} }, scales:{ x:{grid:{display:false},ticks:{font:{size:11},autoSkip:false}}, y:{min:0,max:100,ticks:{callback:v=>v+"%",font:{size:11},stepSize:25},grid:{color:"rgba(0,0,0,0.06)"}} } }
+    });
+  }
+}
+
+async function dashPrev() { state.dashWeekOffset--; document.getElementById("main-content").innerHTML=`<div class="loading-screen"><div class="spinner"></div><p>Loading...</p></div>`; await loadDashWeek(); renderDashboard(); }
+async function dashNext() { state.dashWeekOffset++; document.getElementById("main-content").innerHTML=`<div class="loading-screen"><div class="spinner"></div><p>Loading...</p></div>`; await loadDashWeek(); renderDashboard(); }
+
+function openPinModal() { document.getElementById("pin-overlay").classList.remove("hidden"); setTimeout(()=>document.getElementById("pin-input").focus(),50); }
+function closePinModal() { document.getElementById("pin-overlay").classList.add("hidden"); document.getElementById("pin-input").value=""; document.getElementById("pin-error").classList.add("hidden"); }
+function submitPin() {
+  if (document.getElementById("pin-input").value===DIRECTOR_PIN) {
+    state.role="director"; closePinModal();
+    document.getElementById("director-btns").classList.remove("hidden");
+    document.getElementById("login-btn").classList.add("hidden");
+    renderTabs(); renderCurrentView();
+  } else { document.getElementById("pin-error").classList.remove("hidden"); document.getElementById("pin-input").value=""; }
+}
+function signOut() { state.role="staff"; state.editMode=false; state.activeView="overview"; document.getElementById("director-btns").classList.add("hidden"); document.getElementById("login-btn").classList.remove("hidden"); renderTabs(); renderCurrentView(); }
+
+async function init() {
+  try {
+    await loadConfig();
+    await loadTodayCompletions();
+    renderApp();
+  } catch(e) {
+    document.getElementById("loading-screen").innerHTML = `<div style="text-align:center;"><p style="color:#c0392b;font-size:14px;">Failed to connect to database.</p><p style="font-size:12px;color:#999;margin-top:8px;">${e.message}</p><button class="btn" style="margin-top:16px;" onclick="init()">Retry</button></div>`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
