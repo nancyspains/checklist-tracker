@@ -87,13 +87,13 @@ const SITE_COLORS = ["#378ADD","#1D9E75","#D85A30"];
 const POLL_INTERVAL = 15000;
 
 const DAY_CHECKLISTS = {
-  1: [{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"eon",name:"EON complete"},{id:"midweek",name:"Midweek cleaning"}],
-  2: [{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"eon",name:"EON complete"},{id:"midweek",name:"Midweek cleaning"}],
-  3: [{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"eon",name:"EON complete"},{id:"eow",name:"EOW complete"}],
-  4: [{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"eon",name:"EON complete"},{id:"cellar",name:"Cellar checklist"}],
-  5: [{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"eon",name:"EON complete"},{id:"stocks",name:"Stocks accepted"}],
-  6: [{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"eon",name:"EON complete"}],
-  0: [{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"eon",name:"EON complete"},{id:"maintenance",name:"Maintenance checklist"},{id:"timesheets",name:"Timesheets approved"}]
+  1: [{id:"eon",name:"EON complete"},{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"timesheets",name:"Timesheet approval"},{id:"maintenance",name:"Maintenance"}],
+  2: [{id:"eon",name:"EON complete"},{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"deepclean",name:"Deep clean"}],
+  3: [{id:"eon",name:"EON complete"},{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"deepclean",name:"Deep clean"}],
+  4: [{id:"eon",name:"EON complete"},{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"eow",name:"EOW complete"}],
+  5: [{id:"eon",name:"EON complete"},{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"cellar",name:"Cellar checklist"},{id:"orders",name:"Acquire orders accepted"}],
+  6: [{id:"eon",name:"EON complete"},{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"}],
+  0: [{id:"eon",name:"EON complete"},{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"}]
 };
 
 const DAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
@@ -402,7 +402,7 @@ function renderHistory() {
       const done=checklists.filter(c=>comp[s.id+"-"+c.id]).length;
       const pct=checklists.length?Math.round(done/checklists.length*100):0;
       html+=`<div class="card" style="margin-bottom:8px;"><div class="row" style="margin-bottom:8px;"><span style="font-weight:500;font-size:14px;">${s.name}</span><span class="spacer"></span>${badge(pct,done+"/"+checklists.length+" done")}</div>
-        ${checklists.map(c=>{const d=!!comp[s.id+"-"+c.id];return`<div class="history-item"><div class="tick-box ${d?"done":"undone"}">${d?"✓":""}</div><span style="font-size:13px;color:${d?"#999":"#1a1a1a"};text-decoration:${d?"line-through":"none"};">${c.name}</span></div>`;}).join("")}</div>`;
+        ${checklists.map(c=>{const d=!!comp[s.id+"-"+c.id];return`<div class="check-row"><input type="checkbox" ${d?"checked":""} onchange="toggleHistoryCheck('${state.historyDay}','${s.id}','${c.id}')"><span class="check-label${d?" done":""}" onclick="toggleHistoryCheck('${state.historyDay}','${s.id}','${c.id}')">${c.name}</span></div>`;}).join("")}</div>`;
     });
   }
   const el=document.getElementById("main-content"); if(el) el.innerHTML=html;
@@ -411,6 +411,27 @@ function renderHistory() {
 function selectHistoryDay(d){state.historyDay=state.historyDay===d?null:d;renderHistory();}
 async function historyPrev(){state.historyWeekOffset--;state.historyDay=null;document.getElementById("main-content").innerHTML=`<div class="loading-screen"><div class="spinner"></div><p>Loading...</p></div>`;await loadHistoryWeek();renderHistory();}
 async function historyNext(){state.historyWeekOffset++;state.historyDay=null;document.getElementById("main-content").innerHTML=`<div class="loading-screen"><div class="spinner"></div><p>Loading...</p></div>`;await loadHistoryWeek();renderHistory();}
+
+async function toggleHistoryCheck(date, siteId, checkId) {
+  const key=`${siteId}-${checkId}`;
+  const comp=state.historyData[date]||{};
+  const newVal=!comp[key];
+  if(!state.historyData[date]) state.historyData[date]={};
+  state.historyData[date][key]=newVal;
+  renderHistory();
+  setSaving(true);
+  try {
+    const existing=await sbFetch(`completions?completion_date=eq.${date}&site_id=eq.${siteId}&check_id=eq.${checkId}&select=id`);
+    if(existing&&existing.length){
+      await sbFetch(`completions?completion_date=eq.${date}&site_id=eq.${siteId}&check_id=eq.${checkId}`,{method:"PATCH",body:JSON.stringify({completed:newVal})});
+    } else {
+      await sbFetch("completions",{method:"POST",body:JSON.stringify({site_id:siteId,check_id:checkId,completion_date:date,completed:newVal})});
+    }
+    state.lastSaved=new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+  } catch(e){console.error("History save failed",e);state.historyData[date][key]=!newVal;}
+  setSaving(false);
+  renderHistory();
+}
 
 function renderDashboard() {
   const dates=getWeekDates(state.dashWeekOffset);
