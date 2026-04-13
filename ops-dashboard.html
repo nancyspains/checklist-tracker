@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nancy Spain's — Ops Director KPI</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f5f4f0;color:#1a1a18;min-height:100vh;}
+.wrap{max-width:820px;margin:0 auto;padding:1.5rem 1rem;}
+h1{font-size:19px;font-weight:500;}
+p.sub{font-size:12px;color:#5f5e5a;margin-top:2px;}
+.topbar{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:1.25rem;}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;}
+.btn{font-family:inherit;font-size:13px;padding:6px 14px;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;background:transparent;color:#5f5e5a;cursor:pointer;}
+.btn.active{background:#f1efe8;color:#1a1a18;font-weight:500;border-color:rgba(0,0,0,0.35);}
+.btn.small{font-size:12px;padding:5px 10px;}
+.btn:disabled{opacity:0.35;cursor:default;}
+.week-nav{display:flex;align-items:center;gap:8px;background:#fff;border:0.5px solid rgba(0,0,0,0.12);border-radius:12px;padding:0.7rem 1rem;margin-bottom:1.25rem;}
+.arrow{font-size:18px;border:none;background:transparent;color:#5f5e5a;cursor:pointer;padding:0 4px;line-height:1;}
+.week-nav .center{flex:1;text-align:center;}
+.wlabel{font-size:14px;font-weight:500;}
+.pill{display:inline-block;font-size:11px;padding:2px 7px;border-radius:20px;font-weight:500;margin-left:6px;}
+.pill-purple{background:#EEEDFE;color:#534AB7;}
+.pill-green{background:#EAF3DE;color:#3B6D11;}
+.pill-gray{background:#f1efe8;color:#888780;}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:1.25rem;}
+.kpi-card{background:#f1efe8;border-radius:8px;padding:0.85rem;}
+.klabel{font-size:11px;color:#5f5e5a;margin-bottom:5px;}
+.kval{font-size:22px;font-weight:500;line-height:1;}
+.ktgt{font-size:11px;color:#888780;margin-top:3px;}
+.kbadge{display:inline-block;font-size:11px;padding:2px 7px;border-radius:20px;margin-top:5px;font-weight:500;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;}
+.ccart{background:#fff;border:0.5px solid rgba(0,0,0,0.12);border-radius:12px;padding:1rem;}
+.ctitle{font-size:13px;font-weight:500;margin-bottom:10px;}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.bar-row:last-child{margin-bottom:0;}
+.bar-lbl{font-size:11px;color:#5f5e5a;width:90px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bar-track{flex:1;background:#f1efe8;border-radius:4px;height:16px;position:relative;overflow:hidden;}
+.bar-fill{height:100%;border-radius:4px;transition:width 0.3s;}
+.bar-tgt{position:absolute;top:0;height:100%;width:1.5px;background:rgba(180,80,50,0.45);}
+.bar-val{font-size:11px;color:#5f5e5a;width:38px;text-align:right;flex-shrink:0;}
+.entry-card{background:#fff;border:0.5px solid rgba(0,0,0,0.12);border-radius:12px;padding:1.25rem;margin-bottom:1rem;}
+.entry-head{display:flex;align-items:center;gap:12px;margin-bottom:1.25rem;}
+.avatar{width:40px;height:40px;border-radius:50%;background:#E1F5EE;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:#0F6E56;flex-shrink:0;}
+.field-row{margin-bottom:14px;}
+.field-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.field-label{font-size:13px;color:#5f5e5a;}
+.field-right{display:flex;align-items:center;gap:8px;}
+.status-pill{font-size:11px;padding:2px 7px;border-radius:20px;font-weight:500;}
+.field-val{font-size:15px;font-weight:500;min-width:50px;text-align:right;}
+.field-bar-wrap{display:flex;align-items:center;gap:10px;}
+.mini-track{flex:1;position:relative;height:6px;background:#f1efe8;border-radius:4px;}
+.mini-fill{position:absolute;left:0;top:0;height:100%;border-radius:4px;transition:width 0.2s;}
+.mini-tgt{position:absolute;top:-3px;width:2px;height:12px;background:rgba(150,100,50,0.4);border-radius:1px;}
+.field-tgt{font-size:11px;color:#888780;margin-top:3px;}
+.num-input{width:70px;font-size:13px;padding:4px 8px;text-align:right;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;background:#fff;color:#1a1a18;font-family:inherit;}
+.save-row{display:flex;gap:8px;justify-content:flex-end;}
+.history-item{background:#fff;border:0.5px solid rgba(0,0,0,0.12);border-radius:12px;padding:0.85rem 1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
+.loading{text-align:center;padding:3rem;color:#5f5e5a;font-size:14px;}
+.sync-bar{font-size:12px;padding:6px 12px;border-radius:8px;margin-bottom:1rem;display:none;}
+.sync-saving{background:#FAEEDA;color:#854F0B;display:block;}
+.sync-saved{background:#EAF3DE;color:#3B6D11;display:block;}
+.sync-error{background:#FCEBEB;color:#A32D2D;display:block;}
+.section-divider{font-size:13px;font-weight:500;color:#5f5e5a;margin:1.25rem 0 0.75rem;padding-bottom:6px;border-bottom:0.5px solid rgba(0,0,0,0.1);}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;color:#5f5e5a;font-weight:400;padding:4px 6px 8px;border-bottom:0.5px solid rgba(0,0,0,0.1);}
+td{padding:7px 6px;border-bottom:0.5px solid rgba(0,0,0,0.08);color:#1a1a18;}
+tr:last-child td{border-bottom:none;}
+.score-pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:12px;font-weight:500;}
+@media(max-width:600px){.grid2,.grid3{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><div class="loading">Connecting to database...</div></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCp4Kb2mh_RC80TE8WcGjLZX2Of4huqt5E",
+  authDomain: "nancy-spains-kpi.firebaseapp.com",
+  projectId: "nancy-spains-kpi",
+  storageBucket: "nancy-spains-kpi.firebasestorage.app",
+  messagingSenderId: "1042191730060",
+  appId: "1:1042191730060:web:8819d9840616dceb7382a9"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp);
+
+// ── Config ──
+const PUBS = ["Nancy Spains Shoreditch","Nancy Spains Monument","Nancy Spains Manchester"];
+const SHORT = {"Nancy Spains Shoreditch":"Shoreditch","Nancy Spains Monument":"Monument","Nancy Spains Manchester":"Manchester"};
+
+// KPIs that are per-pub
+const PUB_FIELDS = [
+  {key:"mystery", label:"Mystery Shopper %", suffix:"%", min:0, max:100, step:1, lb:false, target:90},
+  {key:"audit",   label:"Audit Score %",     suffix:"%", min:0, max:100, step:1, lb:false, target:90},
+];
+
+// KPIs that are group-wide
+const GROUP_FIELDS = [
+  {key:"compliance", label:"Compliance Checklists %", suffix:"%", min:0, max:100, step:1,   lb:false, target:90},
+  {key:"gp",         label:"GP %",                    suffix:"%", min:0, max:100, step:0.1, lb:false, target:80},
+];
+
+const BLANK_PUB  = {mystery:0, audit:0};
+const BLANK_GROUP = {compliance:0, gp:0};
+
+const ADMIN_PASSWORD = "nancys2026";
+const STORE_KEY = "ops_kpi_weeks";
+
+// ── State ──
+const state = {
+  view:"dashboard", activeWeek:currentWeekEnding(), allData:{},
+  draft:{pubs:{}, group:{}}, saved:false, unlocked:false,
+  loading:true, syncStatus:""
+};
+
+// ── Date helpers ──
+function currentWeekEnding(){
+  const t=new Date(); const day=t.getDay();
+  const diff=t.getDate()-day+(day===0?0:7);
+  const s=new Date(t); s.setDate(diff);
+  return s.toISOString().split("T")[0];
+}
+function shiftWeek(w,n){
+  const d=new Date(w+"T12:00:00"); d.setDate(d.getDate()+n*7);
+  return d.toISOString().split("T")[0];
+}
+function fmtWeek(w){
+  return new Date(w+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
+}
+
+// ── Firebase ──
+async function loadWeekFromDB(week){
+  const ref=doc(db,STORE_KEY,week);
+  const snap=await getDoc(ref);
+  if(snap.exists()) return snap.data();
+  const d={pubs:{},group:{...BLANK_GROUP}};
+  PUBS.forEach(p=>{d.pubs[p]={...BLANK_PUB};});
+  return d;
+}
+async function saveWeekToDB(week,data){
+  await setDoc(doc(db,STORE_KEY,week),data);
+}
+async function loadAllWeeks(){
+  const snap=await getDocs(collection(db,STORE_KEY));
+  const all={};snap.forEach(d=>{all[d.id]=d.data();});
+  return all;
+}
+
+let unsubscribe=null;
+function listenToWeek(week){
+  if(unsubscribe) unsubscribe();
+  unsubscribe=onSnapshot(doc(db,STORE_KEY,week),(snap)=>{
+    if(snap.exists()){
+      state.allData[week]=snap.data();
+      if(!state.unlocked) state.draft=JSON.parse(JSON.stringify(snap.data()));
+      render();
+    }
+  });
+}
+
+async function init(){
+  state.allData=await loadAllWeeks();
+  state.draft=await loadWeekFromDB(state.activeWeek);
+  state.loading=false;
+  listenToWeek(state.activeWeek);
+  render();
+}
+
+// ── Helpers ──
+function si(val,tgt,lb){
+  const diff=lb?val-tgt:tgt-val;
+  if(diff<=0) return{bg:"#EAF3DE",col:"#3B6D11",label:"On target"};
+  if(diff<=3) return{bg:"#FAEEDA",col:"#854F0B",label:"Near target"};
+  return{bg:"#FCEBEB",col:"#A32D2D",label:"Off target"};
+}
+function barColor(val,tgt,lb){
+  const diff=lb?val-tgt:tgt-val;
+  return diff<=0?"#639922":diff<=3?"#BA7517":"#E24B4A";
+}
+function avg(arr,key){
+  if(!arr.length) return 0;
+  return arr.reduce((s,p)=>s+(p[key]||0),0)/arr.length;
+}
+function h(tag,attrs,children){
+  const el=document.createElement(tag);
+  if(attrs) Object.keys(attrs).forEach(k=>{
+    if(k==="style"&&typeof attrs[k]==="object"){Object.assign(el.style,attrs[k]);}
+    else if(k.startsWith("on")){el.addEventListener(k.slice(2).toLowerCase(),attrs[k]);}
+    else{el.setAttribute(k,attrs[k]);}
+  });
+  if(children){
+    if(!Array.isArray(children)) children=[children];
+    children.forEach(c=>{
+      if(c==null) return;
+      if(typeof c==="string"||typeof c==="number"){el.appendChild(document.createTextNode(c));}
+      else{el.appendChild(c);}
+    });
+  }
+  return el;
+}
+function div(attrs,children){return h("div",attrs,children);}
+function span(attrs,children){return h("span",attrs,children);}
+function btn(label,attrs){return h("button",Object.assign({class:"btn"},attrs||{}),[label]);}
+
+// ── Render ──
+function render(){
+  const app=document.getElementById("app");
+  app.innerHTML="";
+  if(state.loading){app.appendChild(div({class:"loading"},"Connecting to live database..."));return;}
+  app.appendChild(renderTopBar());
+  const sb=div({class:"sync-bar sync-"+state.syncStatus});
+  if(state.syncStatus==="saving") sb.textContent="Saving to database...";
+  if(state.syncStatus==="saved")  sb.textContent="✓ Saved — all users will see the update instantly";
+  if(state.syncStatus==="error")  sb.textContent="Error saving — please try again";
+  app.appendChild(sb);
+  app.appendChild(renderWeekNav());
+  if(state.view==="dashboard") app.appendChild(renderDashboard());
+  if(state.view==="entry")     app.appendChild(renderEntry());
+  if(state.view==="history")   app.appendChild(renderHistory());
+}
+
+function renderTopBar(){
+  const wrap=div({class:"topbar"});
+  const left=div({});
+  left.appendChild(h("h1",{},"Nancy Spain's — Ops Director KPI"));
+  left.appendChild(h("p",{class:"sub"},"Live dashboard · updates instantly for everyone"));
+  wrap.appendChild(left);
+  const right=div({class:"tabs"});
+  [["dashboard","Dashboard"],["entry","Enter figures"],["history","History"]].forEach(t=>{
+    const b=btn(t[1],{class:"btn"+(state.view===t[0]?" active":"")});
+    b.addEventListener("click",()=>{state.view=t[0];render();});
+    right.appendChild(b);
+  });
+  const ex=btn("Export CSV ↓",{class:"btn"});
+  ex.addEventListener("click",()=>exportCSV(state.activeWeek,state.allData[state.activeWeek]||state.draft));
+  right.appendChild(ex);
+  wrap.appendChild(right);
+  return wrap;
+}
+
+function renderWeekNav(){
+  const cur=currentWeekEnding();
+  const isCur=state.activeWeek===cur;
+  const saved=!!state.allData[state.activeWeek];
+  const wrap=div({class:"week-nav"});
+  const prev=h("button",{class:"arrow"},"‹");
+  prev.addEventListener("click",async()=>{
+    state.activeWeek=shiftWeek(state.activeWeek,-1);
+    state.draft=await loadWeekFromDB(state.activeWeek);
+    listenToWeek(state.activeWeek);render();
+  });
+  const center=div({class:"center"});
+  center.appendChild(span({class:"wlabel"},"Week ending "+fmtWeek(state.activeWeek)));
+  if(isCur)       center.appendChild(span({class:"pill pill-purple"},"Current week"));
+  else if(saved)  center.appendChild(span({class:"pill pill-green"},"Saved"));
+  else            center.appendChild(span({class:"pill pill-gray"},"No data"));
+  const next=h("button",{class:"arrow"},"›");
+  if(state.activeWeek>=cur) next.disabled=true;
+  next.addEventListener("click",async()=>{
+    const n=shiftWeek(state.activeWeek,1);
+    if(n<=cur){state.activeWeek=n;state.draft=await loadWeekFromDB(n);listenToWeek(n);render();}
+  });
+  wrap.appendChild(prev);wrap.appendChild(center);wrap.appendChild(next);
+  return wrap;
+}
+
+function renderDashboard(){
+  const data=state.allData[state.activeWeek]||state.draft;
+  const pubs=data.pubs||{};
+  const group=data.group||BLANK_GROUP;
+  const prevW=shiftWeek(state.activeWeek,-1);
+  const prevData=state.allData[prevW]||null;
+  const frag=document.createDocumentFragment();
+
+  function makeBarRow(lbl,val,tgt,maxV,lb,suffix){
+    const row=div({class:"bar-row"});
+    const l=div({class:"bar-lbl"},lbl);l.title=lbl;
+    const track=div({class:"bar-track"});
+    const pct=Math.min(100,(val/maxV)*100);
+    const tpct=Math.min(100,(tgt/maxV)*100);
+    const fill=div({class:"bar-fill"});fill.style.width=pct.toFixed(1)+"%";fill.style.background=barColor(val,tgt,lb);
+    const tline=div({class:"bar-tgt"});tline.style.left=tpct.toFixed(1)+"%";
+    track.appendChild(fill);track.appendChild(tline);
+    row.appendChild(l);row.appendChild(track);row.appendChild(div({class:"bar-val"},val+suffix));
+    return row;
+  }
+  function makeChart(title,rows){
+    const c=div({class:"ccart"});c.appendChild(div({class:"ctitle"},title));
+    rows.forEach(r=>c.appendChild(r));return c;
+  }
+
+  // ── Summary KPI cards ──
+  const mysteryAvg=avg(PUBS.map(p=>pubs[p]||BLANK_PUB),"mystery");
+  const auditAvg=avg(PUBS.map(p=>pubs[p]||BLANK_PUB),"audit");
+  const kpis=[
+    {label:"Avg Mystery Shopper", val:mysteryAvg, tgt:90,  lb:false, disp:mysteryAvg.toFixed(0)+"%",       tgtLabel:"Target: 90%", badge:mysteryAvg>=90?"Passing":"Needs work"},
+    {label:"Avg Audit Score",     val:auditAvg,   tgt:90,  lb:false, disp:auditAvg.toFixed(0)+"%",         tgtLabel:"Target: 90%", badge:auditAvg>=90?"Passing":"Needs work"},
+    {label:"Compliance %",        val:group.compliance||0, tgt:90, lb:false, disp:(group.compliance||0)+"%", tgtLabel:"Target: 90%", badge:(group.compliance||0)>=90?"On target":"Below target"},
+    {label:"GP %",                val:group.gp||0, tgt:80, lb:false, disp:(group.gp||0).toFixed(1)+"%",    tgtLabel:"Target: 80%", badge:(group.gp||0)>=80?"On target":"Below target"},
+  ];
+  const kg=div({class:"kpi-grid"});
+  kpis.forEach(k=>{
+    const s=si(k.val,k.tgt,k.lb);
+    const card=div({class:"kpi-card"});
+    card.appendChild(div({class:"klabel"},k.label));
+    card.appendChild(div({class:"kval"},k.disp));
+    card.appendChild(div({class:"ktgt"},k.tgtLabel));
+    const badge=span({class:"kbadge"});badge.style.background=s.bg;badge.style.color=s.col;badge.textContent=k.badge;
+    card.appendChild(badge);kg.appendChild(card);
+  });
+  frag.appendChild(kg);
+
+  // ── Mystery shopper & Audit per pub ──
+  const r1=div({class:"grid2"});
+  r1.appendChild(makeChart("Mystery shopper by pub",PUBS.map(p=>makeBarRow(SHORT[p],(pubs[p]||BLANK_PUB).mystery,90,100,false,"%"))));
+  r1.appendChild(makeChart("Audit score by pub",PUBS.map(p=>makeBarRow(SHORT[p],(pubs[p]||BLANK_PUB).audit,90,100,false,"%"))));
+  frag.appendChild(r1);
+
+  // ── Group KPIs ──
+  const r2=div({class:"grid2"});
+  const compCard=div({class:"ccart"});
+  compCard.appendChild(div({class:"ctitle"},"Compliance checklists"));
+  compCard.appendChild(makeBarRow("Group",(group.compliance||0),90,100,false,"%"));
+  r2.appendChild(compCard);
+  const gpCard=div({class:"ccart"});
+  gpCard.appendChild(div({class:"ctitle"},"GP %"));
+  gpCard.appendChild(makeBarRow("Group",(group.gp||0),80,100,false,"%"));
+  r2.appendChild(gpCard);
+  frag.appendChild(r2);
+
+  // ── Comparison table ──
+  const tblCard=div({class:"ccart"});
+  tblCard.appendChild(div({class:"ctitle"},"Site comparison"));
+  const tbl=h("table",{});
+  const thead=h("thead",{});const hrow=h("tr",{});
+  ["Site","Mystery Shopper","Audit Score","vs prev mystery","vs prev audit"].forEach(hd=>hrow.appendChild(h("th",{},hd)));
+  thead.appendChild(hrow);tbl.appendChild(thead);
+  const tbody=h("tbody",{});
+  PUBS.forEach(pub=>{
+    const pd=pubs[pub]||BLANK_PUB;
+    const prevPd=prevData?(prevData.pubs||{})[pub]:null;
+    const tr=h("tr",{});
+    tr.appendChild(h("td",{style:{fontWeight:"500"}},SHORT[pub]));
+    PUB_FIELDS.forEach(f=>{
+      const s=si(pd[f.key]||0,f.target,f.lb);
+      const td=h("td",{});
+      const sp=span({class:"score-pill"});sp.style.background=s.bg;sp.style.color=s.col;sp.textContent=(pd[f.key]||0)+f.suffix;
+      td.appendChild(sp);tr.appendChild(td);
+    });
+    PUB_FIELDS.forEach(f=>{
+      const td=h("td",{});
+      if(prevPd){
+        const diff=(pd[f.key]||0)-(prevPd[f.key]||0);
+        td.textContent=Math.abs(diff)<0.05?"→":diff>0?"+"+diff.toFixed(0):diff.toFixed(0);
+        td.style.color=diff>0?"#3B6D11":diff<0?"#A32D2D":"#888780";
+        td.style.fontSize="12px";
+      }else{td.textContent="—";td.style.color="#888780";}
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+  tbl.appendChild(tbody);tblCard.appendChild(tbl);
+  frag.appendChild(tblCard);
+  return frag;
+}
+
+function renderEntry(){
+  if(!state.unlocked){
+    const gate=div({style:{background:"#fff",border:"0.5px solid rgba(0,0,0,0.12)",borderRadius:"12px",padding:"2rem",maxWidth:"340px",margin:"2rem auto",textAlign:"center"}});
+    gate.appendChild(div({style:{fontSize:"32px",marginBottom:"12px"}},"🔒"));
+    gate.appendChild(h("p",{style:{fontWeight:"500",fontSize:"15px",color:"#1a1a18",marginBottom:"6px"}},"Admin access required"));
+    gate.appendChild(h("p",{style:{fontSize:"13px",color:"#5f5e5a",marginBottom:"20px"}},"Enter the password to edit figures."));
+    const pinInput=h("input",{type:"password",placeholder:"Enter password"});
+    pinInput.style.cssText="width:100%;font-size:14px;padding:8px 12px;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;margin-bottom:12px;text-align:center;font-family:inherit;background:#fff;color:#1a1a18;";
+    const errMsg=h("p",{style:{fontSize:"12px",color:"#A32D2D",marginBottom:"10px",minHeight:"16px"}},"");
+    const unlockBtn=btn("Unlock",{class:"btn"});
+    unlockBtn.style.cssText="width:100%;background:#f1efe8;font-weight:500;color:#1a1a18;";
+    function tryUnlock(){
+      if(pinInput.value===ADMIN_PASSWORD){state.unlocked=true;render();}
+      else{errMsg.textContent="Incorrect password. Please try again.";pinInput.value="";}
+    }
+    unlockBtn.addEventListener("click",tryUnlock);
+    pinInput.addEventListener("keydown",e=>{if(e.key==="Enter")tryUnlock();});
+    gate.appendChild(pinInput);gate.appendChild(errMsg);gate.appendChild(unlockBtn);
+    return gate;
+  }
+
+  const frag=document.createDocumentFragment();
+  if(!state.draft.pubs) state.draft.pubs={};
+  if(!state.draft.group) state.draft.group={...BLANK_GROUP};
+  PUBS.forEach(p=>{if(!state.draft.pubs[p]) state.draft.pubs[p]={...BLANK_PUB};});
+
+  // ── Per-pub fields ──
+  frag.appendChild(div({class:"section-divider"},"Per site figures"));
+  PUBS.forEach(pub=>{
+    const pd=state.draft.pubs[pub];
+    const initials=pub.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+    const card=div({class:"entry-card"});
+    const ehead=div({class:"entry-head"});
+    ehead.appendChild(div({class:"avatar"},initials));
+    const einfo=div({});
+    einfo.appendChild(h("p",{style:{fontWeight:"500",fontSize:"14px",color:"#1a1a18",margin:"0"}},pub));
+    einfo.appendChild(h("p",{style:{fontSize:"12px",color:"#5f5e5a",margin:"0"}},"Week ending "+fmtWeek(state.activeWeek)));
+    ehead.appendChild(einfo);card.appendChild(ehead);
+    PUB_FIELDS.forEach(f=>{
+      const val=pd[f.key]!=null?pd[f.key]:0;
+      const s=si(val,f.target,f.lb);
+      const pct=((val-f.min)/(f.max-f.min))*100;
+      const tpct=((f.target-f.min)/(f.max-f.min))*100;
+      const row=div({class:"field-row"});
+      const top=div({class:"field-top"});
+      const right=div({class:"field-right"});
+      const sp=span({class:"status-pill"});sp.style.background=s.bg;sp.style.color=s.col;sp.textContent=s.label;
+      const sv=span({class:"field-val"});sv.textContent=val.toFixed(f.step<1?1:0)+f.suffix;
+      right.appendChild(sp);right.appendChild(sv);
+      top.appendChild(span({class:"field-label"},f.label));top.appendChild(right);row.appendChild(top);
+      const bwrap=div({class:"field-bar-wrap"});
+      const track=div({class:"mini-track"});
+      const fill=div({class:"mini-fill"});fill.style.width=Math.min(100,pct).toFixed(1)+"%";fill.style.background=s.col;
+      const tline=div({class:"mini-tgt"});tline.style.left=tpct.toFixed(1)+"%";
+      track.appendChild(fill);track.appendChild(tline);
+      const inp=h("input",{type:"number",min:f.min,max:f.max,step:f.step,class:"num-input"});
+      inp.value=val;
+      inp.addEventListener("input",function(){state.draft.pubs[pub][f.key]=parseFloat(this.value)||0;state.saved=false;render();});
+      bwrap.appendChild(track);bwrap.appendChild(inp);row.appendChild(bwrap);
+      row.appendChild(div({class:"field-tgt"},"Target: "+f.target+f.suffix));
+      card.appendChild(row);
+    });
+    frag.appendChild(card);
+  });
+
+  // ── Group-wide fields ──
+  frag.appendChild(div({class:"section-divider"},"Group-wide figures"));
+  const groupCard=div({class:"entry-card"});
+  const ghead=div({class:"entry-head"});
+  ghead.appendChild(div({class:"avatar",style:{background:"#E1F5EE",color:"#0F6E56"}},"NS"));
+  const ginfo=div({});
+  ginfo.appendChild(h("p",{style:{fontWeight:"500",fontSize:"14px",color:"#1a1a18",margin:"0"}},"Nancy Spain's Group"));
+  ginfo.appendChild(h("p",{style:{fontSize:"12px",color:"#5f5e5a",margin:"0"}},"Week ending "+fmtWeek(state.activeWeek)));
+  ghead.appendChild(ginfo);groupCard.appendChild(ghead);
+  GROUP_FIELDS.forEach(f=>{
+    const val=state.draft.group[f.key]!=null?state.draft.group[f.key]:0;
+    const s=si(val,f.target,f.lb);
+    const pct=((val-f.min)/(f.max-f.min))*100;
+    const tpct=((f.target-f.min)/(f.max-f.min))*100;
+    const row=div({class:"field-row"});
+    const top=div({class:"field-top"});
+    const right=div({class:"field-right"});
+    const sp=span({class:"status-pill"});sp.style.background=s.bg;sp.style.color=s.col;sp.textContent=s.label;
+    const sv=span({class:"field-val"});sv.textContent=val.toFixed(f.step<1?1:0)+f.suffix;
+    right.appendChild(sp);right.appendChild(sv);
+    top.appendChild(span({class:"field-label"},f.label));top.appendChild(right);row.appendChild(top);
+    const bwrap=div({class:"field-bar-wrap"});
+    const track=div({class:"mini-track"});
+    const fill=div({class:"mini-fill"});fill.style.width=Math.min(100,pct).toFixed(1)+"%";fill.style.background=s.col;
+    const tline=div({class:"mini-tgt"});tline.style.left=tpct.toFixed(1)+"%";
+    track.appendChild(fill);track.appendChild(tline);
+    const inp=h("input",{type:"number",min:f.min,max:f.max,step:f.step,class:"num-input"});
+    inp.value=val;
+    inp.addEventListener("input",function(){state.draft.group[f.key]=parseFloat(this.value)||0;state.saved=false;render();});
+    bwrap.appendChild(track);bwrap.appendChild(inp);row.appendChild(bwrap);
+    row.appendChild(div({class:"field-tgt"},"Target: "+f.target+f.suffix));
+    groupCard.appendChild(row);
+  });
+  frag.appendChild(groupCard);
+
+  const srow=div({class:"save-row"});
+  const lockBtn=btn("🔒 Lock",{class:"btn"});
+  lockBtn.style.color="#5f5e5a";
+  lockBtn.addEventListener("click",()=>{state.unlocked=false;state.view="dashboard";render();});
+  srow.appendChild(lockBtn);
+  const sb=btn("Save & publish live",{class:"btn"});
+  sb.style.cssText="background:#f1efe8;font-weight:500;color:#1a1a18;";
+  sb.addEventListener("click",async()=>{
+    state.syncStatus="saving";render();
+    try{
+      await saveWeekToDB(state.activeWeek,state.draft);
+      state.allData[state.activeWeek]=JSON.parse(JSON.stringify(state.draft));
+      state.syncStatus="saved";render();
+      setTimeout(()=>{state.syncStatus="";render();},3000);
+    }catch(e){state.syncStatus="error";render();}
+  });
+  srow.appendChild(sb);frag.appendChild(srow);
+  return frag;
+}
+
+function renderHistory(){
+  const weeks=Object.keys(state.allData).sort((a,b)=>b.localeCompare(a));
+  const frag=document.createDocumentFragment();
+  const topRow=div({style:{display:"flex",justifyContent:"flex-end",marginBottom:"12px"}});
+  const allEx=btn("Export all weeks CSV ↓",{class:"btn"});
+  allEx.addEventListener("click",()=>exportAllCSV(state.allData));
+  topRow.appendChild(allEx);frag.appendChild(topRow);
+  if(!weeks.length){
+    frag.appendChild(div({style:{padding:"2rem",textAlign:"center",color:"#5f5e5a",fontSize:"14px"}},"No saved weeks yet."));
+    return frag;
+  }
+  weeks.forEach(w=>{
+    const d=state.allData[w];
+    const pubs=d.pubs||{};
+    const group=d.group||BLANK_GROUP;
+    const mystAvg=avg(PUBS.map(p=>pubs[p]||BLANK_PUB),"mystery");
+    const auditAvg=avg(PUBS.map(p=>pubs[p]||BLANK_PUB),"audit");
+    const item=div({class:"history-item"});
+    const left=div({});
+    left.appendChild(div({style:{fontSize:"14px",fontWeight:"500",color:"#1a1a18"}},"Week ending "+fmtWeek(w)));
+    left.appendChild(div({style:{fontSize:"12px",color:"#5f5e5a",marginTop:"3px"}},
+      "Mystery "+mystAvg.toFixed(0)+"% · Audit "+auditAvg.toFixed(0)+"% · Compliance "+(group.compliance||0)+"% · GP "+(group.gp||0).toFixed(1)+"%"));
+    const right=div({style:{display:"flex",gap:"6px"}});
+    const vb=btn("View",{class:"btn small"});
+    vb.addEventListener("click",async()=>{state.activeWeek=w;state.view="dashboard";listenToWeek(w);render();});
+    const eb=btn("CSV ↓",{class:"btn small"});
+    eb.addEventListener("click",()=>exportCSV(w,d));
+    right.appendChild(vb);right.appendChild(eb);
+    item.appendChild(left);item.appendChild(right);frag.appendChild(item);
+  });
+  return frag;
+}
+
+function exportCSV(week,data){
+  const pubs=(data&&data.pubs)||{};
+  const group=(data&&data.group)||BLANK_GROUP;
+  const rows=[["Site","Week ending","Mystery Shopper %","Audit Score %","Compliance %","GP %"]];
+  PUBS.forEach(pub=>{
+    const pd=pubs[pub]||BLANK_PUB;
+    rows.push([pub,week,pd.mystery,pd.audit,group.compliance,group.gp]);
+  });
+  const csv=rows.map(r=>r.map(v=>`"${v}"`).join(",")).join("\n");
+  const a=document.createElement("a");
+  a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);
+  a.download="nancy-spains-ops-kpi-"+week+".csv";
+  a.click();
+}
+function exportAllCSV(allData){
+  const rows=[["Site","Week ending","Mystery Shopper %","Audit Score %","Compliance %","GP %"]];
+  Object.keys(allData).sort().forEach(week=>{
+    const pubs=(allData[week]&&allData[week].pubs)||{};
+    const group=(allData[week]&&allData[week].group)||BLANK_GROUP;
+    PUBS.forEach(pub=>{
+      const pd=pubs[pub]||BLANK_PUB;
+      rows.push([pub,week,pd.mystery,pd.audit,group.compliance,group.gp]);
+    });
+  });
+  const csv=rows.map(r=>r.map(v=>`"${v}"`).join(",")).join("\n");
+  const a=document.createElement("a");
+  a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);
+  a.download="nancy-spains-ops-kpi-all-weeks.csv";
+  a.click();
+}
+
+init();
+</script>
+</body>
+</html>
