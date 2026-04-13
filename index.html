@@ -96,6 +96,12 @@ const DAY_CHECKLISTS = {
   0: [{id:"eon",name:"EON complete"},{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"}]
 };
 
+const SITE_OVERRIDES = {
+  "s2": {
+    1: [{id:"timesheets",name:"Timesheet approval"},{id:"maintenance",name:"Maintenance"}]
+  }
+};
+
 const DAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 
 const defaultSites = [
@@ -112,8 +118,9 @@ const state = {
 
 const today = () => new Date().toISOString().split("T")[0];
 const todayDow = () => new Date().getDay();
-const getChecklists = (dateStr) => {
+const getChecklists = (dateStr, siteId) => {
   const dow = new Date(dateStr + "T12:00:00").getDay();
+  if (siteId && SITE_OVERRIDES[siteId] && SITE_OVERRIDES[siteId][dow]) return SITE_OVERRIDES[siteId][dow];
   return DAY_CHECKLISTS[dow] || [];
 };
 
@@ -213,15 +220,14 @@ function weekLabel(dates) {
   return fmt(dates[0])+" – "+fmt(dates[6]);
 }
 function sitePct(site, comp, date) {
-  const checklists = getChecklists(date || today());
+  const checklists = getChecklists(date || today(), site.id);
   if (!checklists.length) return {done:0,total:0,pct:0};
   const done = checklists.filter(c=>comp[site.id+"-"+c.id]).length;
   return {done, total:checklists.length, pct:Math.round(done/checklists.length*100)};
 }
 function allPct(comp, date) {
-  const checklists = getChecklists(date || today());
-  const total = state.sites.length * checklists.length;
-  const done = state.sites.reduce((a,s)=>a+checklists.filter(c=>comp[s.id+"-"+c.id]).length,0);
+  const total = state.sites.reduce((a,s)=>a+getChecklists(date||today(),s.id).length,0);
+  const done = state.sites.reduce((a,s)=>a+getChecklists(date||today(),s.id).filter(c=>comp[s.id+"-"+c.id]).length,0);
   return total ? Math.round(done/total*100) : 0;
 }
 function badgeClass(pct) { return pct===100?"badge-green":pct>=50?"badge-amber":"badge-red"; }
@@ -304,9 +310,8 @@ async function setView(id) {
 
 function renderOverview() {
   updateOverallBadge();
-  const checklists = DAY_CHECKLISTS[todayDow()];
-  const total = state.sites.length * checklists.length;
-  const done = state.sites.reduce((a,s)=>a+checklists.filter(c=>state.completions[s.id+"-"+c.id]).length,0);
+  const total = state.sites.reduce((a,s)=>a+getChecklists(today(),s.id).length,0);
+  const done = state.sites.reduce((a,s)=>a+getChecklists(today(),s.id).filter(c=>state.completions[s.id+"-"+c.id]).length,0);
   let html = `<div class="metric-grid">
     <div class="metric"><div class="lbl">Total tasks today</div><div class="val">${total}</div></div>
     <div class="metric"><div class="lbl">Completed</div><div class="val">${done}</div></div>
@@ -323,7 +328,7 @@ function renderOverview() {
 
 function renderSite(site) {
   updateOverallBadge();
-  const checklists = DAY_CHECKLISTS[todayDow()];
+  const checklists = getChecklists(today(), site.id);
   const {pct} = sitePct(site,state.completions);
   const nameHtml = state.editMode
     ? `<div class="row"><input id="rename-input-${site.id}" class="input" value="${site.name}" style="font-size:15px;width:160px;" onkeydown="if(event.key==='Enter')saveSiteName('${site.id}')"><button class="btn" onclick="saveSiteName('${site.id}')">Save</button><button class="btn" onclick="setView('${site.id}')">Cancel</button></div>`
