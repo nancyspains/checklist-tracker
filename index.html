@@ -359,7 +359,7 @@ async function loadHistoryWeek() {
   state.historyData={};
   for(const d of dates){
     const comp=await loadCompletions(d);
-    state.historyData[d]=Object.keys(comp).length>0?comp:(d===today()?comp:null);
+    state.historyData[d]=comp;
   }
 }
 
@@ -384,8 +384,8 @@ function renderHistory() {
   </div><div class="day-grid">`;
   dates.forEach(d=>{
     const comp=state.historyData[d]; const isToday=d===today();
-    const hasData=comp!==null&&comp!==undefined;
-    const pct=hasData?allPct(comp,d):null;
+    const hasData=true;
+    const pct=Object.keys(comp).length>0?allPct(comp,d):null;
     const sel=state.historyDay===d;
     html+=`<div class="day-cell${hasData?" has-data":""}${sel?" selected":""}" onclick="${hasData?`selectHistoryDay('${d}')`:""}">
       <div class="day-name" style="${isToday?"color:#185fa5;font-weight:500;":""}">${new Date(d+"T12:00:00").toLocaleDateString("en-GB",{weekday:"short"})}</div>
