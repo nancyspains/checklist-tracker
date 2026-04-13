@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nancy Spain's — Marketing Director KPI</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f5f4f0;color:#1a1a18;min-height:100vh;}
+.wrap{max-width:820px;margin:0 auto;padding:1.5rem 1rem;}
+h1{font-size:19px;font-weight:500;}
+p.sub{font-size:12px;color:#5f5e5a;margin-top:2px;}
+.topbar{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:1.25rem;}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;}
+.btn{font-family:inherit;font-size:13px;padding:6px 14px;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;background:transparent;color:#5f5e5a;cursor:pointer;}
+.btn.active{background:#f1efe8;color:#1a1a18;font-weight:500;border-color:rgba(0,0,0,0.35);}
+.btn.small{font-size:12px;padding:5px 10px;}
+.btn:disabled{opacity:0.35;cursor:default;}
+.week-nav{display:flex;align-items:center;gap:8px;background:#fff;border:0.5px solid rgba(0,0,0,0.12);border-radius:12px;padding:0.7rem 1rem;margin-bottom:1.25rem;}
+.arrow{font-size:18px;border:none;background:transparent;color:#5f5e5a;cursor:pointer;padding:0 4px;line-height:1;}
+.center{flex:1;text-align:center;}
+.wlabel{font-size:14px;font-weight:500;}
+.pill{display:inline-block;font-size:11px;padding:2px 7px;border-radius:20px;font-weight:500;margin-left:6px;}
+.pill-purple{background:#EEEDFE;color:#534AB7;}
+.pill-green{background:#EAF3DE;color:#3B6D11;}
+.pill-gray{background:#f1efe8;color:#888780;}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:1.25rem;}
+.kpi-card{background:#f1efe8;border-radius:8px;padding:0.85rem;}
+.klabel{font-size:11px;color:#5f5e5a;margin-bottom:5px;}
+.kval{font-size:22px;font-weight:500;line-height:1;}
+.ktgt{font-size:11px;color:#888780;margin-top:3px;}
+.kbadge{display:inline-block;font-size:11px;padding:2px 7px;border-radius:20px;margin-top:5px;font-weight:500;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.ccart{background:#fff;border:0.5px solid rgba(0,0,0,0.12);border-radius:12px;padding:1rem;}
+.ctitle{font-size:13px;font-weight:500;margin-bottom:10px;}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.bar-row:last-child{margin-bottom:0;}
+.bar-lbl{font-size:11px;color:#5f5e5a;width:110px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bar-track{flex:1;background:#f1efe8;border-radius:4px;height:16px;position:relative;overflow:hidden;}
+.bar-fill{height:100%;border-radius:4px;transition:width 0.3s;}
+.bar-tgt{position:absolute;top:0;height:100%;width:1.5px;background:rgba(180,80,50,0.45);}
+.bar-val{font-size:11px;color:#5f5e5a;width:52px;text-align:right;flex-shrink:0;}
+.entry-card{background:#fff;border:0.5px solid rgba(0,0,0,0.12);border-radius:12px;padding:1.25rem;margin-bottom:1rem;}
+.entry-head{display:flex;align-items:center;gap:12px;margin-bottom:1.25rem;}
+.avatar{width:40px;height:40px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:#185FA5;flex-shrink:0;}
+.field-row{margin-bottom:14px;}
+.field-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.field-label{font-size:13px;color:#5f5e5a;}
+.field-right{display:flex;align-items:center;gap:8px;}
+.status-pill{font-size:11px;padding:2px 7px;border-radius:20px;font-weight:500;}
+.field-val{font-size:15px;font-weight:500;min-width:60px;text-align:right;}
+.field-bar-wrap{display:flex;align-items:center;gap:10px;}
+.mini-track{flex:1;position:relative;height:6px;background:#f1efe8;border-radius:4px;}
+.mini-fill{position:absolute;left:0;top:0;height:100%;border-radius:4px;transition:width 0.2s;}
+.mini-tgt{position:absolute;top:-3px;width:2px;height:12px;background:rgba(150,100,50,0.4);border-radius:1px;}
+.field-tgt{font-size:11px;color:#888780;margin-top:3px;}
+.num-input{width:90px;font-size:13px;padding:4px 8px;text-align:right;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;background:#fff;color:#1a1a18;font-family:inherit;}
+.save-row{display:flex;gap:8px;justify-content:flex-end;}
+.history-item{background:#fff;border:0.5px solid rgba(0,0,0,0.12);border-radius:12px;padding:0.85rem 1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
+.loading{text-align:center;padding:3rem;color:#5f5e5a;font-size:14px;}
+.sync-bar{font-size:12px;padding:6px 12px;border-radius:8px;margin-bottom:1rem;display:none;}
+.sync-saving{background:#FAEEDA;color:#854F0B;display:block;}
+.sync-saved{background:#EAF3DE;color:#3B6D11;display:block;}
+.sync-error{background:#FCEBEB;color:#A32D2D;display:block;}
+.section-divider{font-size:13px;font-weight:500;color:#5f5e5a;margin:1.25rem 0 0.75rem;padding-bottom:6px;border-bottom:0.5px solid rgba(0,0,0,0.1);}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;color:#5f5e5a;font-weight:400;padding:4px 6px 8px;border-bottom:0.5px solid rgba(0,0,0,0.1);}
+td{padding:7px 6px;border-bottom:0.5px solid rgba(0,0,0,0.08);color:#1a1a18;}
+tr:last-child td{border-bottom:none;}
+.score-pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:12px;font-weight:500;}
+@media(max-width:600px){.grid2{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><div class="loading">Connecting to database...</div></div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCp4Kb2mh_RC80TE8WcGjLZX2Of4huqt5E",
+  authDomain: "nancy-spains-kpi.firebaseapp.com",
+  projectId: "nancy-spains-kpi",
+  storageBucket: "nancy-spains-kpi.firebasestorage.app",
+  messagingSenderId: "1042191730060",
+  appId: "1:1042191730060:web:8819d9840616dceb7382a9"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp);
+const STORE_KEY = "marketing_kpi_weeks";
+const ADMIN_PASSWORD = "nancys2026";
+
+const FIELDS = [
+  {key:"romi",          label:"Return on Marketing Investment", suffix:"%",  min:0, max:500, step:0.1, lb:false, target:80,    disp:v=>v.toFixed(1)+"%"},
+  {key:"bookingConv",   label:"Booking Conversion Rate",        suffix:"%",  min:0, max:100, step:0.1, lb:false, target:20,    disp:v=>v.toFixed(1)+"%"},
+  {key:"dbGrowth",      label:"Database Growth",                suffix:"%",  min:0, max:100, step:0.1, lb:false, target:5,     disp:v=>v.toFixed(1)+"%"},
+  {key:"tiktokGrowth",  label:"TikTok Follower Growth",         suffix:"%",  min:0, max:100, step:0.1, lb:false, target:5,     disp:v=>v.toFixed(1)+"%"},
+  {key:"tiktokViews",   label:"Avg TikTok Video Views",         suffix:"",   min:0, max:1000000, step:100, lb:false, target:60000, disp:v=>v>=1000?(v/1000).toFixed(1)+"k":v+""},
+  {key:"strategyExec",  label:"Marketing Strategy Executed",    suffix:"%",  min:0, max:100, step:1,   lb:false, target:90,    disp:v=>v.toFixed(0)+"%"},
+];
+
+const BLANK = {romi:0, bookingConv:0, dbGrowth:0, tiktokGrowth:0, tiktokViews:0, strategyExec:0};
+
+const state = {
+  view:"dashboard", activeWeek:currentWeekEnding(), allData:{},
+  draft:{...BLANK}, unlocked:false, loading:true, syncStatus:""
+};
+
+function currentWeekEnding(){
+  const t=new Date(); const day=t.getDay();
+  const diff=t.getDate()-day+(day===0?0:7);
+  const s=new Date(t); s.setDate(diff);
+  return s.toISOString().split("T")[0];
+}
+function shiftWeek(w,n){
+  const d=new Date(w+"T12:00:00"); d.setDate(d.getDate()+n*7);
+  return d.toISOString().split("T")[0];
+}
+function fmtWeek(w){
+  return new Date(w+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
+}
+
+async function loadWeekFromDB(week){
+  const snap=await getDoc(doc(db,STORE_KEY,week));
+  return snap.exists()?snap.data():{...BLANK};
+}
+async function saveWeekToDB(week,data){ await setDoc(doc(db,STORE_KEY,week),data); }
+async function loadAllWeeks(){
+  const snap=await getDocs(collection(db,STORE_KEY));
+  const all={}; snap.forEach(d=>{all[d.id]=d.data();}); return all;
+}
+
+let unsubscribe=null;
+function listenToWeek(week){
+  if(unsubscribe) unsubscribe();
+  unsubscribe=onSnapshot(doc(db,STORE_KEY,week),(snap)=>{
+    if(snap.exists()){
+      state.allData[week]=snap.data();
+      if(!state.unlocked) state.draft=JSON.parse(JSON.stringify(snap.data()));
+      render();
+    }
+  });
+}
+
+async function init(){
+  state.allData=await loadAllWeeks();
+  state.draft=await loadWeekFromDB(state.activeWeek);
+  state.loading=false;
+  listenToWeek(state.activeWeek);
+  render();
+}
+
+function si(val,tgt,lb){
+  const diff=lb?val-tgt:tgt-val;
+  if(diff<=0) return{bg:"#EAF3DE",col:"#3B6D11",label:"On target"};
+  if(diff<=3) return{bg:"#FAEEDA",col:"#854F0B",label:"Near target"};
+  return{bg:"#FCEBEB",col:"#A32D2D",label:"Off target"};
+}
+function barColor(val,tgt,lb){
+  const diff=lb?val-tgt:tgt-val;
+  return diff<=0?"#639922":diff<=3?"#BA7517":"#E24B4A";
+}
+
+function h(tag,attrs,children){
+  const el=document.createElement(tag);
+  if(attrs) Object.keys(attrs).forEach(k=>{
+    if(k==="style"&&typeof attrs[k]==="object") Object.assign(el.style,attrs[k]);
+    else if(k.startsWith("on")) el.addEventListener(k.slice(2).toLowerCase(),attrs[k]);
+    else el.setAttribute(k,attrs[k]);
+  });
+  if(children){
+    if(!Array.isArray(children)) children=[children];
+    children.forEach(c=>{
+      if(c==null) return;
+      if(typeof c==="string"||typeof c==="number") el.appendChild(document.createTextNode(c));
+      else el.appendChild(c);
+    });
+  }
+  return el;
+}
+function div(a,c){return h("div",a,c);}
+function span(a,c){return h("span",a,c);}
+function btn(l,a){return h("button",Object.assign({class:"btn"},a||{}),[l]);}
+
+function render(){
+  const app=document.getElementById("app");
+  app.innerHTML="";
+  if(state.loading){app.appendChild(div({class:"loading"},"Connecting to live database..."));return;}
+  app.appendChild(renderTopBar());
+  const sb=div({class:"sync-bar sync-"+state.syncStatus});
+  if(state.syncStatus==="saving") sb.textContent="Saving to database...";
+  if(state.syncStatus==="saved")  sb.textContent="✓ Saved — all users will see the update instantly";
+  if(state.syncStatus==="error")  sb.textContent="Error saving — please try again";
+  app.appendChild(sb);
+  app.appendChild(renderWeekNav());
+  if(state.view==="dashboard") app.appendChild(renderDashboard());
+  if(state.view==="entry")     app.appendChild(renderEntry());
+  if(state.view==="history")   app.appendChild(renderHistory());
+}
+
+function renderTopBar(){
+  const wrap=div({class:"topbar"});
+  const left=div({});
+  left.appendChild(h("h1",{},"Nancy Spain's — Marketing Director KPI"));
+  left.appendChild(h("p",{class:"sub"},"Live dashboard · updates instantly for everyone"));
+  wrap.appendChild(left);
+  const right=div({class:"tabs"});
+  [["dashboard","Dashboard"],["entry","Enter figures"],["history","History"]].forEach(t=>{
+    const b=btn(t[1],{class:"btn"+(state.view===t[0]?" active":"")});
+    b.addEventListener("click",()=>{state.view=t[0];render();});
+    right.appendChild(b);
+  });
+  const ex=btn("Export CSV ↓",{class:"btn"});
+  ex.addEventListener("click",()=>exportCSV(state.activeWeek,state.allData[state.activeWeek]||state.draft));
+  right.appendChild(ex);
+  wrap.appendChild(right);
+  return wrap;
+}
+
+function renderWeekNav(){
+  const cur=currentWeekEnding();
+  const isCur=state.activeWeek===cur;
+  const saved=!!state.allData[state.activeWeek];
+  const wrap=div({class:"week-nav"});
+  const prev=h("button",{class:"arrow"},"‹");
+  prev.addEventListener("click",async()=>{
+    state.activeWeek=shiftWeek(state.activeWeek,-1);
+    state.draft=await loadWeekFromDB(state.activeWeek);
+    listenToWeek(state.activeWeek);render();
+  });
+  const center=div({class:"center"});
+  center.appendChild(span({class:"wlabel"},"Week ending "+fmtWeek(state.activeWeek)));
+  if(isCur)      center.appendChild(span({class:"pill pill-purple"},"Current week"));
+  else if(saved) center.appendChild(span({class:"pill pill-green"},"Saved"));
+  else           center.appendChild(span({class:"pill pill-gray"},"No data"));
+  const next=h("button",{class:"arrow"},"›");
+  if(state.activeWeek>=cur) next.disabled=true;
+  next.addEventListener("click",async()=>{
+    const n=shiftWeek(state.activeWeek,1);
+    if(n<=cur){state.activeWeek=n;state.draft=await loadWeekFromDB(n);listenToWeek(n);render();}
+  });
+  wrap.appendChild(prev);wrap.appendChild(center);wrap.appendChild(next);
+  return wrap;
+}
+
+function renderDashboard(){
+  const data=state.allData[state.activeWeek]||state.draft;
+  const prevW=shiftWeek(state.activeWeek,-1);
+  const prevData=state.allData[prevW]||null;
+  const frag=document.createDocumentFragment();
+
+  // ── KPI summary cards ──
+  const kg=div({class:"kpi-grid"});
+  FIELDS.forEach(f=>{
+    const val=data[f.key]||0;
+    const s=si(val,f.target,f.lb);
+    const card=div({class:"kpi-card"});
+    card.appendChild(div({class:"klabel"},f.label));
+    card.appendChild(div({class:"kval"},f.disp(val)));
+    card.appendChild(div({class:"ktgt"},"Target: "+f.disp(f.target)));
+    const badge=span({class:"kbadge"});badge.style.background=s.bg;badge.style.color=s.col;
+    badge.textContent=val>=f.target?"On target":"Below target";
+    card.appendChild(badge);kg.appendChild(card);
+  });
+  frag.appendChild(kg);
+
+  // ── Bar charts ──
+  function makeBarRow(lbl,val,tgt,maxV,lb,dispVal){
+    const row=div({class:"bar-row"});
+    const l=div({class:"bar-lbl"},lbl);l.title=lbl;
+    const track=div({class:"bar-track"});
+    const pct=Math.min(100,(val/maxV)*100);
+    const tpct=Math.min(100,(tgt/maxV)*100);
+    const fill=div({class:"bar-fill"});fill.style.width=pct.toFixed(1)+"%";fill.style.background=barColor(val,tgt,lb);
+    const tline=div({class:"bar-tgt"});tline.style.left=tpct.toFixed(1)+"%";
+    track.appendChild(fill);track.appendChild(tline);
+    row.appendChild(l);row.appendChild(track);row.appendChild(div({class:"bar-val"},dispVal));
+    return row;
+  }
+  function makeChart(title,rows){
+    const c=div({class:"ccart"});c.appendChild(div({class:"ctitle"},title));
+    rows.forEach(r=>c.appendChild(r));return c;
+  }
+
+  const r1=div({class:"grid2"});
+  r1.appendChild(makeChart("Revenue metrics",[
+    makeBarRow("ROMI",data.romi||0,80,200,false,(data.romi||0).toFixed(1)+"%"),
+    makeBarRow("Booking conv.",data.bookingConv||0,20,100,false,(data.bookingConv||0).toFixed(1)+"%"),
+  ]));
+  r1.appendChild(makeChart("Growth metrics",[
+    makeBarRow("DB growth",data.dbGrowth||0,5,50,false,(data.dbGrowth||0).toFixed(1)+"%"),
+    makeBarRow("TikTok followers",data.tiktokGrowth||0,5,50,false,(data.tiktokGrowth||0).toFixed(1)+"%"),
+  ]));
+  frag.appendChild(r1);
+
+  const r2=div({class:"grid2"});
+  r2.appendChild(makeChart("TikTok performance",[
+    makeBarRow("Avg video views",data.tiktokViews||0,60000,200000,false,((data.tiktokViews||0)>=1000?((data.tiktokViews||0)/1000).toFixed(1)+"k":(data.tiktokViews||0)+"")),
+  ]));
+  r2.appendChild(makeChart("Strategy execution",[
+    makeBarRow("Strategy executed",data.strategyExec||0,90,100,false,(data.strategyExec||0)+"%"),
+  ]));
+  frag.appendChild(r2);
+
+  // ── Week on week comparison table ──
+  const tblCard=div({class:"ccart"});
+  tblCard.appendChild(div({class:"ctitle"},"Week on week comparison"));
+  const tbl=h("table",{});
+  const thead=h("thead",{});const hrow=h("tr",{});
+  ["KPI","This week","Target","vs last week"].forEach(hd=>hrow.appendChild(h("th",{},hd)));
+  thead.appendChild(hrow);tbl.appendChild(thead);
+  const tbody=h("tbody",{});
+  FIELDS.forEach(f=>{
+    const val=data[f.key]||0;
+    const prev=prevData?(prevData[f.key]||0):null;
+    const s=si(val,f.target,f.lb);
+    const tr=h("tr",{});
+    tr.appendChild(h("td",{style:{color:"#5f5e5a"}},f.label));
+    const vtd=h("td",{});
+    const vsp=span({class:"score-pill"});vsp.style.background=s.bg;vsp.style.color=s.col;vsp.textContent=f.disp(val);
+    vtd.appendChild(vsp);tr.appendChild(vtd);
+    tr.appendChild(h("td",{style:{color:"#888780",fontSize:"12px"}},f.disp(f.target)));
+    const chTd=h("td",{});
+    if(prev!==null){
+      const diff=val-prev;
+      const better=f.lb?diff<0:diff>0;
+      const dispDiff=f.key==="tiktokViews"?(Math.abs(diff)>=1000?(diff/1000).toFixed(1)+"k":diff+""):diff.toFixed(f.step<1?1:0);
+      chTd.textContent=Math.abs(diff)<0.05?"→":diff>0?"+"+dispDiff:dispDiff;
+      chTd.style.color=better?"#3B6D11":diff===0?"#888780":"#A32D2D";
+      chTd.style.fontSize="12px";
+    }else{chTd.textContent="—";chTd.style.color="#888780";}
+    tr.appendChild(chTd);tbody.appendChild(tr);
+  });
+  tbl.appendChild(tbody);tblCard.appendChild(tbl);frag.appendChild(tblCard);
+  return frag;
+}
+
+function renderEntry(){
+  if(!state.unlocked){
+    const gate=div({style:{background:"#fff",border:"0.5px solid rgba(0,0,0,0.12)",borderRadius:"12px",padding:"2rem",maxWidth:"340px",margin:"2rem auto",textAlign:"center"}});
+    gate.appendChild(div({style:{fontSize:"32px",marginBottom:"12px"}},"🔒"));
+    gate.appendChild(h("p",{style:{fontWeight:"500",fontSize:"15px",color:"#1a1a18",marginBottom:"6px"}},"Admin access required"));
+    gate.appendChild(h("p",{style:{fontSize:"13px",color:"#5f5e5a",marginBottom:"20px"}},"Enter the password to edit figures."));
+    const pinInput=h("input",{type:"password",placeholder:"Enter password"});
+    pinInput.style.cssText="width:100%;font-size:14px;padding:8px 12px;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;margin-bottom:12px;text-align:center;font-family:inherit;background:#fff;color:#1a1a18;";
+    const errMsg=h("p",{style:{fontSize:"12px",color:"#A32D2D",marginBottom:"10px",minHeight:"16px"}},"");
+    const unlockBtn=btn("Unlock",{class:"btn"});
+    unlockBtn.style.cssText="width:100%;background:#f1efe8;font-weight:500;color:#1a1a18;";
+    function tryUnlock(){
+      if(pinInput.value===ADMIN_PASSWORD){state.unlocked=true;render();}
+      else{errMsg.textContent="Incorrect password. Please try again.";pinInput.value="";}
+    }
+    unlockBtn.addEventListener("click",tryUnlock);
+    pinInput.addEventListener("keydown",e=>{if(e.key==="Enter")tryUnlock();});
+    gate.appendChild(pinInput);gate.appendChild(errMsg);gate.appendChild(unlockBtn);
+    return gate;
+  }
+
+  const frag=document.createDocumentFragment();
+  const card=div({class:"entry-card"});
+  const ehead=div({class:"entry-head"});
+  ehead.appendChild(div({class:"avatar"},"MD"));
+  const einfo=div({});
+  einfo.appendChild(h("p",{style:{fontWeight:"500",fontSize:"14px",color:"#1a1a18",margin:"0"}},"Marketing Director"));
+  einfo.appendChild(h("p",{style:{fontSize:"12px",color:"#5f5e5a",margin:"0"}},"Week ending "+fmtWeek(state.activeWeek)));
+  ehead.appendChild(einfo);card.appendChild(ehead);
+
+  FIELDS.forEach(f=>{
+    const val=state.draft[f.key]!=null?state.draft[f.key]:0;
+    const s=si(val,f.target,f.lb);
+    const pct=((val-f.min)/(f.max-f.min))*100;
+    const tpct=((f.target-f.min)/(f.max-f.min))*100;
+    const row=div({class:"field-row"});
+    const top=div({class:"field-top"});
+    const right=div({class:"field-right"});
+    const sp=span({class:"status-pill"});sp.style.background=s.bg;sp.style.color=s.col;sp.textContent=s.label;
+    const sv=span({class:"field-val"});sv.textContent=f.disp(val);
+    right.appendChild(sp);right.appendChild(sv);
+    top.appendChild(span({class:"field-label"},f.label));top.appendChild(right);row.appendChild(top);
+    const bwrap=div({class:"field-bar-wrap"});
+    const track=div({class:"mini-track"});
+    const fill=div({class:"mini-fill"});fill.style.width=Math.min(100,pct).toFixed(1)+"%";fill.style.background=s.col;
+    const tline=div({class:"mini-tgt"});tline.style.left=Math.min(100,tpct).toFixed(1)+"%";
+    track.appendChild(fill);track.appendChild(tline);
+    const inp=h("input",{type:"number",min:f.min,max:f.max,step:f.step,class:"num-input"});
+    inp.value=val;
+    inp.addEventListener("input",function(){state.draft[f.key]=parseFloat(this.value)||0;render();});
+    bwrap.appendChild(track);bwrap.appendChild(inp);row.appendChild(bwrap);
+    row.appendChild(div({class:"field-tgt"},"Target: "+f.disp(f.target)));
+    card.appendChild(row);
+  });
+  frag.appendChild(card);
+
+  const srow=div({class:"save-row"});
+  const lockBtn=btn("🔒 Lock",{class:"btn"});
+  lockBtn.style.color="#5f5e5a";
+  lockBtn.addEventListener("click",()=>{state.unlocked=false;state.view="dashboard";render();});
+  srow.appendChild(lockBtn);
+  const sb=btn("Save & publish live",{class:"btn"});
+  sb.style.cssText="background:#f1efe8;font-weight:500;color:#1a1a18;";
+  sb.addEventListener("click",async()=>{
+    state.syncStatus="saving";render();
+    try{
+      await saveWeekToDB(state.activeWeek,state.draft);
+      state.allData[state.activeWeek]=JSON.parse(JSON.stringify(state.draft));
+      state.syncStatus="saved";render();
+      setTimeout(()=>{state.syncStatus="";render();},3000);
+    }catch(e){state.syncStatus="error";render();}
+  });
+  srow.appendChild(sb);frag.appendChild(srow);
+  return frag;
+}
+
+function renderHistory(){
+  const weeks=Object.keys(state.allData).sort((a,b)=>b.localeCompare(a));
+  const frag=document.createDocumentFragment();
+  const topRow=div({style:{display:"flex",justifyContent:"flex-end",marginBottom:"12px"}});
+  const allEx=btn("Export all weeks CSV ↓",{class:"btn"});
+  allEx.addEventListener("click",()=>exportAllCSV(state.allData));
+  topRow.appendChild(allEx);frag.appendChild(topRow);
+  if(!weeks.length){
+    frag.appendChild(div({style:{padding:"2rem",textAlign:"center",color:"#5f5e5a",fontSize:"14px"}},"No saved weeks yet."));
+    return frag;
+  }
+  weeks.forEach(w=>{
+    const d=state.allData[w];
+    const item=div({class:"history-item"});
+    const left=div({});
+    left.appendChild(div({style:{fontSize:"14px",fontWeight:"500",color:"#1a1a18"}},"Week ending "+fmtWeek(w)));
+    left.appendChild(div({style:{fontSize:"12px",color:"#5f5e5a",marginTop:"3px"}},
+      "ROMI "+(d.romi||0).toFixed(1)+"% · Booking conv. "+(d.bookingConv||0).toFixed(1)+"% · TikTok views "+((d.tiktokViews||0)>=1000?((d.tiktokViews||0)/1000).toFixed(1)+"k":(d.tiktokViews||0))));
+    const right=div({style:{display:"flex",gap:"6px"}});
+    const vb=btn("View",{class:"btn small"});
+    vb.addEventListener("click",async()=>{state.activeWeek=w;state.view="dashboard";listenToWeek(w);render();});
+    const eb=btn("CSV ↓",{class:"btn small"});
+    eb.addEventListener("click",()=>exportCSV(w,d));
+    right.appendChild(vb);right.appendChild(eb);
+    item.appendChild(left);item.appendChild(right);frag.appendChild(item);
+  });
+  return frag;
+}
+
+function exportCSV(week,data){
+  const rows=[["Week ending","ROMI %","Booking Conversion %","Database Growth %","TikTok Follower Growth %","Avg TikTok Views","Marketing Strategy Executed %"]];
+  rows.push([week,data.romi||0,data.bookingConv||0,data.dbGrowth||0,data.tiktokGrowth||0,data.tiktokViews||0,data.strategyExec||0]);
+  const csv=rows.map(r=>r.map(v=>`"${v}"`).join(",")).join("\n");
+  const a=document.createElement("a");
+  a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);
+  a.download="nancy-spains-marketing-kpi-"+week+".csv";
+  a.click();
+}
+function exportAllCSV(allData){
+  const rows=[["Week ending","ROMI %","Booking Conversion %","Database Growth %","TikTok Follower Growth %","Avg TikTok Views","Marketing Strategy Executed %"]];
+  Object.keys(allData).sort().forEach(week=>{
+    const d=allData[week];
+    rows.push([week,d.romi||0,d.bookingConv||0,d.dbGrowth||0,d.tiktokGrowth||0,d.tiktokViews||0,d.strategyExec||0]);
+  });
+  const csv=rows.map(r=>r.map(v=>`"${v}"`).join(",")).join("\n");
+  const a=document.createElement("a");
+  a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);
+  a.download="nancy-spains-marketing-kpi-all-weeks.csv";
+  a.click();
+}
+
+init();
+</script>
+</body>
+</html>
