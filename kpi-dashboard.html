@@ -93,8 +93,8 @@ const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
 
 // ── Config ──
-const PUBS = ["Nancy Spains Shoreditch","Nancy Spains Monument","Nancy Spains Manchester","The Parish Bar"];
-const SHORT = {"Nancy Spains Shoreditch":"Shoreditch","Nancy Spains Monument":"Monument","Nancy Spains Manchester":"Manchester","The Parish Bar":"Parish Bar"};
+const PUBS = ["Nancy Spains Shoreditch","Nancy Spains Monument","Nancy Spains Manchester"];
+const SHORT = {"Nancy Spains Shoreditch":"Shoreditch","Nancy Spains Monument":"Monument","Nancy Spains Manchester":"Manchester"};
 const TARGETS = {labour:18,gp:80,tasks:90,audit:90,mystery:90,reviews:4.9,reviewCount:0,newReviews:8,stockVar:1};
 const FIELDS = [
   {key:"labour",      label:"Labour %",             suffix:"%",    min:0, max:60,  step:0.1, lb:true},
@@ -389,14 +389,7 @@ function renderEntry(){
     gate.appendChild(pinInput);gate.appendChild(errMsg);gate.appendChild(unlockBtn);
     return gate;
   }
-  const cur=currentWeekEnding();
-  if(state.activeWeek!==cur){
-    const wrap=div({style:{padding:"2rem",textAlign:"center",color:"#5f5e5a",fontSize:"14px"}});
-    wrap.innerHTML="Figures can only be entered for the current week.<br><br>";
-    const gb=btn("Go to current week →",{class:"btn"});
-    gb.addEventListener("click",async()=>{state.activeWeek=cur;state.draft=await loadWeekFromDB(cur);listenToWeek(cur);render();});
-    wrap.appendChild(gb);return wrap;
-  }
+
   const frag=document.createDocumentFragment();
   const pt=div({class:"pub-tabs"});
   PUBS.forEach(pub=>{
