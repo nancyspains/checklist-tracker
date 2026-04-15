@@ -457,13 +457,9 @@ function renderEntry(){
 }
 
 function scorePub(pd){
-  // Returns 0-100 for each KPI. 100 = at or better than target.
-  // For lower-is-better: score drops linearly as val exceeds target.
-  // For higher-is-better: score rises linearly up to target, capped at 100.
   function scoreHigh(val,tgt){ return Math.max(0,Math.min(100,Math.round((val/tgt)*100))); }
   function scoreLow(val,tgt){
     if(val<=tgt) return 100;
-    // Penalise proportionally — double the target = 0 score
     return Math.max(0,Math.round(100-((val-tgt)/tgt)*100));
   }
   const scores=[];
@@ -472,7 +468,7 @@ function scorePub(pd){
   if(pd.tasks!=null)     scores.push(scoreHigh(pd.tasks,90));
   if(pd.audit!=null)     scores.push(scoreHigh(pd.audit,90));
   if(pd.mystery!=null)   scores.push(scoreHigh(pd.mystery,90));
-  if(pd.reviews!=null)   scores.push(scoreHigh(pd.reviews*10,49)); // scale to 0-100
+  if(pd.reviews!=null)   scores.push(scoreHigh(pd.reviews*10,49));
   if(pd.newReviews!=null)scores.push(scoreHigh(pd.newReviews,8));
   if(pd.stockVar!=null)  scores.push(scoreLow(pd.stockVar,1));
   return scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):0;
