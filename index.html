@@ -102,6 +102,7 @@ const SITE_OVERRIDES = {
   }
 };
 
+
 const DAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 
 const defaultSites = [
@@ -116,13 +117,20 @@ const state = {
   historyDay: null, historyData: {}, dashData: {}, saving: false, lastSaved: null
 };
 
-const today = () => new Date().toISOString().split("T")[0];
+const today = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+};
 const todayDow = () => new Date().getDay();
 const getChecklists = (dateStr, siteId) => {
   const dow = new Date(dateStr + "T12:00:00").getDay();
-  if (siteId && SITE_OVERRIDES[siteId] && SITE_OVERRIDES[siteId][dow]) return SITE_OVERRIDES[siteId][dow];
+  if (siteId && SITE_OVERRIDES[siteId] && SITE_OVERRIDES[siteId][dow]) {
+    return SITE_OVERRIDES[siteId][dow];
+  }
   return DAY_CHECKLISTS[dow] || [];
 };
+
+const getTodayChecklists = (siteId) => getChecklists(today(), siteId);
 
 let pollTimer = null;
 let dashChart = null;
@@ -252,7 +260,7 @@ function renderCurrentView() {
 }
 
 function renderApp() {
-  const todayChecklists = DAY_CHECKLISTS[todayDow()];
+  const todayChecklists = getChecklists(today(), "s1");
   document.getElementById("app").innerHTML = `
     <div id="pin-overlay" class="pin-overlay hidden">
       <div class="pin-modal">
