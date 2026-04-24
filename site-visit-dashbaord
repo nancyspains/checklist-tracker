@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Site Visit Dashboard — Nancy Spains</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; color: #1a1a1a; font-size: 15px; }
+.wrap { max-width: 760px; margin: 0 auto; padding: 1.5rem 1.25rem; }
+h1 { font-size: 20px; font-weight: 500; }
+.sub { color: #666; font-size: 14px; margin-top: 2px; margin-bottom: 1.25rem; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1.25rem; padding-bottom: 12px; border-bottom: 0.5px solid rgba(0,0,0,0.1); }
+.tab { font-size: 14px; padding: 6px 14px; border-radius: 8px; border: 0.5px solid rgba(0,0,0,0.25); background: transparent; color: #555; cursor: pointer; font-family: inherit; }
+.tab.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+.week-nav { display: flex; align-items: center; justify-content: center; gap: 16px; background: #fff; border-radius: 12px; padding: 12px 20px; margin-bottom: 1.25rem; border: 0.5px solid rgba(0,0,0,0.08); }
+.week-nav button { background: none; border: none; font-size: 18px; cursor: pointer; color: #888; padding: 0 4px; }
+.week-nav button:hover { color: #1a1a1a; }
+.week-label { font-size: 15px; font-weight: 500; }
+.week-badge { font-size: 12px; padding: 2px 10px; border-radius: 6px; background: #e8e4ff; color: #5b4fcf; font-weight: 500; margin-left: 8px; }
+.venue-filter { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.vf-btn { font-size: 13px; padding: 5px 14px; border-radius: 8px; border: 0.5px solid rgba(0,0,0,0.2); background: transparent; color: #555; cursor: pointer; font-family: inherit; }
+.vf-btn.active { border-color: #1a1a1a; background: #fff; color: #1a1a1a; font-weight: 500; }
+.metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.25rem; }
+.metric-card { background: #fff; border-radius: 12px; padding: 1rem 1.25rem; border: 0.5px solid rgba(0,0,0,0.08); }
+.metric-card .lbl { font-size: 12px; color: #888; margin-bottom: 6px; }
+.metric-card .val { font-size: 22px; font-weight: 500; }
+.metric-card .status { font-size: 12px; margin-top: 4px; }
+.on-target { color: #27500a; }
+.near-target { color: #633806; }
+.below { color: #791f1f; }
+.section { background: #fff; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 10px; border: 0.5px solid rgba(0,0,0,0.08); }
+.section-title { font-size: 13px; font-weight: 500; color: #888; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+.bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.bar-row:last-child { margin-bottom: 0; }
+.bar-lbl { font-size: 14px; width: 90px; flex-shrink: 0; }
+.bar-track { flex: 1; height: 8px; background: #eee; border-radius: 4px; overflow: visible; position: relative; }
+.bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s; }
+.bar-target { position: absolute; top: -3px; height: 14px; width: 2px; background: #ccc; border-radius: 1px; }
+.bar-pct { font-size: 13px; color: #555; width: 36px; text-align: right; flex-shrink: 0; }
+.visit-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 0.5px solid rgba(0,0,0,0.07); font-size: 14px; }
+.visit-row:last-child { border-bottom: none; }
+.visit-meta { font-size: 12px; color: #888; margin-top: 2px; }
+.badge { display: inline-block; font-size: 12px; font-weight: 500; padding: 2px 10px; border-radius: 6px; }
+.badge-green { background: #eaf3de; color: #27500a; }
+.badge-amber { background: #faeeda; color: #633806; }
+.badge-red { background: #fcebeb; color: #791f1f; }
+.badge-gray { background: #f0f0ee; color: #555; }
+.chart-wrap { position: relative; height: 200px; margin-top: 8px; }
+.sync { font-size: 13px; color: #666; display: flex; align-items: center; gap: 5px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #3b6d11; }
+.header-row { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; }
+.empty { text-align: center; color: #aaa; font-size: 14px; padding: 2rem 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header-row">
+    <div>
+      <h1>Site Visit Dashboard</h1>
+      <p class="sub">Live dashboard · updates instantly for everyone</p>
+    </div>
+    <span class="sync"><span class="dot"></span>Live sync on</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="setTab('dashboard')">Dashboard</button>
+    <button class="tab" onclick="setTab('history')">History</button>
+  </div>
+
+  <div id="dashboard-view">
+    <div class="week-nav">
+      <button onclick="prevWeek()">‹</button>
+      <span class="week-label" id="week-label">—</span>
+      <span class="week-badge" id="week-badge" style="display:none">Current week</span>
+      <button onclick="nextWeek()">›</button>
+    </div>
+
+    <div class="venue-filter">
+      <button class="vf-btn active" onclick="setVenue('all')">All pubs</button>
+      <button class="vf-btn" onclick="setVenue('Shoreditch')">Shoreditch</button>
+      <button class="vf-btn" onclick="setVenue('Monument')">Monument</button>
+      <button class="vf-btn" onclick="setVenue('Manchester')">Manchester</button>
+    </div>
+
+    <div class="metrics" id="metrics"></div>
+
+    <div class="section">
+      <div class="section-title">Visit scores by venue</div>
+      <div id="venue-bars"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Standards breakdown</div>
+      <div id="standards-bars"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Score trend (last 8 weeks)</div>
+      <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+    </div>
+  </div>
+
+  <div id="history-view" style="display:none">
+    <div class="venue-filter">
+      <button class="vf-btn active" onclick="setHistVenue('all')">All pubs</button>
+      <button class="vf-btn" onclick="setHistVenue('Shoreditch')">Shoreditch</button>
+      <button class="vf-btn" onclick="setHistVenue('Monument')">Monument</button>
+      <button class="vf-btn" onclick="setHistVenue('Manchester')">Manchester</button>
+    </div>
+    <div class="section" id="history-list"></div>
+  </div>
+</div>
+
+<script>
+const SB_URL = 'https://vqfvklqdexakwjjyvwod.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxZnZrbHFkZXhha3dqanl2d29kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3NjYzNjcsImV4cCI6MjA1OTM0MjM2N30.FwcEGMJSEHKBGVQkLJqxlODQB0DYIlmFm_JkTgxLm_k';
+
+const VENUES = ['Shoreditch','Monument','Manchester'];
+const STANDARDS = ['Cleanliness','Maintenance','Staff Presentation','Beer Quality','Stock Organisation','Music'];
+const STANDARD_ITEMS = {
+  'Cleanliness': ['Bar tops clean, dry and sanitised','Floors clean — no spillages or debris','No odours in venue','Bathrooms clean, stocked and odour-free'],
+  'Maintenance': ['All lighting fully operational','No visible damage to walls, ceilings or floors','All equipment functioning correctly','No leaks at bar, cellar or toilets','Fire exits clear'],
+  'Staff Presentation': ['All staff in correct uniform','Uniforms clean and ironed','Staff presenting themselves professionally'],
+  'Beer Quality': ['Pints poured correctly — correct head and clarity','Beer served at correct temperature','Beer tastes good'],
+  'Stock Organisation': ['Stock neatly stored and labelled','Cellar clean and organised','Back bar clean and fully stocked before service'],
+  'Music': ['Volume appropriate — customers can hold a conversation (pre 11pm)','Indie and Irish music playing','Controlled via Soundtrack software'],
+};
+
+const TARGET = 90;
+let allHistory = [];
+let currentWeekOffset = 0;
+let activeVenue = 'all';
+let activeHistVenue = 'all';
+let activeTab = 'dashboard';
+let trendChart = null;
+
+function getWeekStart(offset = 0) {
+  const d = new Date();
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  d.setDate(diff + offset * 7);
+  d.setHours(0,0,0,0);
+  return d;
+}
+
+function weekLabel(offset) {
+  const start = getWeekStart(offset);
+  const end = new Date(start); end.setDate(end.getDate() + 6);
+  const fmt = d => d.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+  return `Week ${fmt(start)} – ${fmt(end)} ${end.getFullYear()}`;
+}
+
+function weekOfStr(offset) {
+  return getWeekStart(offset).toISOString().split('T')[0];
+}
+
+async function sb(path) {
+  const r = await fetch(`${SB_URL}/rest/v1/${path}`, {
+    headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' }
+  });
+  const t = await r.text();
+  return t ? JSON.parse(t) : [];
+}
+
+async function load() {
+  try {
+    allHistory = await sb('site_visit_history?select=*&order=visited_at.desc&limit=500') || [];
+  } catch(e) { allHistory = []; }
+  render();
+  setInterval(async () => {
+    try { allHistory = await sb('site_visit_history?select=*&order=visited_at.desc&limit=500') || []; render(); } catch(e) {}
+  }, 15000);
+}
+
+function getWeekData(offset, venue) {
+  const weekOf = weekOfStr(offset);
+  // Match by week_of field or by visited_at within that week
+  const start = getWeekStart(offset);
+  const end = new Date(start); end.setDate(end.getDate() + 7);
+  return allHistory.filter(h => {
+    const d = new Date(h.visited_at);
+    const inRange = d >= start && d < end;
+    const venueMatch = venue === 'all' || h.venue === venue;
+    return inRange && venueMatch;
+  });
+}
+
+function avg(arr) { return arr.length ? Math.round(arr.reduce((a,b)=>a+b,0)/arr.length) : null; }
+
+function badgeClass(p) { return p === null ? 'badge-gray' : p >= TARGET ? 'badge-green' : p >= 80 ? 'badge-amber' : 'badge-red'; }
+function barColor(p) { return p >= TARGET ? '#3b6d11' : p >= 80 ? '#b45309' : '#b91c1c'; }
+function statusText(p, label) {
+  if (p === null) return `<span class="below">No data</span>`;
+  if (p >= TARGET) return `<span class="on-target">On target</span>`;
+  if (p >= 80) return `<span class="near-target">Near target</span>`;
+  return `<span class="below">Below target</span>`;
+}
+
+function setTab(t) {
+  activeTab = t;
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.getAttribute('onclick').includes(t)));
+  document.getElementById('dashboard-view').style.display = t === 'dashboard' ? '' : 'none';
+  document.getElementById('history-view').style.display = t === 'history' ? '' : 'none';
+  render();
+}
+
+function setVenue(v) {
+  activeVenue = v;
+  document.querySelectorAll('.venue-filter .vf-btn').forEach(b => b.classList.toggle('active', b.getAttribute('onclick').includes(`'${v}'`) && !b.closest('#history-view')));
+  renderDashboard();
+}
+
+function setHistVenue(v) {
+  activeHistVenue = v;
+  document.querySelectorAll('#history-view .vf-btn').forEach(b => b.classList.toggle('active', b.getAttribute('onclick').includes(`'${v}'`)));
+  renderHistory();
+}
+
+function prevWeek() { currentWeekOffset--; renderDashboard(); }
+function nextWeek() { if (currentWeekOffset < 0) { currentWeekOffset++; renderDashboard(); } }
+
+function render() {
+  if (activeTab === 'dashboard') renderDashboard();
+  else renderHistory();
+}
+
+function renderDashboard() {
+  // Week label
+  document.getElementById('week-label').textContent = weekLabel(currentWeekOffset);
+  const badge = document.getElementById('week-badge');
+  badge.style.display = currentWeekOffset === 0 ? '' : 'none';
+
+  const data = getWeekData(currentWeekOffset, activeVenue);
+  const pcts = data.map(h => h.pct).filter(p => p !== null);
+  const avgScore = avg(pcts);
+  const totalVisits = data.length;
+  const venuesWithVisits = [...new Set(data.map(h => h.venue))].length;
+
+  // Metrics
+  document.getElementById('metrics').innerHTML = `
+    <div class="metric-card">
+      <div class="lbl">Avg score</div>
+      <div class="val">${avgScore !== null ? avgScore+'%' : '—'}</div>
+      <div class="status">${statusText(avgScore)}</div>
+    </div>
+    <div class="metric-card">
+      <div class="lbl">Total visits</div>
+      <div class="val">${totalVisits}</div>
+      <div class="status" style="color:#888">${totalVisits > 0 ? totalVisits + ' recorded' : 'None this week'}</div>
+    </div>
+    <div class="metric-card">
+      <div class="lbl">Venues visited</div>
+      <div class="val">${venuesWithVisits}${activeVenue === 'all' ? '/3' : ''}</div>
+      <div class="status" style="color:#888">${activeVenue === 'all' ? 'of 3 pubs' : activeVenue}</div>
+    </div>`;
+
+  // Venue bars
+  const venuesToShow = activeVenue === 'all' ? VENUES : [activeVenue];
+  document.getElementById('venue-bars').innerHTML = venuesToShow.map(v => {
+    const vData = getWeekData(currentWeekOffset, v);
+    const vAvg = avg(vData.map(h => h.pct));
+    const visits = vData.length;
+    const w = vAvg !== null ? vAvg : 0;
+    const col = vAvg !== null ? barColor(vAvg) : '#ddd';
+    const badge = vAvg !== null ? `<span class="badge ${badgeClass(vAvg)}">${vAvg}%</span>` : `<span class="badge badge-gray">No visits</span>`;
+    return `<div class="bar-row">
+      <span class="bar-lbl">${v}</span>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${w}%;background:${col}"></div>
+        <div class="bar-target" style="left:${TARGET}%"></div>
+      </div>
+      <span class="bar-pct">${badge}</span>
+    </div>`;
+  }).join('');
+
+  // Standards breakdown
+  document.getElementById('standards-bars').innerHTML = STANDARDS.map(std => {
+    const items = STANDARD_ITEMS[std];
+    let total = 0, count = 0;
+    data.forEach(h => {
+      if (!h.scores) return;
+      items.forEach(item => {
+        const v = h.scores[item];
+        if (v !== null && v !== undefined) { total += v; count++; }
+      });
+    });
+    const pct = count ? Math.round((total / (count * 3)) * 100) : null;
+    const w = pct !== null ? pct : 0;
+    const col = pct !== null ? barColor(pct) : '#ddd';
+    const badge = pct !== null ? `<span class="badge ${badgeClass(pct)}">${pct}%</span>` : `<span class="badge badge-gray">No data</span>`;
+    return `<div class="bar-row">
+      <span class="bar-lbl" style="font-size:13px">${std}</span>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${w}%;background:${col}"></div>
+        <div class="bar-target" style="left:${TARGET}%"></div>
+      </div>
+      <span class="bar-pct">${badge}</span>
+    </div>`;
+  }).join('');
+
+  // Trend chart — last 8 weeks
+  const weeks = Array.from({length:8}, (_,i) => i - 7 + currentWeekOffset);
+  const weekLabels = weeks.map(w => {
+    const s = getWeekStart(w);
+    return s.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+  });
+
+  const vColors = { Shoreditch: '#6366F1', Monument: '#F59E0B', Manchester: '#3b6d11' };
+  const datasets = venuesToShow.map(v => ({
+    label: v,
+    data: weeks.map(w => {
+      const wd = getWeekData(w, v);
+      return avg(wd.map(h => h.pct));
+    }),
+    borderColor: vColors[v] || '#888',
+    backgroundColor: (vColors[v] || '#888') + '18',
+    tension: 0.3,
+    pointRadius: 4,
+    spanGaps: true,
+  }));
+
+  const ctx = document.getElementById('trendChart');
+  if (trendChart) { trendChart.destroy(); trendChart = null; }
+  trendChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: weekLabels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        y: { min: 0, max: 100, ticks: { callback: v => v+'%' }, grid: { color: 'rgba(0,0,0,0.05)' } },
+        x: { grid: { display: false } }
+      },
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 12 } } },
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw !== null ? ctx.raw+'%' : 'No data'}` } }
+      }
+    }
+  });
+}
+
+function renderHistory() {
+  const data = activeHistVenue === 'all' ? allHistory : allHistory.filter(h => h.venue === activeHistVenue);
+
+  if (!data.length) {
+    document.getElementById('history-list').innerHTML = '<div class="empty">No visit history yet.</div>';
+    return;
+  }
+
+  document.getElementById('history-list').innerHTML = data.slice(0, 100).map(h => {
+    const d = new Date(h.visited_at).toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+    const notes = h.notes ? `<div style="font-size:12px;color:#888;margin-top:3px;font-style:italic">"${h.notes.slice(0,100)}${h.notes.length>100?'...':''}"</div>` : '';
+    return `<div class="visit-row">
+      <div>
+        <div style="font-weight:500">${h.venue} — Visit ${h.visit_number}</div>
+        <div class="visit-meta">${d}</div>
+        ${notes}
+      </div>
+      <span class="badge ${badgeClass(h.pct)}">${h.pct}%</span>
+    </div>`;
+  }).join('');
+}
+
+document.addEventListener('DOMContentLoaded', load);
+</script>
+</body>
+</html>
