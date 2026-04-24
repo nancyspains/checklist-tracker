@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Site Visit Tracker — Nancy Spains</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f4f0; color: #1a1a1a; min-height: 100vh; }
+  .container { max-width: 860px; margin: 0 auto; padding: 1.5rem 1rem; }
+  h1 { font-size: 20px; font-weight: 600; margin-bottom: 2px; }
+  .subtitle { font-size: 13px; color: #666; margin-bottom: 1.25rem; }
+  .header-row { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 1.25rem; }
+  .btn { font-size: 13px; padding: 6px 14px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #333; cursor: pointer; font-weight: 500; }
+  .btn:hover { background: #f5f5f5; }
+  .btn-save { background: #fff; }
+  .btn-save.saved { background: #D1FAE5; color: #065F46; border-color: #6EE7B7; }
+  .btn-save.saving { opacity: 0.7; }
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid #ddd; margin-bottom: 1.25rem; }
+  .tab { font-size: 13px; padding: 6px 14px; border-radius: 8px 8px 0 0; border: 1px solid transparent; background: transparent; color: #888; cursor: pointer; font-weight: 400; margin-bottom: -1px; }
+  .tab.active { background: #f5f4f0; border-color: #ddd; border-bottom-color: #f5f4f0; color: #1a1a1a; font-weight: 500; }
+  .overview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1rem; }
+  .venue-card { background: #fff; border-radius: 10px; padding: 14px 16px; cursor: pointer; border: 1px solid #eee; }
+  .venue-card:hover { border-color: #ccc; }
+  .venue-card h3 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .visit-bars { display: flex; gap: 4px; margin: 8px 0; }
+  .visit-bar { flex: 1; height: 6px; border-radius: 3px; background: #eee; transition: background 0.3s; }
+  .visit-bar.complete { background: #10B981; }
+  .visit-bar.active { background: #F59E0B; }
+  .pct-badge { display: inline-block; font-size: 16px; font-weight: 700; padding: 4px 10px; border-radius: 6px; }
+  .pct-green { background: #D1FAE5; color: #065F46; }
+  .pct-amber { background: #FEF3C7; color: #92400E; }
+  .pct-red { background: #FEE2E2; color: #991B1B; }
+  .progress-section { background: #fff; border-radius: 10px; padding: 14px 16px; margin-bottom: 1rem; }
+  .progress-row { margin-bottom: 10px; }
+  .progress-label { display: flex; justify-content: space-between; font-size: 12px; color: #666; margin-bottom: 4px; }
+  .progress-bar { height: 6px; background: #eee; border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
+  .visit-selector { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px; }
+  .visit-btn { font-size: 12px; padding: 5px 12px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #333; cursor: pointer; }
+  .visit-btn.active { border-color: #6366F1; background: #EEF2FF; color: #4338CA; font-weight: 500; }
+  .visit-btn.complete { background: #D1FAE5; color: #065F46; border-color: #6EE7B7; }
+  .visit-btn.locked { opacity: 0.5; cursor: not-allowed; }
+  .category-block { margin-bottom: 1rem; border: 1px solid #eee; border-radius: 10px; overflow: hidden; }
+  .category-header { padding: 9px 14px; background: #fafaf9; display: flex; justify-content: space-between; align-items: center; }
+  .category-title { font-size: 13px; font-weight: 600; }
+  .category-score { font-size: 12px; color: #888; }
+  .item-row { padding: 10px 14px; border-top: 1px solid #f0f0f0; background: #fff; }
+  .item-label { font-size: 12px; color: #333; margin-bottom: 6px; }
+  .score-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
+  .score-btn { font-size: 11px; padding: 3px 10px; border-radius: 6px; border: 1px solid #ddd; background: #fff; color: #666; cursor: pointer; }
+  .score-btn.active-0 { background: #FEE2E2; color: #991B1B; border-color: #FCA5A5; font-weight: 600; }
+  .score-btn.active-1 { background: #FEF3C7; color: #92400E; border-color: #FCD34D; font-weight: 600; }
+  .score-btn.active-2 { background: #D1FAE5; color: #065F46; border-color: #6EE7B7; font-weight: 600; }
+  .score-btn.active-3 { background: #BBF7D0; color: #064E3B; border-color: #34D399; font-weight: 600; }
+  .notes-section { margin-top: 0.75rem; }
+  .notes-label { font-size: 12px; color: #666; display: block; margin-bottom: 4px; }
+  textarea { width: 100%; font-size: 12px; padding: 8px 10px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #333; min-height: 80px; resize: vertical; font-family: inherit; }
+  .complete-banner { padding: 10px 14px; background: #D1FAE5; border-radius: 8px; margin-bottom: 1rem; font-size: 13px; color: #065F46; font-weight: 500; }
+  .footer { font-size: 11px; color: #aaa; text-align: center; margin-top: 1.5rem; }
+  .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #10B981; display: inline-block; margin-right: 4px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header-row">
+    <div>
+      <h1>Site Visit Tracker</h1>
+      <p class="subtitle" id="date-display">3 visits per venue per week</p>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span style="font-size:12px;color:#666;"><span class="sync-dot"></span>Live sync</span>
+      <button class="btn" onclick="resetWeek()">New week</button>
+      <button class="btn btn-save" id="save-btn" onclick="saveData()">Save</button>
+    </div>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+  <div id="content"></div>
+  <p class="footer">Complete all items in a visit to unlock the next. Press Save to keep progress.</p>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://gjkijqvxcrgbafvbwmtl.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdqa2lqcXZ4Y3JnYmFmdmJ3bXRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3NjYyMDMsImV4cCI6MjA1OTM0MjIwM30.yCE6fZ5V6-kVupEUm8bOJmzs-v0qSi9ZdlR_c9yVDkw';
+
+const VENUES = ['Shoreditch', 'Monument', 'Manchester'];
+
+const STANDARDS = [
+  { category: 'Cleanliness', items: ['Bar tops clean, dry and sanitised', 'Floors clean — no spillages or debris', 'No odours in venue', 'Bathrooms clean, stocked and odour-free'] },
+  { category: 'Maintenance', items: ['All lighting fully operational', 'No visible damage to walls, ceilings or floors', 'All equipment functioning correctly', 'No leaks at bar, cellar or toilets', 'Fire exits clear'] },
+  { category: 'Staff Presentation', items: ['All staff in correct uniform', 'Uniforms clean and ironed', 'Staff presenting themselves professionally'] },
+  { category: 'Beer Quality', items: ['Pints poured correctly — correct head and clarity', 'Beer served at correct temperature', 'Beer tastes good'] },
+  { category: 'Stock Organisation', items: ['Stock neatly stored and labelled', 'Cellar clean and organised', 'Back bar clean and fully stocked before service'] },
+  { category: 'Music', items: ['Volume appropriate — customers can hold a conversation (pre 11pm)', 'Indie and Irish music playing', 'Controlled via Soundtrack software'] },
+];
+
+const ALL_ITEMS = STANDARDS.flatMap(s => s.items);
+const MAX_PER_ITEM = 3;
+
+function emptyVisit() { return { scores: Object.fromEntries(ALL_ITEMS.map(i => [i, null])), notes: '', completedAt: null }; }
+function initState() { return Object.fromEntries(VENUES.map(v => [v, [emptyVisit(), emptyVisit(), emptyVisit()]])); }
+
+let state = { visits: initState(), activeVenueVisit: Object.fromEntries(VENUES.map(v => [v, 0])) };
+let activeTab = 'Overview';
+
+function isComplete(visit) { return ALL_ITEMS.every(i => visit.scores[i] !== null); }
+
+function visitScore(visit) {
+  const scored = ALL_ITEMS.filter(i => visit.scores[i] !== null);
+  const total = scored.reduce((a, i) => a + visit.scores[i], 0);
+  return { total, scored: scored.length, pct: scored.length === 0 ? 0 : Math.round((total / (scored.length * 3)) * 100) };
+}
+
+function weeklyScore(venue) {
+  const completed = state.visits[venue].filter(isComplete);
+  if (!completed.length) return null;
+  const total = completed.reduce((a, v) => a + visitScore(v).total, 0);
+  const max = completed.reduce((a, v) => a + visitScore(v).scored * 3, 0);
+  return max === 0 ? 0 : Math.round((total / max) * 100);
+}
+
+function pctClass(p) { return p >= 90 ? 'pct-green' : p >= 80 ? 'pct-amber' : 'pct-red'; }
+function barColor(p) { return p >= 90 ? '#10B981' : p >= 80 ? '#F59E0B' : '#EF4444'; }
+
+async function sbFetch(path, opts = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { ...opts, headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': opts.prefer || 'return=representation', ...(opts.headers || {}) } });
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+async function loadData() {
+  try {
+    const rows = await sbFetch('config?config_key=eq.site_visit_tracker_v1&select=config_value');
+    if (rows && rows.length) {
+      const d = JSON.parse(rows[0].config_value);
+      if (d.visits) state.visits = d.visits;
+      if (d.activeVenueVisit) state.activeVenueVisit = d.activeVenueVisit;
+    }
+  } catch(e) { console.warn('Load failed', e); }
+  render();
+}
+
+async function saveData() {
+  const btn = document.getElementById('save-btn');
+  btn.textContent = 'Saving...'; btn.className = 'btn btn-save saving';
+  try {
+    const val = JSON.stringify({ visits: state.visits, activeVenueVisit: state.activeVenueVisit });
+    const existing = await sbFetch('config?config_key=eq.site_visit_tracker_v1&select=id');
+    if (existing && existing.length) {
+      await sbFetch('config?config_key=eq.site_visit_tracker_v1', { method: 'PATCH', body: JSON.stringify({ config_value: val }) });
+    } else {
+      await sbFetch('config', { method: 'POST', body: JSON.stringify({ config_key: 'site_visit_tracker_v1', config_value: val }) });
+    }
+    btn.textContent = 'Saved!'; btn.className = 'btn btn-save saved';
+    setTimeout(() => { btn.textContent = 'Save'; btn.className = 'btn btn-save'; }, 2500);
+  } catch(e) { btn.textContent = 'Save'; btn.className = 'btn btn-save'; console.error(e); }
+}
+
+function resetWeek() {
+  if (!confirm('Reset all visits for this week?')) return;
+  state.visits = initState();
+  state.activeVenueVisit = Object.fromEntries(VENUES.map(v => [v, 0]));
+  render();
+}
+
+function setScore(venue, visitIdx, item, val) {
+  state.visits[venue][visitIdx].scores[item] = val;
+  if (isComplete(state.visits[venue][visitIdx]) && !state.visits[venue][visitIdx].completedAt) {
+    state.visits[venue][visitIdx].completedAt = new Date().toISOString();
+    if (visitIdx < 2) state.activeVenueVisit[venue] = visitIdx + 1;
+  }
+  render();
+}
+
+function setNotes(venue, visitIdx, val) { state.visits[venue][visitIdx].notes = val; }
+function switchTab(tab) { activeTab = tab; render(); }
+function switchVisit(venue, idx) { state.activeVenueVisit[venue] = idx; render(); }
+
+function render() {
+  document.getElementById('date-display').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+  // Tabs
+  const tabs = document.getElementById('tabs');
+  tabs.innerHTML = ['Overview', ...VENUES].map(v => `<button class="tab ${activeTab === v ? 'active' : ''}" onclick="switchTab('${v}')">${v}</button>`).join('');
+
+  const content = document.getElementById('content');
+
+  if (activeTab === 'Overview') {
+    const cards = VENUES.map(v => {
+      const ws = weeklyScore(v);
+      const completed = state.visits[v].filter(isComplete).length;
+      const bars = state.visits[v].map((visit, i) => {
+        const done = isComplete(visit);
+        const active = state.activeVenueVisit[v] === i && !done;
+        return `<div class="visit-bar ${done ? 'complete' : active ? 'active' : ''}"></div>`;
+      }).join('');
+      const badge = ws !== null ? `<span class="pct-badge ${pctClass(ws)}">${ws}% this week</span>` : `<span style="font-size:12px;color:#aaa">No visits complete</span>`;
+      return `<div class="venue-card" onclick="switchTab('${v}')"><h3>${v}</h3><div style="font-size:11px;color:#888;margin-bottom:4px">${completed}/3 visits complete</div><div class="visit-bars">${bars}</div>${badge}</div>`;
+    }).join('');
+
+    const progress = VENUES.map(v => {
+      const ws = weeklyScore(v);
+      const completed = state.visits[v].filter(isComplete).length;
+      const pct = (completed / 3) * 100;
+      const color = ws !== null ? barColor(ws) : '#10B981';
+      return `<div class="progress-row"><div class="progress-label"><span>${v}</span><span>${completed}/3 visits${ws !== null ? ` — ${ws}%` : ''}</span></div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${color}"></div></div></div>`;
+    }).join('');
+
+    content.innerHTML = `<div class="overview-grid">${cards}</div><div class="progress-section"><div style="font-size:13px;font-weight:600;margin-bottom:10px">Weekly progress</div>${progress}</div>`;
+  } else {
+    const venue = activeTab;
+    const activeIdx = state.activeVenueVisit[venue];
+    const ws = weeklyScore(venue);
+
+    const visitBtns = state.visits[venue].map((visit, i) => {
+      const done = isComplete(visit);
+      const locked = i > 0 && !isComplete(state.visits[venue][i - 1]);
+      const active = activeIdx === i;
+      let cls = 'visit-btn';
+      if (done) cls += ' complete';
+      else if (active) cls += ' active';
+      else if (locked) cls += ' locked';
+      const onclick = locked ? '' : `onclick="switchVisit('${venue}', ${i})"`;
+      return `<button class="${cls}" ${onclick} ${locked ? 'disabled' : ''}>${done ? '✓ ' : ''}Visit ${i + 1}${locked ? ' 🔒' : ''}</button>`;
+    }).join('');
+
+    const weekBadge = ws !== null ? `<span class="pct-badge ${pctClass(ws)}">${ws}% this week</span>` : '';
+
+    const visit = state.visits[venue][activeIdx];
+    const done = isComplete(visit);
+    const vs = visitScore(visit);
+
+    const banner = done ? `<div class="complete-banner">✓ Visit ${activeIdx + 1} complete — ${vs.pct}% · ${activeIdx < 2 ? `Visit ${activeIdx + 2} is now unlocked.` : 'All 3 visits complete this week!'}</div>` : '';
+
+    const categories = STANDARDS.map(({ category, items }) => {
+      const catTotal = items.filter(i => visit.scores[i] !== null).reduce((a, i) => a + visit.scores[i], 0);
+      const catMax = items.length * 3;
+      const rows = items.map(item => {
+        const cur = visit.scores[item];
+        const btns = [0, 1, 2, 3].map(v => {
+          const labels = { 0: '0 — Fail', 1: '1 — Below', 2: '2 — Meets', 3: '3 — Exceeds' };
+          const cls = cur === v ? `score-btn active-${v}` : 'score-btn';
+          return `<button class="${cls}" onclick="setScore('${venue}', ${activeIdx}, '${item.replace(/'/g, "\\'")}', ${v})">${labels[v]}</button>`;
+        }).join('');
+        return `<div class="item-row"><div class="item-label">${item}</div><div class="score-buttons">${btns}</div></div>`;
+      }).join('');
+      return `<div class="category-block"><div class="category-header"><span class="category-title">${category}</span><span class="category-score">${catTotal}/${catMax}</span></div>${rows}</div>`;
+    }).join('');
+
+    const notesVal = visit.notes || '';
+    content.innerHTML = `
+      <div class="visit-selector"><div style="display:flex;gap:8px;">${visitBtns}</div>${weekBadge}</div>
+      ${banner}
+      ${categories}
+      <div class="notes-section"><label class="notes-label">Actions & notes — Visit ${activeIdx + 1}</label>
+      <textarea placeholder="Log any actions, issues or observations..." onchange="setNotes('${venue}', ${activeIdx}, this.value)">${notesVal}</textarea></div>`;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadData);
+</script>
+</body>
+</html>
