@@ -3,84 +3,114 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Site Visit Tracker — Nancy Spains</title>
+<title>Site Visit Dashboard — Nancy Spains</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f4f0; color: #1a1a1a; min-height: 100vh; }
-.wrap { max-width: 900px; margin: 0 auto; padding: 1.5rem 1rem; }
-h1 { font-size: 20px; font-weight: 600; margin-bottom: 2px; }
-.sub { font-size: 13px; color: #666; }
-.header-row { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 1.25rem; }
-.btn { font-size: 12px; padding: 6px 14px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #333; cursor: pointer; font-weight: 500; }
-.btn:hover { background: #f5f5f5; }
-.btn-primary { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
-.btn-primary:hover { background: #333; }
-.btn-saved { background: #D1FAE5; color: #065F46; border-color: #6EE7B7; }
-.tabs { display: flex; gap: 4px; border-bottom: 1px solid #ddd; margin-bottom: 1.25rem; flex-wrap: wrap; }
-.tab { font-size: 13px; padding: 6px 14px; border-radius: 8px 8px 0 0; border: 1px solid transparent; background: transparent; color: #888; cursor: pointer; margin-bottom: -1px; }
-.tab.active { background: #f5f4f0; border-color: #ddd; border-bottom-color: #f5f4f0; color: #1a1a1a; font-weight: 500; }
-.card { background: #fff; border-radius: 10px; border: 1px solid #eee; padding: 14px 16px; margin-bottom: 12px; }
-.grid3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 12px; }
-.grid2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-bottom: 12px; }
-.metric { text-align: center; }
-.metric .val { font-size: 24px; font-weight: 600; }
-.metric .lbl { font-size: 11px; color: #888; margin-top: 2px; }
-.pct-badge { display: inline-block; font-size: 15px; font-weight: 700; padding: 4px 10px; border-radius: 6px; }
-.green { background: #D1FAE5; color: #065F46; }
-.amber { background: #FEF3C7; color: #92400E; }
-.red { background: #FEE2E2; color: #991B1B; }
-.gray { background: #f0f0f0; color: #555; }
-.bar-wrap { height: 6px; background: #eee; border-radius: 3px; overflow: hidden; margin-top: 6px; }
-.bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
-.visit-bars { display: flex; gap: 4px; margin: 8px 0; }
-.vbar { flex: 1; height: 6px; border-radius: 3px; background: #eee; }
-.vbar.done { background: #10B981; }
-.vbar.cur { background: #F59E0B; }
-.cat-block { border: 1px solid #eee; border-radius: 10px; overflow: hidden; margin-bottom: 10px; }
-.cat-head { padding: 8px 14px; background: #fafaf9; display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; }
-.cat-score { font-weight: 400; color: #888; font-size: 12px; }
-.item-row { padding: 10px 14px; border-top: 1px solid #f0f0f0; }
-.item-lbl { font-size: 12px; color: #333; margin-bottom: 6px; }
-.score-btns { display: flex; gap: 6px; flex-wrap: wrap; }
-.sbtn { font-size: 11px; padding: 3px 10px; border-radius: 6px; border: 1px solid #ddd; background: #fff; color: #666; cursor: pointer; }
-.sbtn.a0 { background: #FEE2E2; color: #991B1B; border-color: #FCA5A5; font-weight: 600; }
-.sbtn.a1 { background: #FEF3C7; color: #92400E; border-color: #FCD34D; font-weight: 600; }
-.sbtn.a2 { background: #D1FAE5; color: #065F46; border-color: #6EE7B7; font-weight: 600; }
-.sbtn.a3 { background: #BBF7D0; color: #064E3B; border-color: #34D399; font-weight: 600; }
-.visit-btns { display: flex; gap: 8px; flex-wrap: wrap; }
-.vbtn { font-size: 12px; padding: 5px 12px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #333; cursor: pointer; }
-.vbtn.active { border-color: #6366F1; background: #EEF2FF; color: #4338CA; font-weight: 500; }
-.vbtn.done { background: #D1FAE5; color: #065F46; border-color: #6EE7B7; }
-.vbtn.locked { opacity: 0.45; cursor: not-allowed; }
-.banner { padding: 10px 14px; background: #D1FAE5; border-radius: 8px; margin-bottom: 10px; font-size: 13px; color: #065F46; font-weight: 500; }
-textarea { width: 100%; font-size: 12px; padding: 8px 10px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #333; min-height: 72px; resize: vertical; font-family: inherit; }
-.hist-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
-.hist-row:last-child { border-bottom: none; }
-.hist-meta { color: #888; font-size: 11px; margin-top: 2px; }
-.sync { font-size: 12px; color: #666; display: flex; align-items: center; gap: 4px; }
-.dot { width: 8px; height: 8px; border-radius: 50%; background: #10B981; }
-.section-title { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
-.chart-wrap { position: relative; height: 220px; }
-.footer { font-size: 11px; color: #aaa; text-align: center; margin-top: 1.5rem; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; color: #1a1a1a; font-size: 15px; }
+.wrap { max-width: 760px; margin: 0 auto; padding: 1.5rem 1.25rem; }
+h1 { font-size: 20px; font-weight: 500; }
+.sub { color: #666; font-size: 14px; margin-top: 2px; margin-bottom: 1.25rem; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1.25rem; padding-bottom: 12px; border-bottom: 0.5px solid rgba(0,0,0,0.1); }
+.tab { font-size: 14px; padding: 6px 14px; border-radius: 8px; border: 0.5px solid rgba(0,0,0,0.25); background: transparent; color: #555; cursor: pointer; font-family: inherit; }
+.tab.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+.week-nav { display: flex; align-items: center; justify-content: center; gap: 16px; background: #fff; border-radius: 12px; padding: 12px 20px; margin-bottom: 1.25rem; border: 0.5px solid rgba(0,0,0,0.08); }
+.week-nav button { background: none; border: none; font-size: 18px; cursor: pointer; color: #888; padding: 0 4px; }
+.week-nav button:hover { color: #1a1a1a; }
+.week-label { font-size: 15px; font-weight: 500; }
+.week-badge { font-size: 12px; padding: 2px 10px; border-radius: 6px; background: #e8e4ff; color: #5b4fcf; font-weight: 500; margin-left: 8px; }
+.venue-filter { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.vf-btn { font-size: 13px; padding: 5px 14px; border-radius: 8px; border: 0.5px solid rgba(0,0,0,0.2); background: transparent; color: #555; cursor: pointer; font-family: inherit; }
+.vf-btn.active { border-color: #1a1a1a; background: #fff; color: #1a1a1a; font-weight: 500; }
+.metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.25rem; }
+.metric-card { background: #fff; border-radius: 12px; padding: 1rem 1.25rem; border: 0.5px solid rgba(0,0,0,0.08); }
+.metric-card .lbl { font-size: 12px; color: #888; margin-bottom: 6px; }
+.metric-card .val { font-size: 22px; font-weight: 500; }
+.metric-card .status { font-size: 12px; margin-top: 4px; }
+.on-target { color: #27500a; }
+.near-target { color: #633806; }
+.below { color: #791f1f; }
+.section { background: #fff; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 10px; border: 0.5px solid rgba(0,0,0,0.08); }
+.section-title { font-size: 13px; font-weight: 500; color: #888; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+.bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.bar-row:last-child { margin-bottom: 0; }
+.bar-lbl { font-size: 14px; width: 90px; flex-shrink: 0; }
+.bar-track { flex: 1; height: 8px; background: #eee; border-radius: 4px; overflow: visible; position: relative; }
+.bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s; }
+.bar-target { position: absolute; top: -3px; height: 14px; width: 2px; background: #ccc; border-radius: 1px; }
+.bar-pct { font-size: 13px; color: #555; width: 36px; text-align: right; flex-shrink: 0; }
+.visit-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 0.5px solid rgba(0,0,0,0.07); font-size: 14px; }
+.visit-row:last-child { border-bottom: none; }
+.visit-meta { font-size: 12px; color: #888; margin-top: 2px; }
+.badge { display: inline-block; font-size: 12px; font-weight: 500; padding: 2px 10px; border-radius: 6px; }
+.badge-green { background: #eaf3de; color: #27500a; }
+.badge-amber { background: #faeeda; color: #633806; }
+.badge-red { background: #fcebeb; color: #791f1f; }
+.badge-gray { background: #f0f0ee; color: #555; }
+.chart-wrap { position: relative; height: 200px; margin-top: 8px; }
+.sync { font-size: 13px; color: #666; display: flex; align-items: center; gap: 5px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #3b6d11; }
+.header-row { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; }
+.empty { text-align: center; color: #aaa; font-size: 14px; padding: 2rem 0; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="header-row">
     <div>
-      <h1>Site Visit Tracker</h1>
-      <p class="sub" id="date-lbl"></p>
+      <h1>Site Visit Dashboard</h1>
+      <p class="sub">Live dashboard · updates instantly for everyone</p>
     </div>
-    <div style="display:flex;gap:8px;align-items:center;">
-      <span class="sync"><span class="dot"></span>Live sync</span>
-      <button class="btn" onclick="resetWeek()">New week</button>
-      <button class="btn btn-primary" id="save-btn" onclick="saveVisit()">Save visit</button>
+    <span class="sync"><span class="dot"></span>Live sync on</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="setTab('dashboard')">Dashboard</button>
+    <button class="tab" onclick="setTab('history')">History</button>
+  </div>
+
+  <div id="dashboard-view">
+    <div class="week-nav">
+      <button onclick="prevWeek()">‹</button>
+      <span class="week-label" id="week-label">—</span>
+      <span class="week-badge" id="week-badge" style="display:none">Current week</span>
+      <button onclick="nextWeek()">›</button>
+    </div>
+
+    <div class="venue-filter">
+      <button class="vf-btn active" onclick="setVenue('all')">All pubs</button>
+      <button class="vf-btn" onclick="setVenue('Shoreditch')">Shoreditch</button>
+      <button class="vf-btn" onclick="setVenue('Monument')">Monument</button>
+      <button class="vf-btn" onclick="setVenue('Manchester')">Manchester</button>
+    </div>
+
+    <div class="metrics" id="metrics"></div>
+
+    <div class="section">
+      <div class="section-title">Visit scores by venue</div>
+      <div id="venue-bars"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Standards breakdown</div>
+      <div id="standards-bars"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Score trend (last 8 weeks)</div>
+      <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
     </div>
   </div>
-  <div class="tabs" id="tabs"></div>
-  <div id="content"></div>
-  <p class="footer">Complete all items in a visit to unlock the next. Saved visits are stored permanently.</p>
+
+  <div id="history-view" style="display:none">
+    <div class="venue-filter">
+      <button class="vf-btn active" onclick="setHistVenue('all')">All pubs</button>
+      <button class="vf-btn" onclick="setHistVenue('Shoreditch')">Shoreditch</button>
+      <button class="vf-btn" onclick="setHistVenue('Monument')">Monument</button>
+      <button class="vf-btn" onclick="setHistVenue('Manchester')">Manchester</button>
+    </div>
+    <div class="section" id="history-list"></div>
+  </div>
 </div>
 
 <script>
@@ -88,382 +118,251 @@ const SB_URL = 'https://vqfvklqdexakwjjyvwod.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxZnZrbHFkZXhha3dqanl2d29kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3NjYzNjcsImV4cCI6MjA1OTM0MjM2N30.FwcEGMJSEHKBGVQkLJqxlODQB0DYIlmFm_JkTgxLm_k';
 
 const VENUES = ['Shoreditch','Monument','Manchester'];
+const STANDARDS = ['Cleanliness','Maintenance','Staff Presentation','Beer Quality','Stock Organisation','Music'];
+const STANDARD_ITEMS = {
+  'Cleanliness': ['Bar tops clean, dry and sanitised','Floors clean — no spillages or debris','No odours in venue','Bathrooms clean, stocked and odour-free'],
+  'Maintenance': ['All lighting fully operational','No visible damage to walls, ceilings or floors','All equipment functioning correctly','No leaks at bar, cellar or toilets','Fire exits clear'],
+  'Staff Presentation': ['All staff in correct uniform','Uniforms clean and ironed','Staff presenting themselves professionally'],
+  'Beer Quality': ['Pints poured correctly — correct head and clarity','Beer served at correct temperature','Beer tastes good'],
+  'Stock Organisation': ['Stock neatly stored and labelled','Cellar clean and organised','Back bar clean and fully stocked before service'],
+  'Music': ['Volume appropriate — customers can hold a conversation (pre 11pm)','Indie and Irish music playing','Controlled via Soundtrack software'],
+};
 
-const STANDARDS = [
-  { cat: 'Cleanliness', items: ['Bar tops clean, dry and sanitised','Floors clean — no spillages or debris','No odours in venue','Bathrooms clean, stocked and odour-free'] },
-  { cat: 'Maintenance', items: ['All lighting fully operational','No visible damage to walls, ceilings or floors','All equipment functioning correctly','No leaks at bar, cellar or toilets','Fire exits clear'] },
-  { cat: 'Staff Presentation', items: ['All staff in correct uniform','Uniforms clean and ironed','Staff presenting themselves professionally'] },
-  { cat: 'Beer Quality', items: ['Pints poured correctly — correct head and clarity','Beer served at correct temperature','Beer tastes good'] },
-  { cat: 'Stock Organisation', items: ['Stock neatly stored and labelled','Cellar clean and organised','Back bar clean and fully stocked before service'] },
-  { cat: 'Music', items: ['Volume appropriate — customers can hold a conversation (pre 11pm)','Indie and Irish music playing','Controlled via Soundtrack software'] },
-];
+const TARGET = 90;
+let allHistory = [];
+let currentWeekOffset = 0;
+let activeVenue = 'all';
+let activeHistVenue = 'all';
+let activeTab = 'dashboard';
+let trendChart = null;
 
-const ALL_ITEMS = STANDARDS.flatMap(s => s.items);
-const MAX_SCORE = ALL_ITEMS.length * 3;
-
-let activeTab = 'Dashboard';
-let currentWeek = { visits: {}, activeIdx: {} };
-let history = [];
-let charts = {};
-
-VENUES.forEach(v => {
-  currentWeek.visits[v] = [emptyVisit(), emptyVisit(), emptyVisit()];
-  currentWeek.activeIdx[v] = 0;
-});
-
-function emptyVisit() {
-  return { scores: Object.fromEntries(ALL_ITEMS.map(i => [i, null])), notes: '', completedAt: null };
-}
-
-function isComplete(v) { return ALL_ITEMS.every(i => v.scores[i] !== null); }
-
-function visitPct(v) {
-  const sc = ALL_ITEMS.filter(i => v.scores[i] !== null);
-  if (!sc.length) return 0;
-  return Math.round(sc.reduce((a,i) => a + v.scores[i], 0) / (sc.length * 3) * 100);
-}
-
-function weeklyPct(venue) {
-  const done = currentWeek.visits[venue].filter(isComplete);
-  if (!done.length) return null;
-  const t = done.reduce((a,v) => a + visitPct(v), 0);
-  return Math.round(t / done.length);
-}
-
-function pctClass(p) { return p >= 90 ? 'green' : p >= 80 ? 'amber' : 'red'; }
-function barCol(p) { return p >= 90 ? '#10B981' : p >= 80 ? '#F59E0B' : '#EF4444'; }
-
-async function sb(path, opts = {}) {
-  const r = await fetch(`${SB_URL}/rest/v1/${path}`, {
-    ...opts,
-    headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json', Prefer: opts.prefer || 'return=representation', ...(opts.headers||{}) }
-  });
-  const t = await r.text();
-  return t ? JSON.parse(t) : null;
-}
-
-async function loadHistory() {
-  try {
-    const rows = await sb('site_visit_history?select=*&order=visited_at.desc&limit=100');
-    history = rows || [];
-  } catch(e) { history = []; }
-}
-
-async function loadCurrentWeek() {
-  try {
-    const rows = await sb('config?config_key=eq.site_visit_current_week&select=config_value');
-    if (rows && rows.length) {
-      const d = JSON.parse(rows[0].config_value);
-      if (d.visits) currentWeek.visits = d.visits;
-      if (d.activeIdx) currentWeek.activeIdx = d.activeIdx;
-    }
-  } catch(e) {}
-}
-
-async function saveCurrentWeek() {
-  const val = JSON.stringify({ visits: currentWeek.visits, activeIdx: currentWeek.activeIdx });
-  try {
-    const ex = await sb('config?config_key=eq.site_visit_current_week&select=id');
-    if (ex && ex.length) {
-      await sb('config?config_key=eq.site_visit_current_week', { method: 'PATCH', body: JSON.stringify({ config_value: val }) });
-    } else {
-      await sb('config', { method: 'POST', body: JSON.stringify({ config_key: 'site_visit_current_week', config_value: val }) });
-    }
-  } catch(e) {}
-}
-
-async function saveVisit() {
-  const btn = document.getElementById('save-btn');
-  btn.textContent = 'Saving...'; btn.disabled = true;
-
-  // Save current week state
-  await saveCurrentWeek();
-
-  // Save completed visits to history
-  const today = new Date().toISOString().split('T')[0];
-  for (const venue of VENUES) {
-    for (let i = 0; i < 3; i++) {
-      const v = currentWeek.visits[venue][i];
-      if (isComplete(v) && v.completedAt && !v.savedToHistory) {
-        try {
-          await sb('site_visit_history', {
-            method: 'POST',
-            prefer: 'return=minimal',
-            body: JSON.stringify({
-              venue,
-              visit_number: i + 1,
-              visited_at: today,
-              week_of: getWeekStart(),
-              scores: v.scores,
-              notes: v.notes,
-              pct: visitPct(v)
-            })
-          });
-          currentWeek.visits[venue][i].savedToHistory = true;
-        } catch(e) {}
-      }
-    }
-  }
-
-  await saveCurrentWeek();
-  await loadHistory();
-
-  btn.textContent = 'Saved!'; btn.className = 'btn btn-saved';
-  setTimeout(() => { btn.textContent = 'Save visit'; btn.className = 'btn btn-primary'; btn.disabled = false; }, 2500);
-  render();
-}
-
-function getWeekStart() {
+function getWeekStart(offset = 0) {
   const d = new Date();
   const day = d.getDay();
   const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  const mon = new Date(d.setDate(diff));
-  return mon.toISOString().split('T')[0];
+  d.setDate(diff + offset * 7);
+  d.setHours(0,0,0,0);
+  return d;
 }
 
-async function resetWeek() {
-  if (!confirm('Start a new week? Current week data is saved in history.')) return;
-  VENUES.forEach(v => {
-    currentWeek.visits[v] = [emptyVisit(), emptyVisit(), emptyVisit()];
-    currentWeek.activeIdx[v] = 0;
+function weekLabel(offset) {
+  const start = getWeekStart(offset);
+  const end = new Date(start); end.setDate(end.getDate() + 6);
+  const fmt = d => d.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+  return `Week ${fmt(start)} – ${fmt(end)} ${end.getFullYear()}`;
+}
+
+function weekOfStr(offset) {
+  return getWeekStart(offset).toISOString().split('T')[0];
+}
+
+async function sb(path) {
+  const r = await fetch(`${SB_URL}/rest/v1/${path}`, {
+    headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' }
   });
-  await saveCurrentWeek();
+  const t = await r.text();
+  return t ? JSON.parse(t) : [];
+}
+
+async function load() {
+  try {
+    allHistory = await sb('site_visit_history?select=*&order=visited_at.desc&limit=500') || [];
+  } catch(e) { allHistory = []; }
+  render();
+  setInterval(async () => {
+    try { allHistory = await sb('site_visit_history?select=*&order=visited_at.desc&limit=500') || []; render(); } catch(e) {}
+  }, 15000);
+}
+
+function getWeekData(offset, venue) {
+  const weekOf = weekOfStr(offset);
+  // Match by week_of field or by visited_at within that week
+  const start = getWeekStart(offset);
+  const end = new Date(start); end.setDate(end.getDate() + 7);
+  return allHistory.filter(h => {
+    const d = new Date(h.visited_at);
+    const inRange = d >= start && d < end;
+    const venueMatch = venue === 'all' || h.venue === venue;
+    return inRange && venueMatch;
+  });
+}
+
+function avg(arr) { return arr.length ? Math.round(arr.reduce((a,b)=>a+b,0)/arr.length) : null; }
+
+function badgeClass(p) { return p === null ? 'badge-gray' : p >= TARGET ? 'badge-green' : p >= 80 ? 'badge-amber' : 'badge-red'; }
+function barColor(p) { return p >= TARGET ? '#3b6d11' : p >= 80 ? '#b45309' : '#b91c1c'; }
+function statusText(p, label) {
+  if (p === null) return `<span class="below">No data</span>`;
+  if (p >= TARGET) return `<span class="on-target">On target</span>`;
+  if (p >= 80) return `<span class="near-target">Near target</span>`;
+  return `<span class="below">Below target</span>`;
+}
+
+function setTab(t) {
+  activeTab = t;
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.getAttribute('onclick').includes(t)));
+  document.getElementById('dashboard-view').style.display = t === 'dashboard' ? '' : 'none';
+  document.getElementById('history-view').style.display = t === 'history' ? '' : 'none';
   render();
 }
 
-function setScore(venue, vIdx, item, val) {
-  currentWeek.visits[venue][vIdx].scores[item] = val;
-  if (isComplete(currentWeek.visits[venue][vIdx]) && !currentWeek.visits[venue][vIdx].completedAt) {
-    currentWeek.visits[venue][vIdx].completedAt = new Date().toISOString();
-    if (vIdx < 2) currentWeek.activeIdx[venue] = vIdx + 1;
-  }
-  render();
+function setVenue(v) {
+  activeVenue = v;
+  document.querySelectorAll('.venue-filter .vf-btn').forEach(b => b.classList.toggle('active', b.getAttribute('onclick').includes(`'${v}'`) && !b.closest('#history-view')));
+  renderDashboard();
 }
 
-function setNotes(venue, vIdx, val) { currentWeek.visits[venue][vIdx].notes = val; }
-function switchTab(t) { activeTab = t; render(); }
-function switchVisit(venue, idx) { currentWeek.activeIdx[venue] = idx; render(); }
+function setHistVenue(v) {
+  activeHistVenue = v;
+  document.querySelectorAll('#history-view .vf-btn').forEach(b => b.classList.toggle('active', b.getAttribute('onclick').includes(`'${v}'`)));
+  renderHistory();
+}
 
-// ── RENDER ──────────────────────────────────────────────────────────────────
+function prevWeek() { currentWeekOffset--; renderDashboard(); }
+function nextWeek() { if (currentWeekOffset < 0) { currentWeekOffset++; renderDashboard(); } }
 
 function render() {
-  document.getElementById('date-lbl').textContent = new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-
-  const tabNames = ['Dashboard', ...VENUES, 'History'];
-  document.getElementById('tabs').innerHTML = tabNames.map(t =>
-    `<button class="tab ${activeTab===t?'active':''}" onclick="switchTab('${t}')">${t}</button>`
-  ).join('');
-
-  const el = document.getElementById('content');
-
-  if (activeTab === 'Dashboard') renderDashboard(el);
-  else if (VENUES.includes(activeTab)) renderVenue(el, activeTab);
-  else if (activeTab === 'History') renderHistory(el);
+  if (activeTab === 'dashboard') renderDashboard();
+  else renderHistory();
 }
 
-function renderDashboard(el) {
-  // Stats
-  const totalVisits = history.length;
-  const allPcts = history.map(h => h.pct).filter(Boolean);
-  const avgPct = allPcts.length ? Math.round(allPcts.reduce((a,b)=>a+b,0)/allPcts.length) : null;
-  const thisWeek = history.filter(h => h.week_of === getWeekStart());
+function renderDashboard() {
+  // Week label
+  document.getElementById('week-label').textContent = weekLabel(currentWeekOffset);
+  const badge = document.getElementById('week-badge');
+  badge.style.display = currentWeekOffset === 0 ? '' : 'none';
 
-  // Venue cards
-  const cards = VENUES.map(v => {
-    const wp = weeklyPct(v);
-    const done = currentWeek.visits[v].filter(isComplete).length;
-    const bars = [0,1,2].map(i => {
-      const vis = currentWeek.visits[v][i];
-      const d = isComplete(vis);
-      const cur = currentWeek.activeIdx[v] === i && !d;
-      return `<div class="vbar ${d?'done':cur?'cur':''}"></div>`;
-    }).join('');
-    const badge = wp !== null ? `<span class="pct-badge ${pctClass(wp)}">${wp}%</span>` : `<span style="font-size:12px;color:#aaa">No visits complete</span>`;
-    return `<div class="card" style="cursor:pointer" onclick="switchTab('${v}')">
-      <div style="font-size:13px;font-weight:600;margin-bottom:4px">${v}</div>
-      <div style="font-size:11px;color:#888;margin-bottom:2px">${done}/3 visits this week</div>
-      <div class="visit-bars">${bars}</div>
-      ${badge}
+  const data = getWeekData(currentWeekOffset, activeVenue);
+  const pcts = data.map(h => h.pct).filter(p => p !== null);
+  const avgScore = avg(pcts);
+  const totalVisits = data.length;
+  const venuesWithVisits = [...new Set(data.map(h => h.venue))].length;
+
+  // Metrics
+  document.getElementById('metrics').innerHTML = `
+    <div class="metric-card">
+      <div class="lbl">Avg score</div>
+      <div class="val">${avgScore !== null ? avgScore+'%' : '—'}</div>
+      <div class="status">${statusText(avgScore)}</div>
+    </div>
+    <div class="metric-card">
+      <div class="lbl">Total visits</div>
+      <div class="val">${totalVisits}</div>
+      <div class="status" style="color:#888">${totalVisits > 0 ? totalVisits + ' recorded' : 'None this week'}</div>
+    </div>
+    <div class="metric-card">
+      <div class="lbl">Venues visited</div>
+      <div class="val">${venuesWithVisits}${activeVenue === 'all' ? '/3' : ''}</div>
+      <div class="status" style="color:#888">${activeVenue === 'all' ? 'of 3 pubs' : activeVenue}</div>
     </div>`;
-  }).join('');
 
-  // Historic venue avg
-  const venueAvgs = VENUES.map(v => {
-    const vHist = history.filter(h => h.venue === v);
-    const avg = vHist.length ? Math.round(vHist.reduce((a,h)=>a+h.pct,0)/vHist.length) : null;
-    return `<div class="hist-row">
-      <span style="font-weight:500">${v}</span>
-      <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-size:12px;color:#888">${vHist.length} visits</span>
-        ${avg !== null ? `<span class="pct-badge ${pctClass(avg)}" style="font-size:13px">${avg}%</span>` : '<span style="color:#aaa;font-size:12px">No data</span>'}
+  // Venue bars
+  const venuesToShow = activeVenue === 'all' ? VENUES : [activeVenue];
+  document.getElementById('venue-bars').innerHTML = venuesToShow.map(v => {
+    const vData = getWeekData(currentWeekOffset, v);
+    const vAvg = avg(vData.map(h => h.pct));
+    const visits = vData.length;
+    const w = vAvg !== null ? vAvg : 0;
+    const col = vAvg !== null ? barColor(vAvg) : '#ddd';
+    const badge = vAvg !== null ? `<span class="badge ${badgeClass(vAvg)}">${vAvg}%</span>` : `<span class="badge badge-gray">No visits</span>`;
+    return `<div class="bar-row">
+      <span class="bar-lbl">${v}</span>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${w}%;background:${col}"></div>
+        <div class="bar-target" style="left:${TARGET}%"></div>
       </div>
+      <span class="bar-pct">${badge}</span>
     </div>`;
   }).join('');
 
-  // Category avgs from history
-  const catAvgs = STANDARDS.map(s => {
-    const catItems = s.items;
+  // Standards breakdown
+  document.getElementById('standards-bars').innerHTML = STANDARDS.map(std => {
+    const items = STANDARD_ITEMS[std];
     let total = 0, count = 0;
-    history.forEach(h => {
-      catItems.forEach(item => {
-        if (h.scores && h.scores[item] !== null && h.scores[item] !== undefined) {
-          total += h.scores[item]; count++;
-        }
+    data.forEach(h => {
+      if (!h.scores) return;
+      items.forEach(item => {
+        const v = h.scores[item];
+        if (v !== null && v !== undefined) { total += v; count++; }
       });
     });
-    const avg = count ? Math.round((total / count / 3) * 100) : null;
-    return { cat: s.cat, avg };
+    const pct = count ? Math.round((total / (count * 3)) * 100) : null;
+    const w = pct !== null ? pct : 0;
+    const col = pct !== null ? barColor(pct) : '#ddd';
+    const badge = pct !== null ? `<span class="badge ${badgeClass(pct)}">${pct}%</span>` : `<span class="badge badge-gray">No data</span>`;
+    return `<div class="bar-row">
+      <span class="bar-lbl" style="font-size:13px">${std}</span>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${w}%;background:${col}"></div>
+        <div class="bar-target" style="left:${TARGET}%"></div>
+      </div>
+      <span class="bar-pct">${badge}</span>
+    </div>`;
+  }).join('');
+
+  // Trend chart — last 8 weeks
+  const weeks = Array.from({length:8}, (_,i) => i - 7 + currentWeekOffset);
+  const weekLabels = weeks.map(w => {
+    const s = getWeekStart(w);
+    return s.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
   });
 
-  const catRows = catAvgs.map(c =>
-    `<div class="hist-row">
-      <span style="font-size:13px">${c.cat}</span>
-      ${c.avg !== null ?
-        `<div style="display:flex;align-items:center;gap:10px;flex:1;margin-left:16px">
-          <div class="bar-wrap" style="flex:1"><div class="bar-fill" style="width:${c.avg}%;background:${barCol(c.avg)}"></div></div>
-          <span class="pct-badge ${pctClass(c.avg)}" style="font-size:12px;min-width:48px;text-align:center">${c.avg}%</span>
-        </div>` :
-        '<span style="color:#aaa;font-size:12px">No data</span>'
+  const vColors = { Shoreditch: '#6366F1', Monument: '#F59E0B', Manchester: '#3b6d11' };
+  const datasets = venuesToShow.map(v => ({
+    label: v,
+    data: weeks.map(w => {
+      const wd = getWeekData(w, v);
+      return avg(wd.map(h => h.pct));
+    }),
+    borderColor: vColors[v] || '#888',
+    backgroundColor: (vColors[v] || '#888') + '18',
+    tension: 0.3,
+    pointRadius: 4,
+    spanGaps: true,
+  }));
+
+  const ctx = document.getElementById('trendChart');
+  if (trendChart) { trendChart.destroy(); trendChart = null; }
+  trendChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: weekLabels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        y: { min: 0, max: 100, ticks: { callback: v => v+'%' }, grid: { color: 'rgba(0,0,0,0.05)' } },
+        x: { grid: { display: false } }
+      },
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 12 } } },
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw !== null ? ctx.raw+'%' : 'No data'}` } }
       }
-    </div>`
-  ).join('');
-
-  el.innerHTML = `
-    <div class="grid3" style="margin-bottom:12px">
-      <div class="card metric"><div class="val">${totalVisits}</div><div class="lbl">Total visits</div></div>
-      <div class="card metric"><div class="val">${avgPct !== null ? avgPct+'%' : '—'}</div><div class="lbl">Avg score</div></div>
-      <div class="card metric"><div class="val">${thisWeek.length}</div><div class="lbl">Visits this week</div></div>
-    </div>
-    <div class="grid3">${cards}</div>
-    <div class="grid2">
-      <div class="card">
-        <div class="section-title">Venue averages (all time)</div>
-        ${venueAvgs || '<p style="color:#aaa;font-size:13px">No history yet</p>'}
-      </div>
-      <div class="card">
-        <div class="section-title">Standards performance</div>
-        ${catRows || '<p style="color:#aaa;font-size:13px">No history yet</p>'}
-      </div>
-    </div>
-    <div class="card">
-      <div class="section-title">Score trend (last 12 visits)</div>
-      <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
-    </div>`;
-
-  // Trend chart
-  const last12 = [...history].reverse().slice(0, 12);
-  if (last12.length && !charts.trend) {
-    const ctx = document.getElementById('trendChart');
-    if (ctx) {
-      const vColors = { Shoreditch: '#6366F1', Monument: '#F59E0B', Manchester: '#10B981' };
-      const datasets = VENUES.map(v => ({
-        label: v,
-        data: last12.filter(h => h.venue === v).map(h => ({ x: h.visited_at, y: h.pct })),
-        borderColor: vColors[v],
-        backgroundColor: vColors[v] + '22',
-        tension: 0.3,
-        pointRadius: 4,
-      }));
-      charts.trend = new Chart(ctx, {
-        type: 'line',
-        data: { datasets },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          scales: { y: { min: 0, max: 100, ticks: { callback: v => v + '%' } }, x: { type: 'category' } },
-          plugins: { legend: { position: 'bottom' } }
-        }
-      });
     }
-  }
+  });
 }
 
-function renderVenue(el, venue) {
-  const activeIdx = currentWeek.activeIdx[venue];
-  const wp = weeklyPct(venue);
+function renderHistory() {
+  const data = activeHistVenue === 'all' ? allHistory : allHistory.filter(h => h.venue === activeHistVenue);
 
-  const visitBtns = currentWeek.visits[venue].map((v, i) => {
-    const done = isComplete(v);
-    const locked = i > 0 && !isComplete(currentWeek.visits[venue][i-1]);
-    const active = activeIdx === i;
-    let cls = 'vbtn' + (done?' done':active?' active':locked?' locked':'');
-    return `<button class="${cls}" ${locked?'disabled':''} onclick="${locked?'':`switchVisit('${venue}',${i})`}">${done?'✓ ':''}Visit ${i+1}${locked?' 🔒':''}</button>`;
-  }).join('');
-
-  const weekBadge = wp !== null ? `<span class="pct-badge ${pctClass(wp)}">${wp}% this week</span>` : '';
-
-  const visit = currentWeek.visits[venue][activeIdx];
-  const done = isComplete(visit);
-  const banner = done ? `<div class="banner">✓ Visit ${activeIdx+1} complete — ${visitPct(visit)}% · ${activeIdx<2?`Visit ${activeIdx+2} now unlocked.`:'All 3 visits complete this week!'}</div>` : '';
-
-  const cats = STANDARDS.map(({ cat, items }) => {
-    const total = items.filter(i => visit.scores[i]!==null).reduce((a,i)=>a+visit.scores[i],0);
-    const max = items.length * 3;
-    const rows = items.map(item => {
-      const cur = visit.scores[item];
-      const btns = [0,1,2,3].map(v => {
-        const lbl = ['0 — Fail','1 — Below','2 — Meets','3 — Exceeds'][v];
-        const cls = cur===v ? `sbtn a${v}` : 'sbtn';
-        const safe = item.replace(/'/g,"\\'");
-        return `<button class="${cls}" onclick="setScore('${venue}',${activeIdx},'${safe}',${v})">${lbl}</button>`;
-      }).join('');
-      return `<div class="item-row"><div class="item-lbl">${item}</div><div class="score-btns">${btns}</div></div>`;
-    }).join('');
-    return `<div class="cat-block"><div class="cat-head"><span>${cat}</span><span class="cat-score">${total}/${max}</span></div>${rows}</div>`;
-  }).join('');
-
-  el.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-      <div class="visit-btns">${visitBtns}</div>
-      ${weekBadge}
-    </div>
-    ${banner}
-    ${cats}
-    <div style="margin-top:8px">
-      <label style="font-size:12px;color:#888;display:block;margin-bottom:4px">Actions & notes — Visit ${activeIdx+1}</label>
-      <textarea placeholder="Log any actions, issues or observations..." onchange="setNotes('${venue}',${activeIdx},this.value)">${visit.notes||''}</textarea>
-    </div>`;
-}
-
-function renderHistory(el) {
-  if (!history.length) {
-    el.innerHTML = '<div class="card" style="text-align:center;color:#aaa;font-size:13px;padding:2rem">No visit history yet. Complete and save visits to see them here.</div>';
+  if (!data.length) {
+    document.getElementById('history-list').innerHTML = '<div class="empty">No visit history yet.</div>';
     return;
   }
 
-  const rows = history.slice(0, 50).map(h => {
-    const d = new Date(h.visited_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
-    return `<div class="hist-row">
+  document.getElementById('history-list').innerHTML = data.slice(0, 100).map(h => {
+    const d = new Date(h.visited_at).toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+    const notes = h.notes ? `<div style="font-size:12px;color:#888;margin-top:3px;font-style:italic">"${h.notes.slice(0,100)}${h.notes.length>100?'...':''}"</div>` : '';
+    return `<div class="visit-row">
       <div>
         <div style="font-weight:500">${h.venue} — Visit ${h.visit_number}</div>
-        <div class="hist-meta">${d} · Week of ${h.week_of}</div>
-        ${h.notes ? `<div style="font-size:11px;color:#888;margin-top:2px;font-style:italic">"${h.notes.slice(0,80)}${h.notes.length>80?'...':''}"</div>` : ''}
+        <div class="visit-meta">${d}</div>
+        ${notes}
       </div>
-      <span class="pct-badge ${pctClass(h.pct)}">${h.pct}%</span>
+      <span class="badge ${badgeClass(h.pct)}">${h.pct}%</span>
     </div>`;
   }).join('');
-
-  // Per venue history
-  const venueHistory = VENUES.map(v => {
-    const vRows = history.filter(h => h.venue === v).slice(0, 5).map(h => {
-      const d = new Date(h.visited_at).toLocaleDateString('en-GB', { day:'numeric', month:'short' });
-      return `<div class="hist-row"><span style="font-size:12px">${d} · Visit ${h.visit_number}</span><span class="pct-badge ${pctClass(h.pct)}" style="font-size:12px">${h.pct}%</span></div>`;
-    }).join('');
-    return `<div class="card"><div class="section-title">${v}</div>${vRows || '<p style="color:#aaa;font-size:12px">No visits yet</p>'}</div>`;
-  }).join('');
-
-  el.innerHTML = `
-    <div class="card">
-      <div class="section-title">All visits (most recent first)</div>
-      ${rows}
-    </div>
-    <div class="grid3">${venueHistory}</div>`;
 }
 
-// ── INIT ─────────────────────────────────────────────────────────────────────
-(async () => {
-  await Promise.all([loadCurrentWeek(), loadHistory()]);
-  render();
-})();
+document.addEventListener('DOMContentLoaded', load);
 </script>
 </body>
 </html>
