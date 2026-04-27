@@ -149,14 +149,18 @@ async function load(){
 async function saveAll(){
   const btn=document.getElementById('save-btn');
   btn.textContent='Saving...'; btn.disabled=true;
-  // Save current week
   try{
+    // Save current week state — use upsert to avoid constraint issues
     const val=JSON.stringify({visits,activeIdx});
-    const ex=await sb('config?config_key=eq.site_visit_week&select=id');
-    if(ex&&ex.length) await sb('config?config_key=eq.site_visit_week',{method:'PATCH',body:JSON.stringify({config_value:val})});
-    else await sb('config',{method:'POST',body:JSON.stringify({config_key:'site_visit_week',config_value:val})});
-  }catch(e){}
-  // Archive completed visits
+    await sb('config',{
+      method:'POST',
+      prefer:'resolution=merge-duplicates,return=minimal',
+      headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},
+      body:JSON.stringify({config_key:'site_visit_week',config_value:val})
+    });
+  }catch(e){ console.error('Save week error:',e); }
+
+  // Archive completed visits to history
   const today=new Date().toISOString().split('T')[0];
   const weekOf=getWeekStart(0).toISOString().split('T')[0];
   for(const venue of VENUES){
@@ -164,18 +168,30 @@ async function saveAll(){
       const v=visits[venue][i];
       if(isComplete(v)&&v.completedAt&&!v.saved){
         try{
-          await sb('site_visit_history',{method:'POST',prefer:'return=minimal',body:JSON.stringify({venue,visit_number:i+1,visited_at:today,week_of:weekOf,scores:v.scores,notes:v.notes,pct:vPct(v)})});
+          await sb('site_visit_history',{
+            method:'POST',
+            prefer:'return=minimal',
+            headers:{'Prefer':'return=minimal'},
+            body:JSON.stringify({venue,visit_number:i+1,visited_at:today,week_of:weekOf,scores:v.scores,notes:v.notes,pct:vPct(v)})
+          });
           visits[venue][i].saved=true;
-        }catch(e){}
+        }catch(e){ console.error('Save history error:',e); }
       }
     }
   }
-  // Re-save with saved flags
+
+  // Re-save with updated saved flags
   try{
     const val=JSON.stringify({visits,activeIdx});
-    await sb('config?config_key=eq.site_visit_week',{method:'PATCH',body:JSON.stringify({config_value:val})});
-  }catch(e){}
-  history=await sb('site_visit_history?select=*&order=visited_at.desc&limit=500')||[];
+    await sb('config',{
+      method:'POST',
+      prefer:'resolution=merge-duplicates,return=minimal',
+      headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},
+      body:JSON.stringify({config_key:'site_visit_week',config_value:val})
+    });
+  }catch(e){ console.error('Re-save error:',e); }
+
+  try{ history=await sb('site_visit_history?select=*&order=visited_at.desc&limit=500')||[]; }catch(e){}
   btn.textContent='Saved!'; btn.className='btn btn-green'; btn.disabled=false;
   setTimeout(()=>{ btn.textContent='Save'; btn.className='btn btn-dark'; },2500);
   render();
