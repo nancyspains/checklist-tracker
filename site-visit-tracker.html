@@ -150,15 +150,21 @@ async function saveAll(){
   const btn=document.getElementById('save-btn');
   btn.textContent='Saving...'; btn.disabled=true;
   try{
-    // Save current week state — use upsert to avoid constraint issues
     const val=JSON.stringify({visits,activeIdx});
-    await sb('config',{
-      method:'POST',
-      prefer:'resolution=merge-duplicates,return=minimal',
-      headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},
-      body:JSON.stringify({config_key:'site_visit_week',config_value:val})
+    // Try PATCH first, if nothing updated then POST
+    const patch=await fetch(`${SB}/rest/v1/config?config_key=eq.site_visit_week`,{
+      method:'PATCH',
+      headers:{apikey:KEY,Authorization:`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify({config_value:val})
     });
-  }catch(e){ console.error('Save week error:',e); }
+    if(patch.status===404||patch.status===0){
+      await fetch(`${SB}/rest/v1/config`,{
+        method:'POST',
+        headers:{apikey:KEY,Authorization:`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'},
+        body:JSON.stringify({config_key:'site_visit_week',config_value:val})
+      });
+    }
+  }catch(e){ console.error('Save error:',e); }
 
   // Archive completed visits to history
   const today=new Date().toISOString().split('T')[0];
@@ -168,29 +174,25 @@ async function saveAll(){
       const v=visits[venue][i];
       if(isComplete(v)&&v.completedAt&&!v.saved){
         try{
-          await sb('site_visit_history',{
+          const r=await fetch(`${SB}/rest/v1/site_visit_history`,{
             method:'POST',
-            prefer:'return=minimal',
-            headers:{'Prefer':'return=minimal'},
+            headers:{apikey:KEY,Authorization:`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'},
             body:JSON.stringify({venue,visit_number:i+1,visited_at:today,week_of:weekOf,scores:v.scores,notes:v.notes,pct:vPct(v)})
           });
-          visits[venue][i].saved=true;
-        }catch(e){ console.error('Save history error:',e); }
+          if(r.ok) visits[venue][i].saved=true;
+        }catch(e){ console.error('History error:',e); }
       }
     }
   }
-
   // Re-save with updated saved flags
   try{
     const val=JSON.stringify({visits,activeIdx});
-    await sb('config',{
-      method:'POST',
-      prefer:'resolution=merge-duplicates,return=minimal',
-      headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},
-      body:JSON.stringify({config_key:'site_visit_week',config_value:val})
+    await fetch(`${SB}/rest/v1/config?config_key=eq.site_visit_week`,{
+      method:'PATCH',
+      headers:{apikey:KEY,Authorization:`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify({config_value:val})
     });
-  }catch(e){ console.error('Re-save error:',e); }
-
+  }catch(e){}
   try{ history=await sb('site_visit_history?select=*&order=visited_at.desc&limit=500')||[]; }catch(e){}
   btn.textContent='Saved!'; btn.className='btn btn-green'; btn.disabled=false;
   setTimeout(()=>{ btn.textContent='Save'; btn.className='btn btn-dark'; },2500);
