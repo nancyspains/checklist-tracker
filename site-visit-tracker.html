@@ -42,8 +42,10 @@ h1 { font-size: 20px; font-weight: 500; }
 .vbtn { font-size: 12px; padding: 5px 12px; border-radius: 8px; border: 0.5px solid #ddd; background: #fff; color: #333; cursor: pointer; }
 .vbtn.active { border-color: #6366F1; background: #EEF2FF; color: #4338CA; font-weight: 500; }
 .vbtn.done { background: #D1FAE5; color: #065F46; border-color: #6EE7B7; }
-.vbtn.locked { opacity: 0.45; cursor: not-allowed; }
+.vbtn.locked { opacity: 0.55; cursor: pointer; }
+.vbtn.locked:hover { opacity: 0.75; }
 .banner { padding: 10px 14px; background: #D1FAE5; border-radius: 8px; margin-bottom: 10px; font-size: 13px; color: #065F46; font-weight: 500; }
+.banner-lock { padding: 10px 14px; background: #FEF3C7; border-radius: 8px; margin-bottom: 10px; font-size: 13px; color: #92400E; font-weight: 500; border: 0.5px solid #FCD34D; }
 .cat-block { border: 0.5px solid rgba(0,0,0,0.1); border-radius: 10px; overflow: hidden; margin-bottom: 10px; }
 .cat-head { padding: 8px 14px; background: #fafaf9; display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; }
 .cat-score { font-weight: 400; color: #888; font-size: 12px; }
@@ -55,6 +57,18 @@ h1 { font-size: 20px; font-weight: 500; }
 .sbtn.a1 { background: #FEF3C7; color: #92400E; border-color: #FCD34D; font-weight: 600; }
 .sbtn.a2 { background: #D1FAE5; color: #065F46; border-color: #6EE7B7; font-weight: 600; }
 .sbtn.a3 { background: #BBF7D0; color: #064E3B; border-color: #34D399; font-weight: 600; }
+/* Read-only score display for locked visits */
+.sbtn-readonly { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.score-pill { font-size: 12px; padding: 4px 12px; border-radius: 6px; font-weight: 500; }
+.score-pill.s0 { background: #FEE2E2; color: #991B1B; border: 0.5px solid #FCA5A5; }
+.score-pill.s1 { background: #FEF3C7; color: #92400E; border: 0.5px solid #FCD34D; }
+.score-pill.s2 { background: #D1FAE5; color: #065F46; border: 0.5px solid #6EE7B7; }
+.score-pill.s3 { background: #BBF7D0; color: #064E3B; border: 0.5px solid #34D399; }
+.score-pill.s-null { background: #f0f0ee; color: #aaa; border: 0.5px solid #ddd; font-style: italic; }
+.notes-readonly { font-size: 12px; color: #555; background: #fafaf9; border: 0.5px solid #ddd; border-radius: 8px; padding: 8px 10px; min-height: 40px; font-style: italic; line-height: 1.5; }
+.notes-readonly.empty { color: #aaa; }
+.locked-overlay { background: #fffbf0; border: 0.5px solid #FCD34D; }
+.locked-overlay .cat-head { background: #fffbf0; }
 textarea { width: 100%; font-size: 12px; padding: 8px 10px; border-radius: 8px; border: 0.5px solid #ddd; background: #fff; color: #333; min-height: 72px; resize: vertical; font-family: inherit; }
 /* Dashboard */
 .week-nav { display: flex; align-items: center; justify-content: center; gap: 16px; background: #fff; border-radius: 12px; padding: 10px 20px; margin-bottom: 12px; border: 0.5px solid rgba(0,0,0,0.08); }
@@ -94,11 +108,9 @@ textarea { width: 100%; font-size: 12px; padding: 8px 10px; border-radius: 8px; 
       <button class="btn btn-dark" id="save-btn" onclick="saveAll()">Save</button>
     </div>
   </div>
-
   <div class="tabs" id="tabs"></div>
   <div id="content"></div>
 </div>
-
 <script>
 const SB = 'https://vqfvklqdexakwjjyvwod.supabase.co';
 const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxZnZrbHFkZXhha3dqanl2d29kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAwNjQsImV4cCI6MjA5MTMxNjA2NH0.JETvur4VrrIWPCwK3MbQ4zzmOiX1Tc7F_xFWC2OR93M';
@@ -113,7 +125,6 @@ const STDS = [
 ];
 const ALL_ITEMS = STDS.flatMap(s=>s.items);
 const TARGET = 90;
-
 let tab = 'Overview';
 let dashVenue = 'all';
 let histVenue = 'all';
@@ -124,44 +135,63 @@ let visits = {};
 let activeIdx = {};
 VENUES.forEach(v=>{ visits[v]=[ev(),ev(),ev()]; activeIdx[v]=0; });
 
-function ev(){ return { scores:Object.fromEntries(ALL_ITEMS.map(i=>[i,null])), notes:'', completedAt:null, saved:false, startedDate:null }; }
+function ev(){
+  return { scores:Object.fromEntries(ALL_ITEMS.map(i=>[i,null])), notes:'', completedAt:null, saved:false, startedDate:null };
+}
 function today(){ return new Date().toISOString().split('T')[0]; }
 function isComplete(v){ return ALL_ITEMS.every(i=>v.scores[i]!==null); }
 function isLocked(v){
-  // Lock if started on a previous day
   if(v.startedDate && v.startedDate !== today()) return true;
-  // Fallback: lock if completed on a previous day
   if(v.completedAt && v.completedAt.split('T')[0] !== today()) return true;
-  // Lock if any score was entered on a previous day (belt and braces)
   if(v.savedDate && v.savedDate !== today()) return true;
   return false;
 }
-function vPct(v){ const s=ALL_ITEMS.filter(i=>v.scores[i]!==null); if(!s.length)return 0; return Math.round(s.reduce((a,i)=>a+v.scores[i],0)/(s.length*3)*100); }
-function wPct(venue){ const d=visits[venue].filter(isComplete); if(!d.length)return null; return Math.round(d.reduce((a,v)=>a+vPct(v),0)/d.length); }
+function vPct(v){
+  const s=ALL_ITEMS.filter(i=>v.scores[i]!==null);
+  if(!s.length)return 0;
+  return Math.round(s.reduce((a,i)=>a+v.scores[i],0)/(s.length*3)*100);
+}
+function wPct(venue){
+  const d=visits[venue].filter(isComplete);
+  if(!d.length)return null;
+  return Math.round(d.reduce((a,v)=>a+vPct(v),0)/d.length);
+}
 function pc(p){ return p>=90?'b-green':p>=80?'b-amber':'b-red'; }
 function bc(p){ return p>=90?'#3b6d11':p>=80?'#b45309':'#b91c1c'; }
 
 async function sb(path,opts={}){
   const r=await fetch(`${SB}/rest/v1/${path}`,{...opts,headers:{apikey:KEY,Authorization:`Bearer ${KEY}`,'Content-Type':'application/json',Prefer:opts.prefer||'return=representation',...(opts.headers||{})}});
-  const t=await r.text(); return t?JSON.parse(t):null;
+  const t=await r.text();
+  return t?JSON.parse(t):null;
 }
 
 async function load(){
   try{
     const r=await sb('config?config_key=eq.site_visit_week&select=config_value');
-    if(r&&r.length){ const d=JSON.parse(r[0].config_value); if(d.visits)visits=d.visits; if(d.activeIdx)activeIdx=d.activeIdx; }
+    if(r&&r.length){
+      const d=JSON.parse(r[0].config_value);
+      if(d.visits)visits=d.visits;
+      if(d.activeIdx)activeIdx=d.activeIdx;
+    }
   }catch(e){}
-  try{ history=await sb('site_visit_history?select=*&order=visited_at.desc&limit=500')||[]; }catch(e){ history=[]; }
+  try{
+    history=await sb('site_visit_history?select=*&order=visited_at.desc&limit=500')||[];
+  }catch(e){ history=[]; }
   render();
-  setInterval(async()=>{ try{ history=await sb('site_visit_history?select=*&order=visited_at.desc&limit=500')||[]; render(); }catch(e){} },15000);
+  setInterval(async()=>{
+    try{
+      history=await sb('site_visit_history?select=*&order=visited_at.desc&limit=500')||[];
+      render();
+    }catch(e){}
+  },15000);
 }
 
 async function saveAll(){
   const btn=document.getElementById('save-btn');
-  btn.textContent='Saving...'; btn.disabled=true;
+  btn.textContent='Saving...';
+  btn.disabled=true;
   try{
     const val=JSON.stringify({visits,activeIdx});
-    // Try PATCH first, if nothing updated then POST
     const patch=await fetch(`${SB}/rest/v1/config?config_key=eq.site_visit_week`,{
       method:'PATCH',
       headers:{apikey:KEY,Authorization:`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'},
@@ -175,9 +205,7 @@ async function saveAll(){
       });
     }
   }catch(e){ console.error('Save error:',e); }
-
-  // Archive completed visits to history
-  const today=new Date().toISOString().split('T')[0];
+  const todayStr=new Date().toISOString().split('T')[0];
   const weekOf=getWeekStart(0).toISOString().split('T')[0];
   for(const venue of VENUES){
     for(let i=0;i<3;i++){
@@ -187,14 +215,13 @@ async function saveAll(){
           const r=await fetch(`${SB}/rest/v1/site_visit_history`,{
             method:'POST',
             headers:{apikey:KEY,Authorization:`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'},
-            body:JSON.stringify({venue,visit_number:i+1,visited_at:today,week_of:weekOf,scores:v.scores,notes:v.notes,pct:vPct(v)})
+            body:JSON.stringify({venue,visit_number:i+1,visited_at:todayStr,week_of:weekOf,scores:v.scores,notes:v.notes,pct:vPct(v)})
           });
           if(r.ok) visits[venue][i].saved=true;
         }catch(e){ console.error('History error:',e); }
       }
     }
   }
-  // Re-save with updated saved flags
   try{
     const val=JSON.stringify({visits,activeIdx});
     await fetch(`${SB}/rest/v1/config?config_key=eq.site_visit_week`,{
@@ -203,8 +230,12 @@ async function saveAll(){
       body:JSON.stringify({config_value:val})
     });
   }catch(e){}
-  try{ history=await sb('site_visit_history?select=*&order=visited_at.desc&limit=500')||[]; }catch(e){}
-  btn.textContent='Saved!'; btn.className='btn btn-green'; btn.disabled=false;
+  try{
+    history=await sb('site_visit_history?select=*&order=visited_at.desc&limit=500')||[];
+  }catch(e){}
+  btn.textContent='Saved!';
+  btn.className='btn btn-green';
+  btn.disabled=false;
   setTimeout(()=>{ btn.textContent='Save'; btn.className='btn btn-dark'; },2500);
   render();
 }
@@ -228,6 +259,7 @@ function setScore(venue,vIdx,item,val){
 }
 
 function setNotes(venue,vIdx,val){ visits[venue][vIdx].notes=val; }
+
 function switchTab(t){ tab=t; render(); }
 function switchVisit(venue,idx){ activeIdx[venue]=idx; render(); }
 function setDashVenue(v){ dashVenue=v; render(); }
@@ -236,19 +268,30 @@ function prevWeek(){ weekOffset--; render(); }
 function nextWeek(){ if(weekOffset<0){weekOffset++;render();} }
 
 function getWeekStart(offset=0){
-  const d=new Date(); const day=d.getDay();
+  const d=new Date();
+  const day=d.getDay();
   const diff=d.getDate()-day+(day===0?-6:1);
-  d.setDate(diff+offset*7); d.setHours(0,0,0,0); return d;
+  d.setDate(diff+offset*7);
+  d.setHours(0,0,0,0);
+  return d;
 }
+
 function weekLabel(offset){
-  const s=getWeekStart(offset); const e=new Date(s); e.setDate(e.getDate()+6);
+  const s=getWeekStart(offset);
+  const e=new Date(s); e.setDate(e.getDate()+6);
   const f=d=>d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
   return `Week ${f(s)} – ${f(e)} ${e.getFullYear()}`;
 }
+
 function getWeekData(offset,venue){
-  const s=getWeekStart(offset); const e=new Date(s); e.setDate(e.getDate()+7);
-  return history.filter(h=>{ const d=new Date(h.visited_at); return d>=s&&d<e&&(venue==='all'||h.venue===venue); });
+  const s=getWeekStart(offset);
+  const e=new Date(s); e.setDate(e.getDate()+7);
+  return history.filter(h=>{
+    const d=new Date(h.visited_at);
+    return d>=s&&d<e&&(venue==='all'||h.venue===venue);
+  });
 }
+
 function avg(arr){ return arr.length?Math.round(arr.reduce((a,b)=>a+b,0)/arr.length):null; }
 
 function render(){
@@ -267,8 +310,13 @@ function renderOverview(el){
   const allPcts=VENUES.map(v=>wPct(v)).filter(p=>p!==null);
   const overallAvg=avg(allPcts);
   const cards=VENUES.map(v=>{
-    const wp=wPct(v); const done=visits[v].filter(isComplete).length;
-    const bars=[0,1,2].map(i=>{ const d=isComplete(visits[v][i]); const cur=activeIdx[v]===i&&!d; return `<div class="vbar ${d?'done':cur?'active':''}"></div>`; }).join('');
+    const wp=wPct(v);
+    const done=visits[v].filter(isComplete).length;
+    const bars=[0,1,2].map(i=>{
+      const d=isComplete(visits[v][i]);
+      const cur=activeIdx[v]===i&&!d;
+      return `<div class="vbar ${d?'done':cur?'active':''}"></div>`;
+    }).join('');
     const badge=wp!==null?`<span class="badge ${pc(wp)}">${wp}%</span>`:`<span class="badge b-gray">No visits</span>`;
     return `<div class="card" onclick="switchTab('${v}')"><div class="card-title">${v}</div><div style="font-size:11px;color:#888;margin-bottom:4px">${done}/3 visits this week</div><div class="visit-bars">${bars}</div>${badge}</div>`;
   }).join('');
@@ -281,37 +329,83 @@ function renderOverview(el){
     ${cards}`;
 }
 
+function scorePillHTML(val){
+  const labels=['0 — Fail','1 — Below','2 — Meets','3 — Exceeds'];
+  if(val===null||val===undefined) return `<span class="score-pill s-null">Not scored</span>`;
+  return `<span class="score-pill s${val}">${labels[val]}</span>`;
+}
+
 function renderVenue(el,venue){
   const wp=wPct(venue);
   const vbtns=visits[venue].map((v,i)=>{
-    const done=isComplete(v); const locked=i>0&&!isComplete(visits[venue][i-1]); const active=activeIdx[venue]===i; const dayLocked=isLocked(v);
-    let cls='vbtn'+(done?' done':active?' active':locked?' locked':'')+(dayLocked?' locked':'');
+    const done=isComplete(v);
+    const locked=i>0&&!isComplete(visits[venue][i-1]);
+    const active=activeIdx[venue]===i;
+    const dayLocked=isLocked(v);
+    // Day-locked visits are always clickable (view-only), but sequence-locked (not yet unlocked) remain disabled
+    let cls='vbtn'+(done?' done':active?' active':dayLocked?' locked':locked?' locked':'');
     const label=dayLocked?`✓ Visit ${i+1} 🔒`:done?`✓ Visit ${i+1}`:`Visit ${i+1}${locked?' 🔒':''}`;
-    return `<button class="${cls}" ${locked||dayLocked?'disabled':''} onclick="${locked||dayLocked?'':`switchVisit('${venue}',${i})`}">${label}</button>`;
+    // Allow clicking if day-locked (view mode) but not if sequence-locked and not yet complete
+    const clickable = !locked || done || dayLocked;
+    return `<button class="${cls}" ${!clickable?'disabled':''} onclick="${clickable?`switchVisit('${venue}',${i})`:''}">${label}</button>`;
   }).join('');
+
   const weekBadge=wp!==null?`<span class="badge ${pc(wp)}" style="font-size:14px">${wp}% this week</span>`:'';
   const visit=visits[venue][activeIdx[venue]];
   const done=isComplete(visit);
   const dayLocked=isLocked(visit);
-  const banner=dayLocked?`<div class="banner" style="background:#FEF3C7;color:#92400E">🔒 This visit was completed on ${visit.startedDate} and is now locked for editing.</div>`:done?`<div class="banner">✓ Visit ${activeIdx[venue]+1} complete — ${vPct(visit)}% · ${activeIdx[venue]<2?`Visit ${activeIdx[venue]+2} now unlocked.`:'All 3 visits complete this week!'}</div>`:'';
+
+  let banner='';
+  if(dayLocked){
+    const lockedDate=visit.startedDate||visit.completedAt?.split('T')[0]||'a previous day';
+    banner=`<div class="banner-lock">🔒 View only — this visit was completed on ${lockedDate} and can no longer be edited.</div>`;
+  } else if(done){
+    banner=`<div class="banner">✓ Visit ${activeIdx[venue]+1} complete — ${vPct(visit)}% · ${activeIdx[venue]<2?`Visit ${activeIdx[venue]+2} now unlocked.`:'All 3 visits complete this week!'}</div>`;
+  }
+
   const cats=STDS.map(({cat,items})=>{
     const tot=items.filter(i=>visit.scores[i]!==null).reduce((a,i)=>a+visit.scores[i],0);
     const rows=items.map(item=>{
       const cur=visit.scores[item];
-      const btns=[0,1,2,3].map(v=>{ const lbl=['0 — Fail','1 — Below','2 — Meets','3 — Exceeds'][v]; const cls=cur===v?`sbtn a${v}`:'sbtn'; const safe=item.replace(/'/g,"\\'"); return `<button class="${cls}" ${dayLocked?'disabled style="opacity:0.6;cursor:not-allowed"':''} onclick="${dayLocked?'':`setScore('${venue}',${activeIdx[venue]},'${safe}',${v})`}">${lbl}</button>`; }).join('');
-      return `<div class="item-row"><div class="item-lbl">${item}</div><div class="sbtn-row">${btns}</div></div>`;
+      let inputHtml;
+      if(dayLocked){
+        // Read-only: show the selected score as a pill
+        inputHtml=`<div class="sbtn-readonly">${scorePillHTML(cur)}</div>`;
+      } else {
+        const btns=[0,1,2,3].map(v=>{
+          const lbl=['0 — Fail','1 — Below','2 — Meets','3 — Exceeds'][v];
+          const cls=cur===v?`sbtn a${v}`:'sbtn';
+          const safe=item.replace(/'/g,"\\'");
+          return `<button class="${cls}" onclick="setScore('${venue}',${activeIdx[venue]},'${safe}',${v})">${lbl}</button>`;
+        }).join('');
+        inputHtml=`<div class="sbtn-row">${btns}</div>`;
+      }
+      return `<div class="item-row"><div class="item-lbl">${item}</div>${inputHtml}</div>`;
     }).join('');
-    return `<div class="cat-block"><div class="cat-head"><span>${cat}</span><span class="cat-score">${tot}/${items.length*3}</span></div>${rows}</div>`;
+    return `<div class="cat-block${dayLocked?' locked-overlay':''}"><div class="cat-head"><span>${cat}</span><span class="cat-score">${tot}/${items.length*3}</span></div>${rows}</div>`;
   }).join('');
+
+  let notesHtml;
+  if(dayLocked){
+    const notesText=visit.notes||(visit.notes===''?'':null);
+    notesHtml=`
+      <div style="margin-top:8px">
+        <label style="font-size:12px;color:#888;display:block;margin-bottom:4px">Actions & notes — Visit ${activeIdx[venue]+1}</label>
+        <div class="notes-readonly${!notesText?' empty':''}">${notesText||'No notes recorded.'}</div>
+      </div>`;
+  } else {
+    notesHtml=`
+      <div style="margin-top:8px">
+        <label style="font-size:12px;color:#888;display:block;margin-bottom:4px">Actions & notes — Visit ${activeIdx[venue]+1}</label>
+        <textarea placeholder="Log any actions, issues or observations..." onchange="setNotes('${venue}',${activeIdx[venue]},this.value)">${visit.notes||''}</textarea>
+      </div>`;
+  }
+
   el.innerHTML=`
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
       <div class="visit-btns">${vbtns}</div>${weekBadge}
     </div>
-    ${banner}${cats}
-    <div style="margin-top:8px">
-      <label style="font-size:12px;color:#888;display:block;margin-bottom:4px">Actions & notes — Visit ${activeIdx[venue]+1}</label>
-      <textarea placeholder="Log any actions, issues or observations..." onchange="setNotes('${venue}',${activeIdx[venue]},this.value)">${visit.notes||''}</textarea>
-    </div>`;
+    ${banner}${cats}${notesHtml}`;
 }
 
 function renderDashboard(el){
@@ -319,19 +413,25 @@ function renderDashboard(el){
   const pcts=data.map(h=>h.pct).filter(p=>p!=null);
   const avgScore=avg(pcts);
   const vbtns=['all',...VENUES].map(v=>`<button class="vf-btn ${dashVenue===v?'active':''}" onclick="setDashVenue('${v}')">${v==='all'?'All pubs':v}</button>`).join('');
-  const vBars=( dashVenue==='all'?VENUES:[dashVenue]).map(v=>{
-    const vd=getWeekData(weekOffset,v); const va=avg(vd.map(h=>h.pct));
+  const vBars=(dashVenue==='all'?VENUES:[dashVenue]).map(v=>{
+    const vd=getWeekData(weekOffset,v);
+    const va=avg(vd.map(h=>h.pct));
     const badge=va!==null?`<span class="badge ${pc(va)}">${va}%</span>`:`<span class="badge b-gray">No visits</span>`;
     return `<div class="bar-row"><span class="bar-lbl">${v}</span><div class="bar-track"><div class="bar-fill" style="width:${va||0}%;background:${va?bc(va):'#ddd'}"></div><div class="bar-target" style="left:${TARGET}%"></div></div>${badge}</div>`;
   }).join('');
   const stdBars=STDS.map(s=>{
     let t=0,c=0;
-    data.forEach(h=>{ if(!h.scores)return; s.items.forEach(item=>{ const v=h.scores[item]; if(v!==null&&v!==undefined){t+=v;c++;} }); });
+    data.forEach(h=>{
+      if(!h.scores)return;
+      s.items.forEach(item=>{
+        const v=h.scores[item];
+        if(v!==null&&v!==undefined){t+=v;c++;}
+      });
+    });
     const p=c?Math.round((t/(c*3))*100):null;
     const badge=p!==null?`<span class="badge ${pc(p)}">${p}%</span>`:`<span class="badge b-gray">No data</span>`;
     return `<div class="bar-row"><span class="bar-lbl" style="font-size:12px">${s.cat}</span><div class="bar-track"><div class="bar-fill" style="width:${p||0}%;background:${p?bc(p):'#ddd'}"></div><div class="bar-target" style="left:${TARGET}%"></div></div>${badge}</div>`;
   }).join('');
-  // Trend chart
   const weeks=Array.from({length:8},(_,i)=>i-7+weekOffset);
   const wLabels=weeks.map(w=>getWeekStart(w).toLocaleDateString('en-GB',{day:'numeric',month:'short'}));
   const vColors={Shoreditch:'#6366F1',Monument:'#F59E0B',Manchester:'#3b6d11'};
@@ -355,8 +455,27 @@ function renderDashboard(el){
   if(trendChart){ trendChart.destroy(); trendChart=null; }
   trendChart=new Chart(document.getElementById('trendChart'),{
     type:'line',
-    data:{ labels:wLabels, datasets:vShow.map(v=>({ label:v, data:weeks.map(w=>avg(getWeekData(w,v).map(h=>h.pct))), borderColor:vColors[v]||'#888', backgroundColor:(vColors[v]||'#888')+'18', tension:0.3, pointRadius:4, spanGaps:true })) },
-    options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{min:0,max:100,ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.05)'}}, x:{grid:{display:false}} }, plugins:{ legend:{position:'bottom',labels:{font:{size:12}}} } }
+    data:{
+      labels:wLabels,
+      datasets:vShow.map(v=>({
+        label:v,
+        data:weeks.map(w=>avg(getWeekData(w,v).map(h=>h.pct))),
+        borderColor:vColors[v]||'#888',
+        backgroundColor:(vColors[v]||'#888')+'18',
+        tension:0.3,
+        pointRadius:4,
+        spanGaps:true
+      }))
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      scales:{
+        y:{min:0,max:100,ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.05)'}},
+        x:{grid:{display:false}}
+      },
+      plugins:{ legend:{position:'bottom',labels:{font:{size:12}}} }
+    }
   });
 }
 
