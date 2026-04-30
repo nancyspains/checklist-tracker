@@ -124,8 +124,10 @@ let visits = {};
 let activeIdx = {};
 VENUES.forEach(v=>{ visits[v]=[ev(),ev(),ev()]; activeIdx[v]=0; });
 
-function ev(){ return { scores:Object.fromEntries(ALL_ITEMS.map(i=>[i,null])), notes:'', completedAt:null, saved:false }; }
+function ev(){ return { scores:Object.fromEntries(ALL_ITEMS.map(i=>[i,null])), notes:'', completedAt:null, saved:false, startedDate:null }; }
+function today(){ return new Date().toISOString().split('T')[0]; }
 function isComplete(v){ return ALL_ITEMS.every(i=>v.scores[i]!==null); }
+function isLocked(v){ return v.startedDate && v.startedDate !== today(); }
 function vPct(v){ const s=ALL_ITEMS.filter(i=>v.scores[i]!==null); if(!s.length)return 0; return Math.round(s.reduce((a,i)=>a+v.scores[i],0)/(s.length*3)*100); }
 function wPct(venue){ const d=visits[venue].filter(isComplete); if(!d.length)return null; return Math.round(d.reduce((a,v)=>a+vPct(v),0)/d.length); }
 function pc(p){ return p>=90?'b-green':p>=80?'b-amber':'b-red'; }
@@ -206,6 +208,8 @@ function newWeek(){
 }
 
 function setScore(venue,vIdx,item,val){
+  if(isLocked(visits[venue][vIdx])) return; // blocked if locked
+  if(!visits[venue][vIdx].startedDate) visits[venue][vIdx].startedDate = today();
   visits[venue][vIdx].scores[item]=val;
   if(isComplete(visits[venue][vIdx])&&!visits[venue][vIdx].completedAt){
     visits[venue][vIdx].completedAt=new Date().toISOString();
@@ -271,19 +275,21 @@ function renderOverview(el){
 function renderVenue(el,venue){
   const wp=wPct(venue);
   const vbtns=visits[venue].map((v,i)=>{
-    const done=isComplete(v); const locked=i>0&&!isComplete(visits[venue][i-1]); const active=activeIdx[venue]===i;
-    let cls='vbtn'+(done?' done':active?' active':locked?' locked':'');
-    return `<button class="${cls}" ${locked?'disabled':''} onclick="${locked?'':`switchVisit('${venue}',${i})`}">${done?'✓ ':''}Visit ${i+1}${locked?' 🔒':''}</button>`;
+    const done=isComplete(v); const locked=i>0&&!isComplete(visits[venue][i-1]); const active=activeIdx[venue]===i; const dayLocked=isLocked(v);
+    let cls='vbtn'+(done?' done':active?' active':locked?' locked':'')+(dayLocked?' locked':'');
+    const label=dayLocked?`✓ Visit ${i+1} 🔒`:done?`✓ Visit ${i+1}`:`Visit ${i+1}${locked?' 🔒':''}`;
+    return `<button class="${cls}" ${locked||dayLocked?'disabled':''} onclick="${locked||dayLocked?'':`switchVisit('${venue}',${i})`}">${label}</button>`;
   }).join('');
   const weekBadge=wp!==null?`<span class="badge ${pc(wp)}" style="font-size:14px">${wp}% this week</span>`:'';
   const visit=visits[venue][activeIdx[venue]];
   const done=isComplete(visit);
-  const banner=done?`<div class="banner">✓ Visit ${activeIdx[venue]+1} complete — ${vPct(visit)}% · ${activeIdx[venue]<2?`Visit ${activeIdx[venue]+2} now unlocked.`:'All 3 visits complete this week!'}</div>`:'';
+  const dayLocked=isLocked(visit);
+  const banner=dayLocked?`<div class="banner" style="background:#FEF3C7;color:#92400E">🔒 This visit was completed on ${visit.startedDate} and is now locked for editing.</div>`:done?`<div class="banner">✓ Visit ${activeIdx[venue]+1} complete — ${vPct(visit)}% · ${activeIdx[venue]<2?`Visit ${activeIdx[venue]+2} now unlocked.`:'All 3 visits complete this week!'}</div>`:'';
   const cats=STDS.map(({cat,items})=>{
     const tot=items.filter(i=>visit.scores[i]!==null).reduce((a,i)=>a+visit.scores[i],0);
     const rows=items.map(item=>{
       const cur=visit.scores[item];
-      const btns=[0,1,2,3].map(v=>{ const lbl=['0 — Fail','1 — Below','2 — Meets','3 — Exceeds'][v]; const cls=cur===v?`sbtn a${v}`:'sbtn'; const safe=item.replace(/'/g,"\\'"); return `<button class="${cls}" onclick="setScore('${venue}',${activeIdx[venue]},'${safe}',${v})">${lbl}</button>`; }).join('');
+      const btns=[0,1,2,3].map(v=>{ const lbl=['0 — Fail','1 — Below','2 — Meets','3 — Exceeds'][v]; const cls=cur===v?`sbtn a${v}`:'sbtn'; const safe=item.replace(/'/g,"\\'"); return `<button class="${cls}" ${dayLocked?'disabled style="opacity:0.6;cursor:not-allowed"':''} onclick="${dayLocked?'':`setScore('${venue}',${activeIdx[venue]},'${safe}',${v})`}">${lbl}</button>`; }).join('');
       return `<div class="item-row"><div class="item-lbl">${item}</div><div class="sbtn-row">${btns}</div></div>`;
     }).join('');
     return `<div class="cat-block"><div class="cat-head"><span>${cat}</span><span class="cat-score">${tot}/${items.length*3}</span></div>${rows}</div>`;
