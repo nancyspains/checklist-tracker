@@ -127,7 +127,15 @@ VENUES.forEach(v=>{ visits[v]=[ev(),ev(),ev()]; activeIdx[v]=0; });
 function ev(){ return { scores:Object.fromEntries(ALL_ITEMS.map(i=>[i,null])), notes:'', completedAt:null, saved:false, startedDate:null }; }
 function today(){ return new Date().toISOString().split('T')[0]; }
 function isComplete(v){ return ALL_ITEMS.every(i=>v.scores[i]!==null); }
-function isLocked(v){ return v.startedDate && v.startedDate !== today(); }
+function isLocked(v){
+  // Lock if started on a previous day
+  if(v.startedDate && v.startedDate !== today()) return true;
+  // Fallback: lock if completed on a previous day
+  if(v.completedAt && v.completedAt.split('T')[0] !== today()) return true;
+  // Lock if any score was entered on a previous day (belt and braces)
+  if(v.savedDate && v.savedDate !== today()) return true;
+  return false;
+}
 function vPct(v){ const s=ALL_ITEMS.filter(i=>v.scores[i]!==null); if(!s.length)return 0; return Math.round(s.reduce((a,i)=>a+v.scores[i],0)/(s.length*3)*100); }
 function wPct(venue){ const d=visits[venue].filter(isComplete); if(!d.length)return null; return Math.round(d.reduce((a,v)=>a+vPct(v),0)/d.length); }
 function pc(p){ return p>=90?'b-green':p>=80?'b-amber':'b-red'; }
@@ -208,8 +216,9 @@ function newWeek(){
 }
 
 function setScore(venue,vIdx,item,val){
-  if(isLocked(visits[venue][vIdx])) return; // blocked if locked
+  if(isLocked(visits[venue][vIdx])) return;
   if(!visits[venue][vIdx].startedDate) visits[venue][vIdx].startedDate = today();
+  visits[venue][vIdx].savedDate = today();
   visits[venue][vIdx].scores[item]=val;
   if(isComplete(visits[venue][vIdx])&&!visits[venue][vIdx].completedAt){
     visits[venue][vIdx].completedAt=new Date().toISOString();
