@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Culture Manager — Site Visit Tracker</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f3;color:#1a1a1a;font-size:14px;line-height:1.5;}
+.topbar{background:#fff;border-bottom:1px solid #e5e5e3;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;gap:10px;}
+.topbar h1{font-size:17px;font-weight:500;}
+.topbar p{font-size:12px;color:#888;margin-top:1px;}
+.topbar-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.sync{display:flex;align-items:center;gap:5px;font-size:12px;color:#3B6D11;}
+.sdot{width:7px;height:7px;border-radius:50%;background:#3B6D11;display:inline-block;flex-shrink:0;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+.btn{font-size:13px;padding:7px 16px;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.btn-o{border:1px solid #ccc;background:#fff;color:#1a1a1a;}
+.btn-s{border:none;background:#1a1a1a;color:#fff;}
+.btn:hover{opacity:.8;}
+.nav{background:#fff;border-bottom:1px solid #e5e5e3;padding:0 24px;display:flex;overflow-x:auto;}
+.ntab{font-size:13px;padding:12px 16px;border:none;background:none;color:#888;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;font-family:inherit;}
+.ntab:hover{color:#444;}
+.ntab.active{color:#1a1a1a;border-bottom-color:#1a1a1a;font-weight:500;}
+.content{max-width:800px;margin:0 auto;padding:24px 20px;}
+.view{display:none;}
+.view.active{display:block;}
+.sg{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+.sc{background:#fff;border:1px solid #e5e5e3;border-radius:10px;padding:14px 16px;}
+.slbl{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;}
+.sval{font-size:26px;font-weight:500;}
+.vc{background:#fff;border:1px solid #e5e5e3;border-radius:10px;padding:14px 16px;margin-bottom:8px;}
+.vn{font-size:15px;font-weight:500;margin-bottom:2px;}
+.vs{font-size:12px;color:#888;margin-bottom:10px;}
+.bw{display:flex;align-items:center;gap:8px;}
+.bt{flex:1;height:5px;background:#f0f0ee;border-radius:4px;overflow:hidden;}
+.bf{height:100%;border-radius:4px;transition:width .3s;}
+.pill{font-size:12px;font-weight:500;padding:2px 9px;border-radius:20px;white-space:nowrap;}
+.g{background:#EAF3DE;color:#27500A;}
+.a{background:#FAEEDA;color:#633806;}
+.r{background:#FCEBEB;color:#791F1F;}
+.p{background:#EEEDFE;color:#3C3489;}
+.gr{background:#f0f0ee;color:#666;}
+.card{background:#fff;border:1px solid #e5e5e3;border-radius:10px;padding:16px 18px;margin-bottom:10px;}
+.chd{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:8px;}
+.chd h3{font-size:14px;font-weight:500;}
+.chd .sc2{font-size:12px;color:#888;}
+.vtr{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+.vts{display:flex;gap:5px;}
+.vt{font-size:12px;padding:5px 13px;border-radius:8px;border:1px solid #e5e5e3;background:#fff;color:#888;cursor:pointer;font-family:inherit;}
+.vt.active{background:#EAF3DE;border-color:#97C459;color:#27500A;font-weight:500;}
+.wa{font-size:12px;font-weight:500;color:#854F0B;}
+.lb{background:#FAEEDA;border:1px solid #EF9F27;border-radius:8px;padding:9px 12px;font-size:12px;color:#633806;margin-bottom:12px;}
+.item{margin-bottom:14px;}
+.il{font-size:13px;margin-bottom:6px;}
+.sbs{display:flex;gap:5px;flex-wrap:wrap;}
+.sb{font-size:12px;padding:4px 11px;border-radius:20px;border:1px solid #e5e5e3;background:#f5f5f3;color:#888;cursor:pointer;font-family:inherit;}
+.sb:hover:not(:disabled){border-color:#999;}
+.sb.s0{background:#FCEBEB;border-color:#F09595;color:#791F1F;}
+.sb.s1{background:#FAEEDA;border-color:#EF9F27;color:#633806;}
+.sb.s2,.sb.s3{background:#EAF3DE;border-color:#97C459;color:#27500A;}
+.sb:disabled{opacity:.5;cursor:default;}
+.ql{display:block;font-size:11px;font-weight:500;color:#888;text-transform:uppercase;letter-spacing:.04em;margin:10px 0 4px;}
+.qt{font-size:12px;color:#666;font-style:italic;padding:7px 10px;background:#f5f5f3;border-radius:8px;margin-bottom:5px;line-height:1.5;}
+.qt.wb{border-left:2px solid #1D9E75;}
+.qt.sa{border-left:2px solid #7F77DD;}
+.qt.cu{border-left:2px solid #D85A30;}
+textarea,select,input[type=text]{width:100%;font-size:13px;padding:8px 10px;border:1px solid #e5e5e3;border-radius:8px;background:#f5f5f3;color:#1a1a1a;font-family:inherit;line-height:1.5;}
+textarea{resize:vertical;min-height:60px;}
+textarea:focus,select:focus,input[type=text]:focus{outline:none;border-color:#999;background:#fff;}
+textarea:disabled,select:disabled,input[type=text]:disabled{opacity:.55;cursor:default;}
+.blk{background:#f5f5f3;border-radius:8px;padding:12px;margin-bottom:8px;}
+.bn{background:none;border:none;border-bottom:1px solid #ddd;width:100%;font-size:13px;font-weight:500;color:#1a1a1a;padding-bottom:5px;margin-bottom:10px;font-family:inherit;}
+.bn:focus{outline:none;border-bottom-color:#999;}
+.bn:disabled{opacity:.55;cursor:default;}
+.bdiv{height:1px;background:#e5e5e3;margin:10px 0;}
+.add{font-size:12px;color:#888;background:none;border:1px dashed #ccc;border-radius:8px;padding:8px 12px;cursor:pointer;width:100%;text-align:center;margin-top:6px;font-family:inherit;}
+.add:hover{background:#f5f5f3;border-color:#aaa;}
+.tog{display:flex;align-items:center;gap:10px;margin-top:10px;padding:8px 10px;background:#fff;border:1px solid #e5e5e3;border-radius:8px;cursor:pointer;}
+.tog input{width:16px;height:16px;cursor:pointer;accent-color:#3B6D11;flex-shrink:0;}
+.tog.done{background:#EAF3DE;border-color:#97C459;}
+.tog.done span{color:#27500A;font-weight:500;}
+.tog span{font-size:13px;color:#1a1a1a;}
+.cis{font-size:12px;color:#888;margin-top:8px;}
+.cis b{color:#27500A;}
+.sf{display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:14px;border-top:1px solid #e5e5e3;}
+.sf p{font-size:12px;color:#888;}
+.nar{display:flex;align-items:center;gap:8px;}
+.nal{display:flex;align-items:center;gap:4px;font-size:12px;color:#888;cursor:pointer;}
+.nal input{accent-color:#7F77DD;width:14px;height:14px;}
+.dg{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:4px;}
+.dc{background:#f5f5f3;border-radius:8px;padding:10px 12px;}
+.dct{font-size:12px;font-weight:500;color:#1a1a1a;margin-bottom:3px;}
+.dcv{font-size:22px;font-weight:500;}
+.dcs{font-size:11px;color:#888;margin-top:2px;}
+.br{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.brn{font-size:13px;width:155px;flex-shrink:0;}
+.blbl{font-size:11px;font-weight:500;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px;}
+.wnav{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid #e5e5e3;border-radius:10px;padding:10px 16px;margin-bottom:14px;}
+.wnav span{font-size:13px;font-weight:500;}
+.wnav button{background:none;border:none;font-size:20px;cursor:pointer;color:#888;padding:0 6px;line-height:1;}
+.stabs{display:flex;gap:5px;margin-bottom:14px;flex-wrap:wrap;}
+.stab{font-size:12px;padding:4px 12px;border-radius:20px;border:1px solid #e5e5e3;background:#fff;color:#888;cursor:pointer;font-family:inherit;}
+.stab.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a;}
+.hi{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f0f0ee;}
+.hi:last-child{border-bottom:none;}
+.hn{font-size:14px;}
+.hd{font-size:12px;color:#888;margin-top:1px;}
+.fp{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px;margin:2px 2px 0 0;}
+.fp.monitor{background:#FAEEDA;color:#633806;}
+.fp.site,.fp.hr{background:#FCEBEB;color:#791F1F;}
+.fpr{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0ee;}
+.fpr:last-child{border-bottom:none;}
+.en{font-size:13px;color:#888;padding:8px 0;}
+@media(max-width:580px){.sg{grid-template-columns:1fr 1fr;}.sg .sc:last-child{grid-column:span 2;}.brn{width:100px;font-size:12px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <h1>Culture manager — site visit tracker</h1>
+    <p id="today-label"></p>
+  </div>
+  <div class="topbar-right">
+    <div class="sync" id="sync"><span class="sdot" id="sdot"></span><span id="stxt">All changes saved</span></div>
+    <button class="btn btn-o" onclick="newWeek()">New week</button>
+    <button class="btn btn-s" onclick="manualSave()">Save</button>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="ntab active" onclick="goTab('overview',this)">Overview</button>
+  <button class="ntab" onclick="goTab('shoreditch',this)">Shoreditch</button>
+  <button class="ntab" onclick="goTab('monument',this)">Monument</button>
+  <button class="ntab" onclick="goTab('manchester',this)">Manchester</button>
+  <button class="ntab" onclick="goTab('dashboard',this)">Dashboard</button>
+  <button class="ntab" onclick="goTab('history',this)">History</button>
+</nav>
+
+<div class="content">
+  <div id="view-overview" class="view active"></div>
+  <div id="view-shoreditch" class="view"></div>
+  <div id="view-monument" class="view"></div>
+  <div id="view-manchester" class="view"></div>
+
+  <div id="view-dashboard" class="view">
+    <div class="wnav">
+      <button onclick="dPrev()">&#8249;</button>
+      <span id="dwl">Week 5 May – 11 May 2026</span>
+      <button onclick="dNext()">&#8250;</button>
+    </div>
+    <div class="stabs">
+      <button class="stab active" onclick="dFilter('all',this)">All pubs</button>
+      <button class="stab" onclick="dFilter('Shoreditch',this)">Shoreditch</button>
+      <button class="stab" onclick="dFilter('Monument',this)">Monument</button>
+      <button class="stab" onclick="dFilter('Manchester',this)">Manchester</button>
+    </div>
+    <div class="sg">
+      <div class="sc"><div class="slbl">Avg score</div><div class="sval" id="d-avg">—</div></div>
+      <div class="sc"><div class="slbl">Total visits</div><div class="sval" id="d-vis">0</div></div>
+      <div class="sc"><div class="slbl">Venues visited</div><div class="sval" id="d-ven">0</div></div>
+    </div>
+    <div class="card"><div class="blbl">Visit scores by venue</div><div id="d-vbars"></div></div>
+    <div class="card"><div class="blbl">Standards breakdown</div><div id="d-sbars"></div></div>
+    <div class="card">
+      <div class="chd"><h3>Bar team 1-1 check-ins</h3><span class="sc2" id="d-cit"></span></div>
+      <div class="dg" id="d-cig"></div>
+      <div style="margin-top:14px" id="d-fps"></div>
+    </div>
+  </div>
+
+  <div id="view-history" class="view">
+    <div class="stabs">
+      <button class="stab active" onclick="hFilter('all',this)">All pubs</button>
+      <button class="stab" onclick="hFilter('Shoreditch',this)">Shoreditch</button>
+      <button class="stab" onclick="hFilter('Monument',this)">Monument</button>
+      <button class="stab" onclick="hFilter('Manchester',this)">Manchester</button>
+    </div>
+    <div class="card"><div id="hist-list"></div></div>
+  </div>
+</div>
+
+<script>
+const SITES=['Shoreditch','Monument','Manchester'];
+const SIDS=['shoreditch','monument','manchester'];
+const VPW=3;
+const ATMOS=[
+  {id:'music_brand',label:'Music on brand and appropriate for time of day'},
+  {id:'music_vol',label:'Volume and tempo correct'},
+  {id:'venue_energy',label:'Venue energy and ambience on standard'},
+  {id:'team_pres',label:'Team presentation and uniform correct'},
+];
+const TRAIN=[
+  {id:'train_del',label:'Training session delivered during service'},
+  {id:'team_resp',label:'Team responded positively to coaching'},
+];
+const STARTER=[
+  {id:'cult_fit',label:'New starter is a cultural fit'},
+  {id:'onboarded',label:'New starter onboarded and set up on Connect Team'},
+  {id:'progress',label:'Starter progressing to standard'},
+];
+const SECS=[
+  {id:'atmosphere',title:'Atmosphere & music',items:ATMOS,na:false},
+  {id:'training',title:'In-service training',items:TRAIN,na:false},
+  {id:'onboarding',title:'New starters',items:STARTER,na:true},
+];
+const SOPTS=[{l:'0 — Fail',c:'s0'},{l:'1 — Below',c:'s1'},{l:'2 — Meets',c:'s2'},{l:'3 — Exceeds',c:'s3'}];
+const WLABELS=['Week 5 May – 11 May 2026','Week 27 Apr – 3 May 2026','Week 20 Apr – 26 Apr 2026','Week 13 Apr – 19 Apr 2026'];
+
+let S,dFilt='all',dOff=0;
+
+function mkSc(items){const o={};items.forEach(it=>{o[it.id]=-1;});return o;}
+function mkVisit(site,idx){
+  const sc={};[...ATMOS,...TRAIN].forEach(it=>{sc[it.id]=-1;});
+  return {site,idx,locked:false,date:'',scores:sc,na:{},
+    atmos_notes:'',train_notes:'',great:'',action:'',
+    starters:[{name:'',scores:mkSc(STARTER)}],
+    checkins:[{name:'',wb:'',sat:'',sat_score:'',cult:'',followup:'',done:false}]};
+}
+function initS(){
+  const s={visits:{},history:[]};
+  SITES.forEach(site=>{s.visits[site]=[];for(let i=0;i<VPW;i++)s.visits[site].push(mkVisit(site,i));});
+  return s;
+}
+function load(){try{const r=localStorage.getItem('cm_svt_v2');S=r?JSON.parse(r):initS();}catch(e){S=initS();}}
+
+let stimer=null;
+function save(){
+  clearTimeout(stimer);
+  setSS('saving');
+  stimer=setTimeout(()=>{
+    try{localStorage.setItem('cm_svt_v2',JSON.stringify(S));setSS('ok');}
+    catch(e){setSS('err');}
+  },700);
+}
+function setSS(s){
+  const dot=document.getElementById('sdot'),txt=document.getElementById('stxt'),wrap=document.getElementById('sync');
+  dot.style.background=s==='saving'?'#BA7517':s==='err'?'#E24B4A':'#3B6D11';
+  dot.style.animation=s==='saving'?'pulse 1s infinite':'none';
+  txt.textContent=s==='saving'?'Saving…':s==='err'?'Save failed':'All changes saved';
+  wrap.style.color=s==='saving'?'#854F0B':s==='err'?'#791F1F':'#3B6D11';
+}
+function manualSave(){
+  localStorage.setItem('cm_svt_v2',JSON.stringify(S));
+  setSS('ok');
+  const b=document.querySelector('.btn-s');b.textContent='Saved ✓';
+  setTimeout(()=>b.textContent='Save',1500);
+}
+
+function pct(v){
+  const na=v.na&&v.na.onboarding;
+  const base=[...ATMOS,...TRAIN].map(it=>v.scores[it.id]).filter(x=>x>=0);
+  const st=na?[]:v.starters.flatMap(s=>STARTER.map(it=>s.scores[it.id]).filter(x=>x>=0));
+  const all=[...base,...st];
+  return all.length?Math.round(all.reduce((a,b)=>a+b,0)/(all.length*3)*100):null;
+}
+function pc(p){return p===null?'a':p>=85?'g':p>=70?'a':'r';}
+function bc(p){return!p?'#E24B4A':p>=85?'#639922':p>=70?'#BA7517':'#E24B4A';}
+function e(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
+function sid(site){return SIDS[SITES.indexOf(site)];}
+
+function goTab(id,el){
+  document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('view-'+id).classList.add('active');
+  if(id==='overview')rOV();
+  if(id==='dashboard')rDash();
+  if(id==='history')rHist('all');
+  const si=SIDS.indexOf(id);
+  if(si>=0)rSite(id,SITES[si],0);
+}
+
+function rOV(){
+  const lk=SITES.flatMap(s=>S.visits[s]).filter(v=>v.locked);
+  const sc=lk.map(pct).filter(p=>p!==null);
+  const avg=sc.length?Math.round(sc.reduce((a,b)=>a+b,0)/sc.length)+'%':'—';
+  const sv=SITES.filter(s=>S.visits[s].some(v=>v.locked)).length;
+  let h=`<div class="sg">
+    <div class="sc"><div class="slbl">Visits this week</div><div class="sval">${lk.length}/${SITES.length*VPW}</div></div>
+    <div class="sc"><div class="slbl">Avg score</div><div class="sval">${avg}</div></div>
+    <div class="sc"><div class="slbl">Sites visited</div><div class="sval">${sv}/${SITES.length}</div></div>
+  </div>`;
+  SITES.forEach(site=>{
+    const done=S.visits[site].filter(v=>v.locked);
+    const ss=done.map(pct).filter(p=>p!==null);
+    const a=ss.length?Math.round(ss.reduce((x,y)=>x+y,0)/ss.length):null;
+    h+=`<div class="vc"><div class="vn">${site}</div><div class="vs">${done.length}/${VPW} visits this week</div>
+      <div class="bw"><div class="bt"><div class="bf" style="width:${a||0}%;background:${bc(a||0)}"></div></div>
+      ${a!==null?`<span class="pill ${pc(a)}">${a}%</span>`:`<span class="pill gr">No visits</span>`}
+      </div></div>`;
+  });
+  document.getElementById('view-overview').innerHTML=h;
+}
+
+function rSite(vid,site,fi){
+  const vs=S.visits[site];
+  const ai=fi!==undefined?fi:(vs.findIndex(v=>!v.locked)>=0?vs.findIndex(v=>!v.locked):vs.length-1);
+  const v=vs[ai],d=v.locked;
+  const ds=vs.filter(x=>x.locked).map(pct).filter(p=>p!==null);
+  const wa=ds.length?Math.round(ds.reduce((a,b)=>a+b,0)/ds.length)+'%':null;
+
+  let h=`<div class="vtr"><div class="vts">
+    ${vs.map((vv,i)=>`<button class="vt${i===ai?' active':''}" onclick="rSite('${vid}','${site}',${i})">${vv.locked?'✓ ':''}Visit ${i+1}${vv.locked?' 🔒':''}</button>`).join('')}
+  </div>${wa?`<span class="wa">${wa} this week</span>`:''}</div>`;
+  if(d)h+=`<div class="lb">🔒 View only — this visit was completed on ${v.date} and can no longer be edited.</div>`;
+
+  // Atmosphere
+  const asc=ATMOS.map(it=>v.scores[it.id]).filter(x=>x>=0);
+  h+=cHd('Atmosphere & music',asc.length?asc.reduce((a,b)=>a+b,0)+'/'+ATMOS.length*3:'—');
+  ATMOS.forEach(it=>{h+=sRow(it,v.scores[it.id],d,`sS('${site}',${ai},'${it.id}',`);});
+  h+=`<label class="ql">Atmosphere notes</label>
+  <textarea ${d?'disabled':''} placeholder="Music adjustments, atmosphere observations…" oninput="upd('${site}',${ai},'atmos_notes',this.value)">${e(v.atmos_notes)}</textarea></div>`;
+
+  // Training
+  const tsc=TRAIN.map(it=>v.scores[it.id]).filter(x=>x>=0);
+  h+=cHd('In-service training',tsc.length?tsc.reduce((a,b)=>a+b,0)+'/'+TRAIN.length*3:'—');
+  TRAIN.forEach(it=>{h+=sRow(it,v.scores[it.id],d,`sS('${site}',${ai},'${it.id}',`);});
+  h+=`<label class="ql">Training notes &amp; observations</label>
+  <textarea ${d?'disabled':''} placeholder="What was trained, who was involved, how the team responded…" oninput="upd('${site}',${ai},'train_notes',this.value)">${e(v.train_notes)}</textarea></div>`;
+
+  // New starters
+  const isNA=!!(v.na&&v.na.onboarding);
+  const stsc=isNA?[]:v.starters.flatMap(st=>STARTER.map(it=>st.scores[it.id]).filter(x=>x>=0));
+  const stMax=isNA?0:v.starters.length*STARTER.length*3;
+  h+=`<div class="card"><div class="chd"><h3>New starters</h3><div class="nar">
+    ${!d?`<label class="nal"><input type="checkbox" ${isNA?'checked':''} onchange="tNA('${site}',${ai},'onboarding',this.checked)"> N/A</label>`:''}
+    ${isNA?`<span class="pill p">Not applicable</span>`:`<span class="sc2">${stsc.length?stsc.reduce((a,b)=>a+b,0)+'/'+stMax:'—'}</span>`}
+  </div></div>`;
+  if(isNA){
+    h+=`<p class="en">No new starters on site this visit.</p>`;
+  } else {
+    v.starters.forEach((st,si)=>{
+      h+=`<div class="blk"><input class="bn" placeholder="Full name…" value="${e(st.name)}" ${d?'disabled':''} oninput="uSt('${site}',${ai},${si},'name',this.value)"><div class="bdiv">`;
+      STARTER.forEach(it=>{
+        h+=`<div class="item"><div class="il">${it.label}</div><div class="sbs">`;
+        SOPTS.forEach((o,oi)=>{h+=`<button class="sb${st.scores[it.id]===oi?' '+o.c:''}" ${d?'disabled':''} onclick="sSt('${site}',${ai},${si},'${it.id}',${oi})">${o.l}</button>`;});
+        h+=`</div></div>`;
+      });
+      h+=`</div>`;
+    });
+    if(!d)h+=`<button class="add" onclick="addSt('${site}',${ai})">+ Add new starter</button>`;
+  }
+  h+=`</div>`;
+
+  // Check-ins
+  const cdn=v.checkins.filter(c=>c.done).length;
+  h+=`<div class="card"><div class="chd"><h3>Bar team 1-1 check-ins</h3><span class="sc2">${cdn}/${v.checkins.length} complete</span></div>`;
+  v.checkins.forEach((ci,ii)=>{
+    h+=`<div class="blk">
+    <input class="bn" placeholder="Team member name…" value="${e(ci.name)}" ${d?'disabled':''} oninput="uCI('${site}',${ai},${ii},'name',this.value)">
+    <label class="ql">Q1 — Wellbeing</label>
+    <div class="qt wb">"How have you been feeling at work lately — is there anything on your mind or anything we can do to support you better?"</div>
+    <textarea ${d?'disabled':''} placeholder="Notes…" oninput="uCI('${site}',${ai},${ii},'wb',this.value)">${e(ci.wb)}</textarea>
+    <label class="ql">Q2 — Satisfaction</label>
+    <div class="qt sa">"On a scale of 1–10, how happy are you in your role right now — and what would make it a higher score?"</div>
+    <select ${d?'disabled':''} onchange="uCI('${site}',${ai},${ii},'sat_score',this.value)" style="margin-bottom:6px">
+      <option value="">Score…</option>
+      ${[10,9,8,7,6,5,4,3,2,1].map(n=>`<option${ci.sat_score==n?' selected':''}>${n}</option>`).join('')}
+    </select>
+    <textarea ${d?'disabled':''} placeholder="What would make it higher? Notes…" oninput="uCI('${site}',${ai},${ii},'sat',this.value)">${e(ci.sat)}</textarea>
+    <label class="ql">Q3 — Team culture</label>
+    <div class="qt cu">"How would you describe the team culture here at the moment — and is there anything about the way we work together you'd want to change?"</div>
+    <textarea ${d?'disabled':''} placeholder="Notes…" oninput="uCI('${site}',${ai},${ii},'cult',this.value)">${e(ci.cult)}</textarea>
+    <label class="ql">Follow-up needed?</label>
+    <select ${d?'disabled':''} onchange="uCI('${site}',${ai},${ii},'followup',this.value)" style="margin-bottom:8px">
+      <option value="">Select…</option>
+      <option value="none"${ci.followup==='none'?' selected':''}>No — all good</option>
+      <option value="monitor"${ci.followup==='monitor'?' selected':''}>Monitor — check next visit</option>
+      <option value="site"${ci.followup==='site'?' selected':''}>Yes — escalate to site manager</option>
+      <option value="hr"${ci.followup==='hr'?' selected':''}>Yes — escalate to HR</option>
+    </select>
+    <label class="tog${ci.done?' done':''}" style="cursor:${d?'default':'pointer'}">
+      <input type="checkbox" ${ci.done?'checked':''} ${d?'disabled':''} onchange="tCI('${site}',${ai},${ii},this.checked)">
+      <span>${ci.done?'Check-in complete':'Mark check-in as complete'}</span>
+    </label></div>`;
+  });
+  if(!d)h+=`<button class="add" onclick="addCI('${site}',${ai})">+ Add team member</button>`;
+  if(cdn>0)h+=`<p class="cis"><b>${cdn}</b> of ${v.checkins.length} check-in${v.checkins.length!==1?'s':''} completed.</p>`;
+  h+=`</div>`;
+
+  // Summary
+  h+=`<div class="card"><div class="chd"><h3>Visit summary</h3></div>
+  <label class="ql">One thing that was great</label>
+  <textarea ${d?'disabled':''} placeholder="Specific, genuine, shareable with the team…" oninput="upd('${site}',${ai},'great',this.value)">${e(v.great)}</textarea>
+  <label class="ql" style="margin-top:10px">One action before next visit</label>
+  <textarea ${d?'disabled':''} placeholder="Clear, ownable, time-bound…" oninput="upd('${site}',${ai},'action',this.value)">${e(v.action)}</textarea>
+  </div>`;
+
+  if(!d)h+=`<div class="sf"><button class="btn btn-s" onclick="cVisit('${site}',${ai})">Mark visit complete</button><p>Complete on-site before leaving</p></div>`;
+  document.getElementById('view-'+vid).innerHTML=h;
+}
+
+function cHd(t,s){return`<div class="card"><div class="chd"><h3>${t}</h3><span class="sc2">${s}</span></div>`;}
+function sRow(it,sel,d,fn){
+  let h=`<div class="item"><div class="il">${it.label}</div><div class="sbs">`;
+  SOPTS.forEach((o,oi)=>{h+=`<button class="sb${sel===oi?' '+o.c:''}" ${d?'disabled':''} onclick="${fn}${oi})">${o.l}</button>`;});
+  return h+`</div></div>`;
+}
+
+function sS(site,vi,id,val){S.visits[site][vi].scores[id]=val;save();rSite(sid(site),site,vi);}
+function sSt(site,vi,si,id,val){S.visits[site][vi].starters[si].scores[id]=val;save();rSite(sid(site),site,vi);}
+function upd(site,vi,f,val){S.visits[site][vi][f]=val;save();}
+function uSt(site,vi,si,f,val){S.visits[site][vi].starters[si][f]=val;save();}
+function uCI(site,vi,ci,f,val){S.visits[site][vi].checkins[ci][f]=val;save();}
+function addSt(site,vi){S.visits[site][vi].starters.push({name:'',scores:mkSc(STARTER)});save();rSite(sid(site),site,vi);}
+function addCI(site,vi){S.visits[site][vi].checkins.push({name:'',wb:'',sat:'',sat_score:'',cult:'',followup:'',done:false});save();rSite(sid(site),site,vi);}
+function tCI(site,vi,ci,val){S.visits[site][vi].checkins[ci].done=val;save();rSite(sid(site),site,vi);}
+function tNA(site,vi,sec,val){if(!S.visits[site][vi].na)S.visits[site][vi].na={};S.visits[site][vi].na[sec]=val;save();rSite(sid(site),site,vi);}
+function cVisit(site,vi){
+  const v=S.visits[site][vi];
+  if(!v.checkins.some(c=>c.done)){alert('Please mark at least one bar team check-in as complete before closing this visit.');return;}
+  v.locked=true;
+  v.date=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  S.history.unshift({site,score:pct(v),date:new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'}),visit:vi+1});
+  save();rSite(sid(site),site,vi);
+}
+function newWeek(){
+  if(!confirm('Start a new week? All current visits will be archived to history.'))return;
+  SITES.forEach(site=>{
+    S.visits[site].filter(v=>v.locked).forEach(v=>S.history.unshift({site:v.site,score:pct(v),date:v.date,visit:v.idx+1}));
+    S.visits[site]=Array.from({length:VPW},(_,i)=>mkVisit(site,i));
+  });
+  save();rOV();
+}
+
+function dFilter(f,el){document.querySelectorAll('.stab').forEach(t=>t.classList.remove('active'));el.classList.add('active');dFilt=f;rDash();}
+function dPrev(){dOff=Math.min(dOff+1,WLABELS.length-1);document.getElementById('dwl').textContent=WLABELS[dOff];}
+function dNext(){dOff=Math.max(dOff-1,0);document.getElementById('dwl').textContent=WLABELS[dOff];}
+
+function rDash(){
+  document.getElementById('dwl').textContent=WLABELS[dOff];
+  const fs=dFilt==='all'?SITES:SITES.filter(s=>s===dFilt);
+  const lk=fs.flatMap(s=>S.visits[s].filter(v=>v.locked));
+  const sc=lk.map(pct).filter(p=>p!==null);
+  const avg=sc.length?Math.round(sc.reduce((a,b)=>a+b,0)/sc.length)+'%':'—';
+  document.getElementById('d-avg').textContent=avg;
+  document.getElementById('d-vis').textContent=lk.length;
+  document.getElementById('d-ven').textContent=fs.filter(s=>S.visits[s].some(v=>v.locked)).length;
+
+  document.getElementById('d-vbars').innerHTML=fs.map(site=>{
+    const ss=S.visits[site].filter(v=>v.locked).map(pct).filter(p=>p!==null);
+    const a=ss.length?Math.round(ss.reduce((x,y)=>x+y,0)/ss.length):null;
+    return `<div class="br"><div class="brn">${site}</div>
+    <div class="bt" style="flex:1"><div class="bf" style="width:${a||0}%;background:${bc(a||0)}"></div></div>
+    ${a!==null?`<span class="pill ${pc(a)}" style="min-width:40px;text-align:right">${a}%</span>`:`<span class="pill gr">—</span>`}
+    </div>`;
+  }).join('');
+
+  document.getElementById('d-sbars').innerHTML=SECS.map(sec=>{
+    let vals=[];
+    if(sec.id==='onboarding'){
+      vals=fs.flatMap(s=>S.visits[s].filter(v=>v.locked&&!(v.na&&v.na.onboarding)).flatMap(v=>v.starters.flatMap(st=>STARTER.map(it=>st.scores[it.id])))).filter(x=>x>=0);
+    } else {
+      vals=fs.flatMap(s=>S.visits[s].filter(v=>v.locked).flatMap(v=>sec.items.map(it=>v.scores[it.id]))).filter(x=>x>=0);
+    }
+    const a=vals.length?Math.round(vals.reduce((x,y)=>x+y,0)/(vals.length*3)*100):0;
+    return `<div class="br"><div class="brn">${sec.title}</div>
+    <div class="bt" style="flex:1"><div class="bf" style="width:${a}%;background:${bc(a)}"></div></div>
+    <span class="pill ${pc(a)}" style="min-width:40px;text-align:right">${vals.length?a+'%':'—'}</span>
+    </div>`;
+  }).join('');
+
+  const av=fs.flatMap(s=>S.visits[s]);
+  const ac=av.flatMap(v=>v.checkins);
+  const dc=ac.filter(c=>c.done).length;
+  const req=fs.length*VPW;
+  document.getElementById('d-cit').textContent=`${dc}/${req} completed`;
+
+  document.getElementById('d-cig').innerHTML=fs.map(site=>{
+    const sci=S.visits[site].flatMap(v=>v.checkins);
+    const sdn=sci.filter(c=>c.done).length;
+    const sats=sci.filter(c=>c.done&&c.sat_score).map(c=>parseInt(c.sat_score)).filter(n=>!isNaN(n));
+    const sa=sats.length?Math.round(sats.reduce((a,b)=>a+b,0)/sats.length):null;
+    return `<div class="dc"><div class="dct">${site}</div><div class="dcv">${sdn}/${VPW}</div>
+    <div class="dcs">check-ins complete</div>
+    ${sa!==null?`<div class="dcs" style="margin-top:3px">Avg satisfaction: <b>${sa}/10</b></div>`:''}
+    </div>`;
+  }).join('');
+
+  const lci=fs.flatMap(s=>S.visits[s].filter(v=>v.locked).flatMap(v=>v.checkins));
+  const fps=lci.filter(c=>c.done&&c.followup&&c.followup!=='none');
+  document.getElementById('d-fps').innerHTML=fps.length
+    ?`<div class="blbl" style="margin-bottom:8px">Follow-ups flagged this week</div>`+fps.map(c=>{
+      const l=c.followup==='monitor'?'Monitor':c.followup==='site'?'Escalate to site manager':'Escalate to HR';
+      return `<div class="fpr"><span class="fp ${c.followup}">${l}</span><span>${c.name||'Unnamed'}</span></div>`;
+    }).join('')
+    :`<p class="en">No follow-ups flagged this week.</p>`;
+}
+
+function hFilter(f,el){document.querySelectorAll('.stab').forEach(t=>t.classList.remove('active'));el.classList.add('active');rHist(f);}
+function rHist(f){
+  const items=f==='all'?S.history:S.history.filter(h=>h.site===f);
+  const el=document.getElementById('hist-list');
+  if(!items.length){el.innerHTML='<p class="en">No visits recorded yet.</p>';return;}
+  el.innerHTML=items.map(h=>`<div class="hi">
+    <div><div class="hn">${h.site} — Visit ${h.visit}</div><div class="hd">${h.date}</div></div>
+    <span class="pill ${pc(h.score)}">${h.score!==null?h.score+'%':'—'}</span>
+  </div>`).join('');
+}
+
+document.getElementById('today-label').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+load();
+rOV();
+SITES.forEach((site,i)=>rSite(SIDS[i],site,0));
+</script>
+</body>
+</html>
