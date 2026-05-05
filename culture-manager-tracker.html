@@ -50,16 +50,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .vts{display:flex;gap:5px;flex-wrap:wrap;}
 .vt{font-size:12px;padding:5px 13px;border-radius:8px;border:1px solid #e5e5e3;background:#fff;color:#888;cursor:pointer;font-family:inherit;}
 .vt.active{background:#EAF3DE;border-color:#97C459;color:#27500A;font-weight:500;}
-.vt.day-locked{background:#f5f5f3;border-color:#e5e5e3;color:#bbb;cursor:not-allowed;}
 .vt.completed{background:#EAF3DE;border-color:#97C459;color:#27500A;}
+.vt.locked{background:#f5f5f3;border-color:#e5e5e3;color:#ccc;cursor:not-allowed;}
 .wa{font-size:12px;font-weight:500;color:#854F0B;}
-.day-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;margin-bottom:12px;}
-.day-badge.today{background:#EAF3DE;color:#27500A;}
-.day-badge.future{background:#f0f0ee;color:#888;}
-.day-badge.past{background:#FAEEDA;color:#633806;}
-.lb{border:1px solid #e5e5e3;border-radius:8px;padding:9px 12px;font-size:12px;color:#666;margin-bottom:12px;background:#f9f9f7;}
-.lb.completed{background:#EAF3DE;border-color:#97C459;color:#27500A;}
-.lb.day-locked{background:#f5f5f3;border-color:#e5e5e3;color:#888;}
+.banner{border-radius:8px;padding:9px 12px;font-size:12px;margin-bottom:12px;}
+.banner.done{background:#EAF3DE;border:1px solid #97C459;color:#27500A;}
+.banner.locked-day{background:#f5f5f3;border:1px solid #e5e5e3;color:#888;}
+.banner.locked-seq{background:#FAEEDA;border:1px solid #EF9F27;color:#633806;}
+.placeholder{text-align:center;padding:40px 20px;color:#aaa;font-size:13px;}
 .item{margin-bottom:14px;}
 .il{font-size:13px;margin-bottom:6px;}
 .sbs{display:flex;gap:5px;flex-wrap:wrap;}
@@ -192,36 +190,37 @@ textarea:disabled,select:disabled,input[type=text]:disabled{opacity:.55;cursor:d
 </div>
 
 <script>
-// ── Supabase ────────────────────────────────────────────────────────────
 const SB_URL = 'https://vqfvklqdexakwjjyvwod.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxZnZrbHFkZXhha3dqanl2d29kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAwNjQsImV4cCI6MjA5MTMxNjA2NH0.JETvur4VrrIWPCwK3MbQ4zzmOiX1Tc7F_xFWC2OR93M';
 const TABLE  = 'culture_manager_tracker';
 const ROW_ID = 'main';
 
-// ── Day-based visit locking ─────────────────────────────────────────────
-// Visit 1 = Thursday (day 4), Visit 2 = Friday (day 5), Visit 3 = Saturday (day 6)
-// JS getDay(): 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
-const VISIT_DAYS = {0: 4, 1: 5, 2: 6}; // visitIdx -> JS day number
+// Visit 0 = Thursday, Visit 1 = Friday, Visit 2 = Saturday
+// JS getDay(): 4=Thu, 5=Fri, 6=Sat
+const VISIT_DAYS = {0:4, 1:5, 2:6};
 const DAY_NAMES  = {4:'Thursday', 5:'Friday', 6:'Saturday'};
 
-function todayDayNum(){ return new Date().getDay(); }
+function todayDay(){ return new Date().getDay(); }
 
-// Returns for a visitIdx: 'active' | 'day-locked' | 'completed'
-function visitStatus(visit, visitIdx){
-  if(visit.locked) return 'completed';
-  const today = todayDayNum();
-  const visitDay = VISIT_DAYS[visitIdx];
-  if(today < visitDay) return 'day-locked';  // future day — not yet unlocked
-  if(today > visitDay) return 'day-locked';  // past day — auto-locked
-  return 'active'; // today is this visit's day
+/*
+  Visit access rules (all must pass):
+  - Visit 0: today >= Thursday (day 4)
+  - Visit 1: today >= Friday (day 5) AND Visit 0 is marked complete
+  - Visit 2: today >= Saturday (day 6) AND Visit 1 is marked complete
+*/
+function visitAccess(visits, idx){
+  const today = todayDay();
+  const v = visits[idx];
+  if(v.locked) return 'completed';
+  // Day hasn't arrived yet
+  if(today < VISIT_DAYS[idx]) return 'locked-day';
+  // Day has passed without completion — lock it
+  if(today > VISIT_DAYS[idx]) return 'locked-day';
+  // It's the right day — check previous visit is complete
+  if(idx > 0 && !visits[idx-1].locked) return 'locked-seq';
+  return 'active';
 }
 
-// Is the visit editable right now?
-function isEditable(visit, visitIdx){
-  return visitStatus(visit, visitIdx) === 'active';
-}
-
-// ── Data model ─────────────────────────────────────────────────────────
 const SITES=['Shoreditch','Monument','Manchester'];
 const SIDS=['shoreditch','monument','manchester'];
 const VPW=3;
@@ -250,7 +249,6 @@ const WLABELS=['Week 5 May – 11 May 2026','Week 27 Apr – 3 May 2026','Week 2
 
 let S, dFilt='all', dOff=0, saveTimer=null, isLoaded=false;
 
-// ── Supabase helpers ────────────────────────────────────────────────────
 function sbH(){ return {'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}; }
 
 async function sbLoad(){
@@ -260,7 +258,10 @@ async function sbLoad(){
     const rows=await r.json();
     if(rows.length && rows[0].data && Object.keys(rows[0].data).length){
       S=rows[0].data;
-      SITES.forEach(site=>{ if(!S.visits) S.visits={}; if(!S.visits[site]){S.visits[site]=[];for(let i=0;i<VPW;i++)S.visits[site].push(mkVisit(site,i));} });
+      SITES.forEach(site=>{
+        if(!S.visits) S.visits={};
+        if(!S.visits[site]){S.visits[site]=[];for(let i=0;i<VPW;i++)S.visits[site].push(mkVisit(site,i));}
+      });
       if(!S.history) S.history=[];
     } else {
       S=initS();
@@ -312,7 +313,6 @@ function setSS(s){
   else { dot.style.background='#3B6D11'; dot.style.animation='none'; txt.textContent='Live sync on'; txt.style.color='#3B6D11'; }
 }
 
-// ── State builders ──────────────────────────────────────────────────────
 function mkSc(items){const o={};items.forEach(it=>{o[it.id]=-1;});return o;}
 function mkVisit(site,idx){
   const sc={};[...ATMOS,...TRAIN].forEach(it=>{sc[it.id]=-1;});
@@ -327,7 +327,6 @@ function initS(){
   return s;
 }
 
-// ── Scoring helpers ─────────────────────────────────────────────────────
 function pct(v){
   const na=v.na&&v.na.onboarding;
   const base=[...ATMOS,...TRAIN].map(it=>v.scores[it.id]).filter(x=>x>=0);
@@ -340,7 +339,18 @@ function bc(p){return!p?'#E24B4A':p>=85?'#639922':p>=70?'#BA7517':'#E24B4A';}
 function e(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
 function sid(site){return SIDS[SITES.indexOf(site)];}
 
-// ── Tab navigation ──────────────────────────────────────────────────────
+// Return the best default visit index to show for a site
+function defaultIdx(site){
+  const visits=S.visits[site];
+  const today=todayDay();
+  // Find today's visit
+  for(let i=0;i<VPW;i++){ if(VISIT_DAYS[i]===today) return i; }
+  // Before Thursday — show visit 0
+  if(today < 4) return 0;
+  // After Saturday — show last
+  return VPW-1;
+}
+
 function goTab(id,el){
   document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
@@ -351,21 +361,9 @@ function goTab(id,el){
   if(id==='dashboard') rDash();
   if(id==='history') rHist('all');
   const si=SIDS.indexOf(id);
-  if(si>=0) rSite(id,SITES[si], activeVisitIdx(SITES[si]));
+  if(si>=0) rSite(id,SITES[si],defaultIdx(SITES[si]));
 }
 
-// Return the visitIdx that should be shown by default for a site
-function activeVisitIdx(site){
-  const today=todayDayNum();
-  // Find the visit whose day matches today
-  for(let i=0;i<VPW;i++){ if(VISIT_DAYS[i]===today) return i; }
-  // If today isn't a visit day (e.g. Tue/Wed admin), show highest unlocked or last
-  // On days before Thursday show visit 0, after Saturday show visit 2
-  if(today < 4) return 0;
-  return VPW-1;
-}
-
-// ── Overview ────────────────────────────────────────────────────────────
 function rOV(){
   const lk=SITES.flatMap(s=>S.visits[s]).filter(v=>v.locked);
   const sc=lk.map(pct).filter(p=>p!==null);
@@ -388,51 +386,54 @@ function rOV(){
   document.getElementById('view-overview').innerHTML=h;
 }
 
-// ── Site view ───────────────────────────────────────────────────────────
-function rSite(vid, site, fi){
-  const vs=S.visits[site];
-  // Default to today's visit index
-  const ai = fi !== undefined ? fi : activeVisitIdx(site);
-  const v=vs[ai];
-  const status=visitStatus(v, ai);
-  const editable=isEditable(v, ai);
+function rSite(vid,site,fi){
+  const visits=S.visits[site];
+  const ai=fi!==undefined?fi:defaultIdx(site);
+  const v=visits[ai];
+  const access=visitAccess(visits,ai);
+  const editable=access==='active';
+  const d=!editable;
 
-  const ds=vs.filter(x=>x.locked).map(pct).filter(p=>p!==null);
+  const ds=visits.filter(x=>x.locked).map(pct).filter(p=>p!==null);
   const wa=ds.length?Math.round(ds.reduce((a,b)=>a+b,0)/ds.length)+'%':null;
 
-  // Visit tab row
+  // Visit tabs
   let h=`<div class="vtr"><div class="vts">`;
-  vs.forEach((vv,i)=>{
-    const st=visitStatus(vv,i);
+  visits.forEach((vv,i)=>{
+    const acc=visitAccess(visits,i);
     const dayName=DAY_NAMES[VISIT_DAYS[i]];
     let cls='vt';
-    let label=`Visit ${i+1} <span style="font-weight:400;opacity:.7">${dayName}</span>`;
     if(i===ai) cls+=' active';
-    if(st==='completed') cls+=' completed', label=`✓ Visit ${i+1} <span style="font-weight:400;opacity:.7">${dayName}</span>`;
-    if(st==='day-locked' && i!==ai) cls=' vt day-locked';
-    const clickable = st !== 'day-locked' || vv.locked;
-    h+=`<button class="${cls}" ${clickable?`onclick="rSite('${vid}','${site}',${i})"`:'disabled'} style="cursor:${clickable?'pointer':'not-allowed'}">${label}</button>`;
+    else if(acc==='completed') cls+=' completed';
+    else if(acc==='locked-day'||acc==='locked-seq') cls+=' locked';
+    const canClick = acc==='completed' || acc==='active';
+    const label=`${acc==='completed'?'✓ ':''}Visit ${i+1} <span style="font-weight:400;opacity:.7">${dayName}</span>${acc==='locked-day'||acc==='locked-seq'?' 🔒':''}`;
+    h+=`<button class="${cls}" ${canClick?`onclick="rSite('${vid}','${site}',${i})"`:''} ${canClick?'':'disabled'}>${label}</button>`;
   });
   h+=`</div>${wa?`<span class="wa">${wa} this week</span>`:''}</div>`;
 
   // Status banner
-  const today=todayDayNum();
-  const visitDay=VISIT_DAYS[ai];
-  if(status==='completed'){
-    h+=`<div class="lb completed">✓ Visit completed on ${v.date}. View only.</div>`;
-  } else if(status==='day-locked' && today < visitDay){
-    h+=`<div class="lb day-locked">🔒 Visit ${ai+1} unlocks on ${DAY_NAMES[visitDay]}.</div>`;
-  } else if(status==='day-locked' && today > visitDay){
-    h+=`<div class="lb day-locked">🔒 ${DAY_NAMES[visitDay]}'s visit has passed. This visit is now locked.</div>`;
+  if(access==='completed'){
+    h+=`<div class="banner done">✓ Visit completed on ${v.date}. View only.</div>`;
+  } else if(access==='locked-day'){
+    const today=todayDay();
+    const vday=VISIT_DAYS[ai];
+    if(today<vday) h+=`<div class="banner locked-day">🔒 Visit ${ai+1} unlocks on ${DAY_NAMES[vday]}.</div>`;
+    else h+=`<div class="banner locked-day">🔒 ${DAY_NAMES[vday]}'s visit window has passed.</div>`;
+  } else if(access==='locked-seq'){
+    h+=`<div class="banner locked-seq">🔒 Complete Visit ${ai} first to unlock this visit.</div>`;
   }
 
-  const d=!editable; // disabled = not editable
-
-  if(status==='day-locked'){
-    // Show a minimal placeholder — no form
-    h+=`<div class="card" style="text-align:center;padding:40px 20px;color:#aaa;font-size:13px;">
-      ${today < visitDay ? `This visit will be available on <strong>${DAY_NAMES[visitDay]}</strong>.` : `This visit day has passed.`}
-    </div>`;
+  // If locked show placeholder only
+  if(access==='locked-day'||access==='locked-seq'){
+    let msg='';
+    if(access==='locked-day'){
+      const today=todayDay(), vday=VISIT_DAYS[ai];
+      msg=today<vday?`Available on <strong>${DAY_NAMES[vday]}</strong>.`:`This visit day has passed.`;
+    } else {
+      msg=`Complete <strong>Visit ${ai}</strong> to unlock this visit.`;
+    }
+    h+=`<div class="card"><div class="placeholder">${msg}</div></div>`;
     document.getElementById('view-'+vid).innerHTML=h;
     return;
   }
@@ -530,7 +531,6 @@ function sRow(it,sel,d,fn){
   return h+`</div></div>`;
 }
 
-// ── Mutations ───────────────────────────────────────────────────────────
 function sS(site,vi,id,val){S.visits[site][vi].scores[id]=val;save();rSite(sid(site),site,vi);}
 function sSt(site,vi,si,id,val){S.visits[site][vi].starters[si].scores[id]=val;save();rSite(sid(site),site,vi);}
 function upd(site,vi,f,val){S.visits[site][vi][f]=val;save();}
@@ -559,7 +559,6 @@ function newWeek(){
   save();rOV();
 }
 
-// ── Dashboard ───────────────────────────────────────────────────────────
 function dFilter(f,el){document.querySelectorAll('.stab').forEach(t=>t.classList.remove('active'));el.classList.add('active');dFilt=f;rDash();}
 function dPrev(){dOff=Math.min(dOff+1,WLABELS.length-1);document.getElementById('dwl').textContent=WLABELS[dOff];}
 function dNext(){dOff=Math.max(dOff-1,0);document.getElementById('dwl').textContent=WLABELS[dOff];}
@@ -617,7 +616,6 @@ function rDash(){
     :`<p class="en">No follow-ups flagged this week.</p>`;
 }
 
-// ── History ─────────────────────────────────────────────────────────────
 function hFilter(f,el){document.querySelectorAll('.stab').forEach(t=>t.classList.remove('active'));el.classList.add('active');rHist(f);}
 function rHist(f){
   const items=f==='all'?S.history:S.history.filter(h=>h.site===f);
@@ -629,13 +627,12 @@ function rHist(f){
   </div>`).join('');
 }
 
-// ── Boot ────────────────────────────────────────────────────────────────
 document.getElementById('today-label').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 document.getElementById('dwl').textContent=WLABELS[0];
 
 sbLoad().then(()=>{
   rOV();
-  SITES.forEach((site,i)=>rSite(SIDS[i],site,activeVisitIdx(site)));
+  SITES.forEach((site,i)=>rSite(SIDS[i],site,defaultIdx(site)));
 });
 </script>
 </body>
