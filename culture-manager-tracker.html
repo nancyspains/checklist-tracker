@@ -11,8 +11,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .topbar h1{font-size:17px;font-weight:500;}
 .topbar p{font-size:12px;color:#888;margin-top:1px;}
 .topbar-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
-.sync{display:flex;align-items:center;gap:5px;font-size:12px;color:#3B6D11;}
+.sync{display:flex;align-items:center;gap:5px;font-size:12px;}
 .sdot{width:7px;height:7px;border-radius:50%;background:#3B6D11;display:inline-block;flex-shrink:0;}
+#stxt{color:#3B6D11;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
 .btn{font-size:13px;padding:7px 16px;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap;}
 .btn-o{border:1px solid #ccc;background:#fff;color:#1a1a1a;}
@@ -44,7 +45,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .card{background:#fff;border:1px solid #e5e5e3;border-radius:10px;padding:16px 18px;margin-bottom:10px;}
 .chd{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:8px;}
 .chd h3{font-size:14px;font-weight:500;}
-.chd .sc2{font-size:12px;color:#888;}
+.sc2{font-size:12px;color:#888;}
 .vtr{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
 .vts{display:flex;gap:5px;}
 .vt{font-size:12px;padding:5px 13px;border-radius:8px;border:1px solid #e5e5e3;background:#fff;color:#888;cursor:pointer;font-family:inherit;}
@@ -75,8 +76,8 @@ textarea:disabled,select:disabled,input[type=text]:disabled{opacity:.55;cursor:d
 .bn:disabled{opacity:.55;cursor:default;}
 .bdiv{height:1px;background:#e5e5e3;margin:10px 0;}
 .add{font-size:12px;color:#888;background:none;border:1px dashed #ccc;border-radius:8px;padding:8px 12px;cursor:pointer;width:100%;text-align:center;margin-top:6px;font-family:inherit;}
-.add:hover{background:#f5f5f3;border-color:#aaa;}
-.tog{display:flex;align-items:center;gap:10px;margin-top:10px;padding:8px 10px;background:#fff;border:1px solid #e5e5e3;border-radius:8px;cursor:pointer;}
+.add:hover{background:#f0f0ee;border-color:#aaa;}
+.tog{display:flex;align-items:center;gap:10px;margin-top:10px;padding:8px 10px;background:#fff;border:1px solid #e5e5e3;border-radius:8px;}
 .tog input{width:16px;height:16px;cursor:pointer;accent-color:#3B6D11;flex-shrink:0;}
 .tog.done{background:#EAF3DE;border-color:#97C459;}
 .tog.done span{color:#27500A;font-weight:500;}
@@ -106,12 +107,14 @@ textarea:disabled,select:disabled,input[type=text]:disabled{opacity:.55;cursor:d
 .hi:last-child{border-bottom:none;}
 .hn{font-size:14px;}
 .hd{font-size:12px;color:#888;margin-top:1px;}
-.fp{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px;margin:2px 2px 0 0;}
+.fp{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px;}
 .fp.monitor{background:#FAEEDA;color:#633806;}
 .fp.site,.fp.hr{background:#FCEBEB;color:#791F1F;}
 .fpr{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0ee;}
 .fpr:last-child{border-bottom:none;}
 .en{font-size:13px;color:#888;padding:8px 0;}
+.loading{text-align:center;padding:60px 20px;color:#888;font-size:14px;}
+.error-banner{background:#FCEBEB;border:1px solid #F09595;border-radius:8px;padding:10px 14px;font-size:13px;color:#791F1F;margin-bottom:14px;}
 @media(max-width:580px){.sg{grid-template-columns:1fr 1fr;}.sg .sc:last-child{grid-column:span 2;}.brn{width:100px;font-size:12px;}}
 </style>
 </head>
@@ -123,9 +126,9 @@ textarea:disabled,select:disabled,input[type=text]:disabled{opacity:.55;cursor:d
     <p id="today-label"></p>
   </div>
   <div class="topbar-right">
-    <div class="sync" id="sync"><span class="sdot" id="sdot"></span><span id="stxt">All changes saved</span></div>
+    <div class="sync"><span class="sdot" id="sdot"></span><span id="stxt">Connecting…</span></div>
     <button class="btn btn-o" onclick="newWeek()">New week</button>
-    <button class="btn btn-s" onclick="manualSave()">Save</button>
+    <button class="btn btn-s" id="save-btn" onclick="manualSave()">Save</button>
   </div>
 </div>
 
@@ -139,7 +142,7 @@ textarea:disabled,select:disabled,input[type=text]:disabled{opacity:.55;cursor:d
 </nav>
 
 <div class="content">
-  <div id="view-overview" class="view active"></div>
+  <div id="view-overview" class="view active"><div class="loading">Loading…</div></div>
   <div id="view-shoreditch" class="view"></div>
   <div id="view-monument" class="view"></div>
   <div id="view-manchester" class="view"></div>
@@ -147,7 +150,7 @@ textarea:disabled,select:disabled,input[type=text]:disabled{opacity:.55;cursor:d
   <div id="view-dashboard" class="view">
     <div class="wnav">
       <button onclick="dPrev()">&#8249;</button>
-      <span id="dwl">Week 5 May – 11 May 2026</span>
+      <span id="dwl"></span>
       <button onclick="dNext()">&#8250;</button>
     </div>
     <div class="stabs">
@@ -182,6 +185,13 @@ textarea:disabled,select:disabled,input[type=text]:disabled{opacity:.55;cursor:d
 </div>
 
 <script>
+// ── Supabase config ────────────────────────────────────────────────────
+const SB_URL  = 'https://vqfvklqdexakwjjyvwod.supabase.co';
+const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxZnZrbHFkZXhha3dqanl2d29kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAwNjQsImV4cCI6MjA5MTMxNjA2NH0.JETvur4VrrIWPCwK3MbQ4zzmOiX1Tc7F_xFWC2OR93M';
+const TABLE   = 'culture_manager_tracker';
+const ROW_ID  = 'main';
+
+// ── Data model ─────────────────────────────────────────────────────────
 const SITES=['Shoreditch','Monument','Manchester'];
 const SIDS=['shoreditch','monument','manchester'];
 const VPW=3;
@@ -201,15 +211,107 @@ const STARTER=[
   {id:'progress',label:'Starter progressing to standard'},
 ];
 const SECS=[
-  {id:'atmosphere',title:'Atmosphere & music',items:ATMOS,na:false},
-  {id:'training',title:'In-service training',items:TRAIN,na:false},
+  {id:'atmosphere',title:'Atmosphere & music',items:ATMOS},
+  {id:'training',title:'In-service training',items:TRAIN},
   {id:'onboarding',title:'New starters',items:STARTER,na:true},
 ];
 const SOPTS=[{l:'0 — Fail',c:'s0'},{l:'1 — Below',c:'s1'},{l:'2 — Meets',c:'s2'},{l:'3 — Exceeds',c:'s3'}];
 const WLABELS=['Week 5 May – 11 May 2026','Week 27 Apr – 3 May 2026','Week 20 Apr – 26 Apr 2026','Week 13 Apr – 19 Apr 2026'];
 
-let S,dFilt='all',dOff=0;
+let S, dFilt='all', dOff=0, saveTimer=null, isLoaded=false;
 
+// ── Supabase helpers ───────────────────────────────────────────────────
+function sbHeaders(){
+  return {'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
+}
+
+async function sbLoad(){
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/${TABLE}?id=eq.${ROW_ID}&select=data`,{headers:sbHeaders()});
+    if(!r.ok) throw new Error('Load failed: '+r.status);
+    const rows=await r.json();
+    if(rows.length && rows[0].data && Object.keys(rows[0].data).length){
+      S=rows[0].data;
+      // ensure all sites exist in case schema changed
+      SITES.forEach(site=>{
+        if(!S.visits) S.visits={};
+        if(!S.visits[site]){
+          S.visits[site]=[];
+          for(let i=0;i<VPW;i++) S.visits[site].push(mkVisit(site,i));
+        }
+      });
+      if(!S.history) S.history=[];
+    } else {
+      S=initS();
+      await sbSaveNow(); // write initial state
+    }
+    setSS('ok');
+    isLoaded=true;
+    return true;
+  } catch(err){
+    console.error(err);
+    // fallback to localStorage
+    try{const raw=localStorage.getItem('cm_svt_fb');S=raw?JSON.parse(raw):initS();}catch(e){S=initS();}
+    setSS('err');
+    isLoaded=true;
+    return false;
+  }
+}
+
+async function sbSaveNow(){
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/${TABLE}?id=eq.${ROW_ID}`,{
+      method:'PATCH',
+      headers:{...sbHeaders(),'Prefer':'return=minimal'},
+      body:JSON.stringify({data:S, updated_at:new Date().toISOString()})
+    });
+    if(!r.ok){
+      // row may not exist yet — upsert
+      await fetch(`${SB_URL}/rest/v1/${TABLE}`,{
+        method:'POST',
+        headers:{...sbHeaders(),'Prefer':'resolution=merge-duplicates'},
+        body:JSON.stringify({id:ROW_ID, data:S, updated_at:new Date().toISOString()})
+      });
+    }
+    localStorage.setItem('cm_svt_fb',JSON.stringify(S)); // keep local backup
+    setSS('ok');
+  } catch(err){
+    console.error(err);
+    localStorage.setItem('cm_svt_fb',JSON.stringify(S));
+    setSS('err');
+  }
+}
+
+function save(){
+  setSS('saving');
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>sbSaveNow(),800);
+}
+
+async function manualSave(){
+  clearTimeout(saveTimer);
+  setSS('saving');
+  await sbSaveNow();
+  const b=document.getElementById('save-btn');
+  b.textContent='Saved ✓';
+  setTimeout(()=>b.textContent='Save',1800);
+}
+
+function setSS(s){
+  const dot=document.getElementById('sdot'), txt=document.getElementById('stxt');
+  if(s==='saving'){
+    dot.style.background='#BA7517'; dot.style.animation='pulse 1s infinite';
+    txt.textContent='Saving…'; txt.style.color='#854F0B';
+  } else if(s==='err'){
+    dot.style.background='#E24B4A'; dot.style.animation='none';
+    txt.textContent='Saved locally (sync error)'; txt.style.color='#791F1F';
+  } else {
+    dot.style.background='#3B6D11'; dot.style.animation='none';
+    txt.textContent='Live sync on'; txt.style.color='#3B6D11';
+  }
+}
+
+// ── State builders ─────────────────────────────────────────────────────
 function mkSc(items){const o={};items.forEach(it=>{o[it.id]=-1;});return o;}
 function mkVisit(site,idx){
   const sc={};[...ATMOS,...TRAIN].forEach(it=>{sc[it.id]=-1;});
@@ -223,31 +325,8 @@ function initS(){
   SITES.forEach(site=>{s.visits[site]=[];for(let i=0;i<VPW;i++)s.visits[site].push(mkVisit(site,i));});
   return s;
 }
-function load(){try{const r=localStorage.getItem('cm_svt_v2');S=r?JSON.parse(r):initS();}catch(e){S=initS();}}
 
-let stimer=null;
-function save(){
-  clearTimeout(stimer);
-  setSS('saving');
-  stimer=setTimeout(()=>{
-    try{localStorage.setItem('cm_svt_v2',JSON.stringify(S));setSS('ok');}
-    catch(e){setSS('err');}
-  },700);
-}
-function setSS(s){
-  const dot=document.getElementById('sdot'),txt=document.getElementById('stxt'),wrap=document.getElementById('sync');
-  dot.style.background=s==='saving'?'#BA7517':s==='err'?'#E24B4A':'#3B6D11';
-  dot.style.animation=s==='saving'?'pulse 1s infinite':'none';
-  txt.textContent=s==='saving'?'Saving…':s==='err'?'Save failed':'All changes saved';
-  wrap.style.color=s==='saving'?'#854F0B':s==='err'?'#791F1F':'#3B6D11';
-}
-function manualSave(){
-  localStorage.setItem('cm_svt_v2',JSON.stringify(S));
-  setSS('ok');
-  const b=document.querySelector('.btn-s');b.textContent='Saved ✓';
-  setTimeout(()=>b.textContent='Save',1500);
-}
-
+// ── Scoring helpers ────────────────────────────────────────────────────
 function pct(v){
   const na=v.na&&v.na.onboarding;
   const base=[...ATMOS,...TRAIN].map(it=>v.scores[it.id]).filter(x=>x>=0);
@@ -260,18 +339,21 @@ function bc(p){return!p?'#E24B4A':p>=85?'#639922':p>=70?'#BA7517':'#E24B4A';}
 function e(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
 function sid(site){return SIDS[SITES.indexOf(site)];}
 
+// ── Tab navigation ─────────────────────────────────────────────────────
 function goTab(id,el){
   document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('view-'+id).classList.add('active');
-  if(id==='overview')rOV();
-  if(id==='dashboard')rDash();
-  if(id==='history')rHist('all');
+  if(!isLoaded) return;
+  if(id==='overview') rOV();
+  if(id==='dashboard') rDash();
+  if(id==='history') rHist('all');
   const si=SIDS.indexOf(id);
-  if(si>=0)rSite(id,SITES[si],0);
+  if(si>=0) rSite(id,SITES[si],0);
 }
 
+// ── Overview ───────────────────────────────────────────────────────────
 function rOV(){
   const lk=SITES.flatMap(s=>S.visits[s]).filter(v=>v.locked);
   const sc=lk.map(pct).filter(p=>p!==null);
@@ -287,33 +369,34 @@ function rOV(){
     const ss=done.map(pct).filter(p=>p!==null);
     const a=ss.length?Math.round(ss.reduce((x,y)=>x+y,0)/ss.length):null;
     h+=`<div class="vc"><div class="vn">${site}</div><div class="vs">${done.length}/${VPW} visits this week</div>
-      <div class="bw"><div class="bt"><div class="bf" style="width:${a||0}%;background:${bc(a||0)}"></div></div>
-      ${a!==null?`<span class="pill ${pc(a)}">${a}%</span>`:`<span class="pill gr">No visits</span>`}
-      </div></div>`;
+    <div class="bw"><div class="bt"><div class="bf" style="width:${a||0}%;background:${bc(a||0)}"></div></div>
+    ${a!==null?`<span class="pill ${pc(a)}">${a}%</span>`:`<span class="pill gr">No visits</span>`}
+    </div></div>`;
   });
   document.getElementById('view-overview').innerHTML=h;
 }
 
+// ── Site view ──────────────────────────────────────────────────────────
 function rSite(vid,site,fi){
   const vs=S.visits[site];
   const ai=fi!==undefined?fi:(vs.findIndex(v=>!v.locked)>=0?vs.findIndex(v=>!v.locked):vs.length-1);
-  const v=vs[ai],d=v.locked;
+  const v=vs[ai], d=v.locked;
   const ds=vs.filter(x=>x.locked).map(pct).filter(p=>p!==null);
   const wa=ds.length?Math.round(ds.reduce((a,b)=>a+b,0)/ds.length)+'%':null;
 
   let h=`<div class="vtr"><div class="vts">
     ${vs.map((vv,i)=>`<button class="vt${i===ai?' active':''}" onclick="rSite('${vid}','${site}',${i})">${vv.locked?'✓ ':''}Visit ${i+1}${vv.locked?' 🔒':''}</button>`).join('')}
   </div>${wa?`<span class="wa">${wa} this week</span>`:''}</div>`;
-  if(d)h+=`<div class="lb">🔒 View only — this visit was completed on ${v.date} and can no longer be edited.</div>`;
+  if(d) h+=`<div class="lb">🔒 View only — this visit was completed on ${v.date} and can no longer be edited.</div>`;
 
-  // Atmosphere
+  // Atmosphere & music
   const asc=ATMOS.map(it=>v.scores[it.id]).filter(x=>x>=0);
   h+=cHd('Atmosphere & music',asc.length?asc.reduce((a,b)=>a+b,0)+'/'+ATMOS.length*3:'—');
   ATMOS.forEach(it=>{h+=sRow(it,v.scores[it.id],d,`sS('${site}',${ai},'${it.id}',`);});
   h+=`<label class="ql">Atmosphere notes</label>
   <textarea ${d?'disabled':''} placeholder="Music adjustments, atmosphere observations…" oninput="upd('${site}',${ai},'atmos_notes',this.value)">${e(v.atmos_notes)}</textarea></div>`;
 
-  // Training
+  // In-service training
   const tsc=TRAIN.map(it=>v.scores[it.id]).filter(x=>x>=0);
   h+=cHd('In-service training',tsc.length?tsc.reduce((a,b)=>a+b,0)+'/'+TRAIN.length*3:'—');
   TRAIN.forEach(it=>{h+=sRow(it,v.scores[it.id],d,`sS('${site}',${ai},'${it.id}',`);});
@@ -332,7 +415,7 @@ function rSite(vid,site,fi){
     h+=`<p class="en">No new starters on site this visit.</p>`;
   } else {
     v.starters.forEach((st,si)=>{
-      h+=`<div class="blk"><input class="bn" placeholder="Full name…" value="${e(st.name)}" ${d?'disabled':''} oninput="uSt('${site}',${ai},${si},'name',this.value)"><div class="bdiv">`;
+      h+=`<div class="blk"><input class="bn" placeholder="Full name…" value="${e(st.name)}" ${d?'disabled':''} oninput="uSt('${site}',${ai},${si},'name',this.value)"><div class="bdiv"></div>`;
       STARTER.forEach(it=>{
         h+=`<div class="item"><div class="il">${it.label}</div><div class="sbs">`;
         SOPTS.forEach((o,oi)=>{h+=`<button class="sb${st.scores[it.id]===oi?' '+o.c:''}" ${d?'disabled':''} onclick="sSt('${site}',${ai},${si},'${it.id}',${oi})">${o.l}</button>`;});
@@ -340,11 +423,11 @@ function rSite(vid,site,fi){
       });
       h+=`</div>`;
     });
-    if(!d)h+=`<button class="add" onclick="addSt('${site}',${ai})">+ Add new starter</button>`;
+    if(!d) h+=`<button class="add" onclick="addSt('${site}',${ai})">+ Add new starter</button>`;
   }
   h+=`</div>`;
 
-  // Check-ins
+  // Bar team check-ins
   const cdn=v.checkins.filter(c=>c.done).length;
   h+=`<div class="card"><div class="chd"><h3>Bar team 1-1 check-ins</h3><span class="sc2">${cdn}/${v.checkins.length} complete</span></div>`;
   v.checkins.forEach((ci,ii)=>{
@@ -357,7 +440,7 @@ function rSite(vid,site,fi){
     <div class="qt sa">"On a scale of 1–10, how happy are you in your role right now — and what would make it a higher score?"</div>
     <select ${d?'disabled':''} onchange="uCI('${site}',${ai},${ii},'sat_score',this.value)" style="margin-bottom:6px">
       <option value="">Score…</option>
-      ${[10,9,8,7,6,5,4,3,2,1].map(n=>`<option${ci.sat_score==n?' selected':''}>${n}</option>`).join('')}
+      ${[10,9,8,7,6,5,4,3,2,1].map(n=>`<option value="${n}"${ci.sat_score==n?' selected':''}>${n}</option>`).join('')}
     </select>
     <textarea ${d?'disabled':''} placeholder="What would make it higher? Notes…" oninput="uCI('${site}',${ai},${ii},'sat',this.value)">${e(ci.sat)}</textarea>
     <label class="ql">Q3 — Team culture</label>
@@ -376,11 +459,11 @@ function rSite(vid,site,fi){
       <span>${ci.done?'Check-in complete':'Mark check-in as complete'}</span>
     </label></div>`;
   });
-  if(!d)h+=`<button class="add" onclick="addCI('${site}',${ai})">+ Add team member</button>`;
-  if(cdn>0)h+=`<p class="cis"><b>${cdn}</b> of ${v.checkins.length} check-in${v.checkins.length!==1?'s':''} completed.</p>`;
+  if(!d) h+=`<button class="add" onclick="addCI('${site}',${ai})">+ Add team member</button>`;
+  if(cdn>0) h+=`<p class="cis"><b>${cdn}</b> of ${v.checkins.length} check-in${v.checkins.length!==1?'s':''} completed.</p>`;
   h+=`</div>`;
 
-  // Summary
+  // Visit summary
   h+=`<div class="card"><div class="chd"><h3>Visit summary</h3></div>
   <label class="ql">One thing that was great</label>
   <textarea ${d?'disabled':''} placeholder="Specific, genuine, shareable with the team…" oninput="upd('${site}',${ai},'great',this.value)">${e(v.great)}</textarea>
@@ -388,7 +471,7 @@ function rSite(vid,site,fi){
   <textarea ${d?'disabled':''} placeholder="Clear, ownable, time-bound…" oninput="upd('${site}',${ai},'action',this.value)">${e(v.action)}</textarea>
   </div>`;
 
-  if(!d)h+=`<div class="sf"><button class="btn btn-s" onclick="cVisit('${site}',${ai})">Mark visit complete</button><p>Complete on-site before leaving</p></div>`;
+  if(!d) h+=`<div class="sf"><button class="btn btn-s" onclick="cVisit('${site}',${ai})">Mark visit complete</button><p>Complete on-site before leaving</p></div>`;
   document.getElementById('view-'+vid).innerHTML=h;
 }
 
@@ -399,6 +482,7 @@ function sRow(it,sel,d,fn){
   return h+`</div></div>`;
 }
 
+// ── Mutations ──────────────────────────────────────────────────────────
 function sS(site,vi,id,val){S.visits[site][vi].scores[id]=val;save();rSite(sid(site),site,vi);}
 function sSt(site,vi,si,id,val){S.visits[site][vi].starters[si].scores[id]=val;save();rSite(sid(site),site,vi);}
 function upd(site,vi,f,val){S.visits[site][vi][f]=val;save();}
@@ -408,6 +492,7 @@ function addSt(site,vi){S.visits[site][vi].starters.push({name:'',scores:mkSc(ST
 function addCI(site,vi){S.visits[site][vi].checkins.push({name:'',wb:'',sat:'',sat_score:'',cult:'',followup:'',done:false});save();rSite(sid(site),site,vi);}
 function tCI(site,vi,ci,val){S.visits[site][vi].checkins[ci].done=val;save();rSite(sid(site),site,vi);}
 function tNA(site,vi,sec,val){if(!S.visits[site][vi].na)S.visits[site][vi].na={};S.visits[site][vi].na[sec]=val;save();rSite(sid(site),site,vi);}
+
 function cVisit(site,vi){
   const v=S.visits[site][vi];
   if(!v.checkins.some(c=>c.done)){alert('Please mark at least one bar team check-in as complete before closing this visit.');return;}
@@ -416,8 +501,9 @@ function cVisit(site,vi){
   S.history.unshift({site,score:pct(v),date:new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'}),visit:vi+1});
   save();rSite(sid(site),site,vi);
 }
+
 function newWeek(){
-  if(!confirm('Start a new week? All current visits will be archived to history.'))return;
+  if(!confirm('Start a new week? All current visits will be archived to history.')) return;
   SITES.forEach(site=>{
     S.visits[site].filter(v=>v.locked).forEach(v=>S.history.unshift({site:v.site,score:pct(v),date:v.date,visit:v.idx+1}));
     S.visits[site]=Array.from({length:VPW},(_,i)=>mkVisit(site,i));
@@ -425,6 +511,7 @@ function newWeek(){
   save();rOV();
 }
 
+// ── Dashboard ──────────────────────────────────────────────────────────
 function dFilter(f,el){document.querySelectorAll('.stab').forEach(t=>t.classList.remove('active'));el.classList.add('active');dFilt=f;rDash();}
 function dPrev(){dOff=Math.min(dOff+1,WLABELS.length-1);document.getElementById('dwl').textContent=WLABELS[dOff];}
 function dNext(){dOff=Math.max(dOff-1,0);document.getElementById('dwl').textContent=WLABELS[dOff];}
@@ -463,8 +550,7 @@ function rDash(){
   }).join('');
 
   const av=fs.flatMap(s=>S.visits[s]);
-  const ac=av.flatMap(v=>v.checkins);
-  const dc=ac.filter(c=>c.done).length;
+  const dc=av.flatMap(v=>v.checkins).filter(c=>c.done).length;
   const req=fs.length*VPW;
   document.getElementById('d-cit').textContent=`${dc}/${req} completed`;
 
@@ -483,12 +569,13 @@ function rDash(){
   const fps=lci.filter(c=>c.done&&c.followup&&c.followup!=='none');
   document.getElementById('d-fps').innerHTML=fps.length
     ?`<div class="blbl" style="margin-bottom:8px">Follow-ups flagged this week</div>`+fps.map(c=>{
-      const l=c.followup==='monitor'?'Monitor':c.followup==='site'?'Escalate to site manager':'Escalate to HR';
-      return `<div class="fpr"><span class="fp ${c.followup}">${l}</span><span>${c.name||'Unnamed'}</span></div>`;
-    }).join('')
+        const l=c.followup==='monitor'?'Monitor':c.followup==='site'?'Escalate to site manager':'Escalate to HR';
+        return `<div class="fpr"><span class="fp ${c.followup}">${l}</span><span>${c.name||'Unnamed'}</span></div>`;
+      }).join('')
     :`<p class="en">No follow-ups flagged this week.</p>`;
 }
 
+// ── History ────────────────────────────────────────────────────────────
 function hFilter(f,el){document.querySelectorAll('.stab').forEach(t=>t.classList.remove('active'));el.classList.add('active');rHist(f);}
 function rHist(f){
   const items=f==='all'?S.history:S.history.filter(h=>h.site===f);
@@ -500,10 +587,14 @@ function rHist(f){
   </div>`).join('');
 }
 
+// ── Boot ───────────────────────────────────────────────────────────────
 document.getElementById('today-label').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-load();
-rOV();
-SITES.forEach((site,i)=>rSite(SIDS[i],site,0));
+document.getElementById('dwl').textContent=WLABELS[0];
+
+sbLoad().then(()=>{
+  rOV();
+  SITES.forEach((site,i)=>rSite(SIDS[i],site,0));
+});
 </script>
 </body>
 </html>
