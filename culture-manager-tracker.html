@@ -133,6 +133,7 @@ textarea:disabled,select:disabled,input[type=text]:disabled{opacity:.55;cursor:d
   <div class="topbar-right">
     <div class="sync"><span class="sdot" id="sdot"></span><span id="stxt">Connecting…</span></div>
     <button class="btn btn-o" onclick="newWeek()">New week</button>
+    <button class="btn btn-o" id="unlock-btn" onclick="promptAdminUnlock()" style="font-size:12px;padding:6px 12px;">🔒 Admin unlock</button>
     <button class="btn btn-s" id="save-btn" onclick="manualSave()">Save</button>
   </div>
 </div>
@@ -202,16 +203,39 @@ const DAY_NAMES  = {4:'Thursday', 5:'Friday', 6:'Saturday'};
 
 function todayDay(){ return new Date().getDay(); }
 
+// Password override — when unlocked, day-based locking is bypassed
+const ADMIN_PASSWORD = 'nancys2026';
+let adminUnlocked = false;
+
+function promptAdminUnlock(){
+  const pwd = prompt('Enter admin password to unlock all visits:');
+  if(pwd === ADMIN_PASSWORD){
+    adminUnlocked = true;
+    const btn = document.getElementById('unlock-btn');
+    if(btn){ btn.textContent = '🔓 Unlocked'; btn.style.background = '#EAF3DE'; btn.style.color = '#27500A'; btn.style.borderColor = '#97C459'; }
+    // Re-render all site views to reflect unlocked state
+    SITES.forEach((site,i) => rSite(SIDS[i], site, defaultIdx(site)));
+  } else if(pwd !== null){
+    alert('Incorrect password.');
+  }
+}
+
 /*
   Visit access rules (all must pass):
   - Visit 0: today >= Thursday (day 4)
   - Visit 1: today >= Friday (day 5) AND Visit 0 is marked complete
   - Visit 2: today >= Saturday (day 6) AND Visit 1 is marked complete
+  Admin override: if adminUnlocked, skip day-based checks
 */
 function visitAccess(visits, idx){
   const today = todayDay();
   const v = visits[idx];
   if(v.locked) return 'completed';
+  // Admin override bypasses day locking but still respects sequential locking
+  if(adminUnlocked){
+    if(idx > 0 && !visits[idx-1].locked) return 'locked-seq';
+    return 'active';
+  }
   // Day hasn't arrived yet
   if(today < VISIT_DAYS[idx]) return 'locked-day';
   // Day has passed without completion — lock it
