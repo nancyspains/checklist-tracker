@@ -87,18 +87,24 @@ const SITE_COLORS = ["#378ADD","#1D9E75","#D85A30"];
 const POLL_INTERVAL = 15000;
 
 const DAY_CHECKLISTS = {
-  1: [{id:"eon",name:"EON complete"},{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"timesheets",name:"Timesheet approval"},{id:"maintenance",name:"Maintenance"},{id:"audit",name:"Audit checklist"}],
-  2: [{id:"eon",name:"EON complete"},{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"deepclean",name:"Deep clean"}],
-  3: [{id:"eon",name:"EON complete"},{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"deepclean",name:"Deep clean"},{id:"cellar",name:"Cellar checklist"}],
-  4: [{id:"eon",name:"EON complete"},{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"eow",name:"EOW complete"}],
-  5: [{id:"eon",name:"EON complete"},{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"orders",name:"Acquire orders accepted"}],
+  1: [{id:"eon",name:"EON complete"},{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"timesheets",name:"Timesheet approval"},{id:"audit",name:"Audit checklist"},{id:"maintenance",name:"Maintenance"}],
+  2: [{id:"eon",name:"EON complete"},{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"inventory",name:"Inventory checklist"}],
+  3: [{id:"eon",name:"EON complete"},{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"}],
+  4: [{id:"eon",name:"EON complete"},{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"deepclean",name:"Deep clean"},{id:"eow",name:"EOW complete"}],
+  5: [{id:"eon",name:"EON complete"},{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"cellar",name:"Cellar checklist"},{id:"orders",name:"Acquire orders accepted"}],
   6: [{id:"eon",name:"EON complete"},{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"}],
   0: [{id:"eon",name:"EON complete"},{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"}]
 };
 
 const SITE_OVERRIDES = {
   "s2": {
-    1: [{id:"timesheets",name:"Timesheet approval"},{id:"maintenance",name:"Maintenance"},{id:"audit",name:"Audit checklist"}]
+    1: [{id:"timesheets",name:"Timesheet approval"},{id:"audit",name:"Audit checklist"},{id:"maintenance",name:"Maintenance"}],
+    2: [{id:"eon",name:"EON complete"},{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"inventory",name:"Inventory checklist"}],
+    3: [{id:"eon",name:"EON complete"},{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"}],
+    4: [{id:"eon",name:"EON complete"},{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"deepclean",name:"Deep clean"},{id:"eow",name:"EOW complete"}],
+    5: [{id:"eon",name:"EON complete"},{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"orders",name:"Acquire orders accepted"}],
+    6: [{id:"eon",name:"EON complete"},{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"cellar",name:"Cellar checklist"}],
+    0: [{id:"eon",name:"EON complete"},{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"}]
   }
 };
 
