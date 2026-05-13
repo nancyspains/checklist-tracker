@@ -93,7 +93,7 @@ const db = getFirestore(firebaseApp);
 // ── Config ──
 const PUBS = ["Nancy Spains Shoreditch","Nancy Spains Monument","Nancy Spains Manchester"];
 const SHORT = {"Nancy Spains Shoreditch":"Shoreditch","Nancy Spains Monument":"Monument","Nancy Spains Manchester":"Manchester"};
-const TARGETS = {labour:18,gp:80,tasks:90,audit:90,mystery:90,reviews:4.9,reviewCount:0,newReviews:4,stockVar:1};
+const TARGETS = {labour:18,gp:80,tasks:90,audit:90,mystery:90,reviews:4.8,reviewCount:0,newReviews:4,stockVar:1};
 const FIELDS = [
   {key:"labour",      label:"Labour %",             suffix:"%",    min:0, max:60,   step:0.1, lb:true},
   {key:"gp",          label:"GP %",                 suffix:"%",    min:0, max:100,  step:0.1, lb:false},
@@ -216,7 +216,7 @@ function scorePub(pd){
   if(pd.tasks!=null)      scores.push(scoreHigh(pd.tasks,90));
   if(pd.audit!=null)      scores.push(scoreHigh(pd.audit,90));
   if(pd.mystery!=null)    scores.push(scoreHigh(pd.mystery,90));
-      if(pd.reviews!=null)    scores.push(scoreHigh(pd.reviews*10,49));
+      if(pd.reviews!=null)    scores.push(scoreHigh(pd.reviews*10,48));
   if(pd.newReviews!=null) scores.push(scoreHigh(pd.newReviews,4));
   if(pd.stockVar!=null)   scores.push(scoreLow(pd.stockVar,1));
   return scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):0;
@@ -316,7 +316,7 @@ function renderDashboard(){
     {label:"Tasks completed",val:tasks,   tgt:90,  lb:false, disp:tasks.toFixed(0)+"%",    tgtL:"Target: 90%",  badge:tasks>=90?"On target":"Below target"},
     {label:"Audit score",    val:audit,   tgt:90,  lb:false, disp:audit.toFixed(0)+"%",    tgtL:"Target: 90%",  badge:audit>=90?"Passing":"Needs work"},
     {label:"Mystery shopper",val:mystery, tgt:90,  lb:false, disp:mystery.toFixed(0)+"%",  tgtL:"Target: 90%",  badge:mystery>=90?"Passing":"Needs work"},
-    {label:"Avg review",     val:rev,     tgt:4.9, lb:false, disp:rev.toFixed(1)+" ★",     tgtL:"Target: 4.9",  badge:rev>=4.9?"Excellent":"Improving"},
+    {label:"Avg review",     val:rev,     tgt:4.8, lb:false, disp:rev.toFixed(1)+" ★",     tgtL:"Target: 4.8",  badge:rev>=4.8?"Excellent":"Improving"},
     {label:"New reviews",    val:newRev,  tgt:4,   lb:false, disp:newRev.toFixed(0),        tgtL:"Target: 4/wk", badge:newRev>=4?"On target":"Below target"},
     {label:"Stock variance", val:stock,   tgt:1,   lb:true,  disp:stock.toFixed(1)+"%",    tgtL:"Target: <1%",  badge:stock<=1?"In range":"High variance"},
   ];
@@ -524,7 +524,7 @@ function renderLeaderboard(){
      {label:"Tasks",val:s.pd.tasks,suffix:"%",tgt:90,lb:false},
      {label:"Audit",val:s.pd.audit,suffix:"%",tgt:90,lb:false},
      {label:"Mystery",val:s.pd.mystery,suffix:"%",tgt:90,lb:false},
-     {label:"Reviews",val:s.pd.reviews,suffix:" ★",tgt:4.9,lb:false},
+     {label:"Reviews",val:s.pd.reviews,suffix:" ★",tgt:4.8,lb:false},
      {label:"New revs",val:s.pd.newReviews,suffix:"",tgt:4,lb:false},
      {label:"Stock",val:s.pd.stockVar,suffix:"%",tgt:1,lb:true}
     ].forEach(k=>{
@@ -551,7 +551,7 @@ function renderLeaderboard(){
     scp.style.background=i===0?"#FAEEDA":"#f1efe8"; scp.style.color=i===0?"#854F0B":"#1a1a18";
     scp.textContent=s.score+""; sc.appendChild(scp); tr.appendChild(sc);
     [[s.pd.labour,18,true,"%"],[s.pd.gp,80,false,"%"],[s.pd.tasks,90,false,"%"],
-     [s.pd.audit,90,false,"%"],[s.pd.mystery,90,false,"%"],     [s.pd.reviews,4.9,false," ★"],
+     [s.pd.audit,90,false,"%"],[s.pd.mystery,90,false,"%"],     [s.pd.reviews,4.8,false," ★"],
      [s.pd.newReviews,4,false,""],[s.pd.stockVar,1,true,"%"]
     ].forEach(([val,tgt,lb,sfx])=>{
       const ksi=si(val||0,tgt,lb); const td=h("td",{});
