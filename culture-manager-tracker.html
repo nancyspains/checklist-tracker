@@ -204,7 +204,7 @@ const DAY_NAMES  = {4:'Thursday', 5:'Friday', 6:'Saturday'};
 function todayDay(){ return new Date().getDay(); }
 
 // Password override — when unlocked, day-based locking is bypassed
-const ADMIN_PASSWORD = 'nsculturetracker2026';
+const ADMIN_PASSWORD = 'nancys2026';
 let adminUnlocked = false;
 
 function promptAdminUnlock(){
@@ -213,8 +213,11 @@ function promptAdminUnlock(){
     adminUnlocked = true;
     const btn = document.getElementById('unlock-btn');
     if(btn){ btn.textContent = '🔓 Unlocked'; btn.style.background = '#EAF3DE'; btn.style.color = '#27500A'; btn.style.borderColor = '#97C459'; }
-    // Re-render all site views to reflect unlocked state
+    // Re-render all site views and history to reflect unlocked state
     SITES.forEach((site,i) => rSite(SIDS[i], site, defaultIdx(site)));
+    rHist('all');
+    // Reset history filter buttons
+    document.querySelectorAll('#view-history .stab').forEach((b,i)=>b.classList.toggle('active',i===0));
   } else if(pwd !== null){
     alert('Incorrect password.');
   }
@@ -467,14 +470,14 @@ function rSite(vid,site,fi){
   h+=cHd('Atmosphere & music',asc.length?asc.reduce((a,b)=>a+b,0)+'/'+ATMOS.length*3:'—');
   ATMOS.forEach(it=>{h+=sRow(it,v.scores[it.id],d,`sS('${site}',${ai},'${it.id}',`);});
   h+=`<label class="ql">Atmosphere notes</label>
-  <textarea ${d?'disabled':''} placeholder="Music adjustments, atmosphere observations…" oninput="upd('${site}',${ai},'atmos_notes',this.value)">${e(v.atmos_notes)}</textarea></div>`;
+  <textarea ${d?'disabled':''} placeholder="Music adjustments, atmosphere observations…" oninput="upd('${site}',${ai},'atmos_notes',this.value)" onblur="upd('${site}',${ai},'atmos_notes',this.value)">${e(v.atmos_notes)}</textarea></div>`;
 
   // Training
   const tsc=TRAIN.map(it=>v.scores[it.id]).filter(x=>x>=0);
   h+=cHd('In-service training',tsc.length?tsc.reduce((a,b)=>a+b,0)+'/'+TRAIN.length*3:'—');
   TRAIN.forEach(it=>{h+=sRow(it,v.scores[it.id],d,`sS('${site}',${ai},'${it.id}',`);});
   h+=`<label class="ql">Training notes &amp; observations</label>
-  <textarea ${d?'disabled':''} placeholder="What was trained, who was involved, how the team responded…" oninput="upd('${site}',${ai},'train_notes',this.value)">${e(v.train_notes)}</textarea></div>`;
+  <textarea ${d?'disabled':''} placeholder="What was trained, who was involved, how the team responded…" oninput="upd('${site}',${ai},'train_notes',this.value)" onblur="upd('${site}',${ai},'train_notes',this.value)">${e(v.train_notes)}</textarea></div>`;
 
   // New starters
   const isNA=!!(v.na&&v.na.onboarding);
@@ -539,9 +542,9 @@ function rSite(vid,site,fi){
   // Summary
   h+=`<div class="card"><div class="chd"><h3>Visit summary</h3></div>
   <label class="ql">One thing that was great</label>
-  <textarea ${d?'disabled':''} placeholder="Specific, genuine, shareable with the team…" oninput="upd('${site}',${ai},'great',this.value)">${e(v.great)}</textarea>
+  <textarea ${d?'disabled':''} placeholder="Specific, genuine, shareable with the team…" oninput="upd('${site}',${ai},'great',this.value)" onblur="upd('${site}',${ai},'great',this.value)">${e(v.great)}</textarea>
   <label class="ql" style="margin-top:10px">One action before next visit</label>
-  <textarea ${d?'disabled':''} placeholder="Clear, ownable, time-bound…" oninput="upd('${site}',${ai},'action',this.value)">${e(v.action)}</textarea>
+  <textarea ${d?'disabled':''} placeholder="Clear, ownable, time-bound…" oninput="upd('${site}',${ai},'action',this.value)" onblur="upd('${site}',${ai},'action',this.value)">${e(v.action)}</textarea>
   </div>`;
 
   if(!d) h+=`<div class="sf"><button class="btn btn-s" onclick="cVisit('${site}',${ai})">Mark visit complete</button><p>Complete on-site before leaving</p></div>`;
@@ -555,15 +558,23 @@ function sRow(it,sel,d,fn){
   return h+`</div></div>`;
 }
 
-function sS(site,vi,id,val){S.visits[site][vi].scores[id]=val;save();rSite(sid(site),site,vi);}
-function sSt(site,vi,si,id,val){S.visits[site][vi].starters[si].scores[id]=val;save();rSite(sid(site),site,vi);}
+function sS(site,vi,id,val){flushTextFields();S.visits[site][vi].scores[id]=val;save();rSite(sid(site),site,vi);}
+function sSt(site,vi,si,id,val){flushTextFields();S.visits[site][vi].starters[si].scores[id]=val;save();rSite(sid(site),site,vi);}
 function upd(site,vi,f,val){S.visits[site][vi][f]=val;save();}
 function uSt(site,vi,si,f,val){S.visits[site][vi].starters[si][f]=val;save();}
 function uCI(site,vi,ci,f,val){S.visits[site][vi].checkins[ci][f]=val;save();}
-function addSt(site,vi){S.visits[site][vi].starters.push({name:'',scores:mkSc(STARTER)});save();rSite(sid(site),site,vi);}
-function addCI(site,vi){S.visits[site][vi].checkins.push({name:'',wb:'',sat:'',sat_score:'',cult:'',followup:'',done:false});save();rSite(sid(site),site,vi);}
-function tCI(site,vi,ci,val){S.visits[site][vi].checkins[ci].done=val;save();rSite(sid(site),site,vi);}
-function tNA(site,vi,sec,val){if(!S.visits[site][vi].na)S.visits[site][vi].na={};S.visits[site][vi].na[sec]=val;save();rSite(sid(site),site,vi);}
+function addSt(site,vi){flushTextFields();S.visits[site][vi].starters.push({name:'',scores:mkSc(STARTER)});save();rSite(sid(site),site,vi);}
+function addCI(site,vi){flushTextFields();S.visits[site][vi].checkins.push({name:'',wb:'',sat:'',sat_score:'',cult:'',followup:'',done:false});save();rSite(sid(site),site,vi);}
+function tCI(site,vi,ci,val){flushTextFields();S.visits[site][vi].checkins[ci].done=val;save();rSite(sid(site),site,vi);}
+function tNA(site,vi,sec,val){flushTextFields();if(!S.visits[site][vi].na)S.visits[site][vi].na={};S.visits[site][vi].na[sec]=val;save();rSite(sid(site),site,vi);}
+
+// Flush any unsaved text from DOM inputs/textareas back into state before a re-render
+function flushTextFields(){
+  document.querySelectorAll('textarea[oninput],input[oninput]').forEach(el=>{
+    const fn = el.getAttribute('oninput');
+    if(fn) try{ eval(fn.replace('this.value', JSON.stringify(el.value))); }catch(e){}
+  });
+}
 
 function cVisit(site,vi){
   const v=S.visits[site][vi];
@@ -641,14 +652,77 @@ function rDash(){
 }
 
 function hFilter(f,el){document.querySelectorAll('.stab').forEach(t=>t.classList.remove('active'));el.classList.add('active');rHist(f);}
+
 function rHist(f){
-  const items=f==='all'?S.history:S.history.filter(h=>h.site===f);
   const el=document.getElementById('hist-list');
-  if(!items.length){el.innerHTML='<p class="en">No visits recorded yet.</p>';return;}
-  el.innerHTML=items.map(h=>`<div class="hi">
-    <div><div class="hn">${h.site} — Visit ${h.visit}</div><div class="hd">${h.date}</div></div>
-    <span class="pill ${pc(h.score)}">${h.score!==null?h.score+'%':'—'}</span>
-  </div>`).join('');
+
+  // Collect all locked visits across all sites, enriched with site/visit index
+  const allLocked=[];
+  SITES.forEach(site=>{
+    S.visits[site].forEach((v,vi)=>{
+      if(v.locked) allLocked.push({site,vi,v});
+    });
+  });
+  // Also pull from history log for display metadata
+  const histItems=f==='all'?S.history:S.history.filter(h=>h.site===f);
+
+  if(!histItems.length&&!allLocked.length){el.innerHTML='<p class="en">No visits recorded yet.</p>';return;}
+
+  // Build list from history log, with edit button if admin unlocked
+  if(!histItems.length){el.innerHTML='<p class="en">No visits recorded yet.</p>';return;}
+
+  el.innerHTML=histItems.map((h,i)=>{
+    // Find the matching locked visit in state
+    const match=S.visits[h.site]?S.visits[h.site].find(v=>v.locked&&v.idx===h.visit-1):null;
+    const editBtn=adminUnlocked&&match
+      ?`<button onclick="adminEditVisit('${h.site}',${h.visit-1})" style="font-size:12px;padding:4px 10px;border:1px solid #B19662;background:#FAF8F3;color:#384137;border-radius:6px;cursor:pointer;margin-left:10px;">Edit</button>`
+      :'';
+    return `<div class="hi">
+      <div><div class="hn">${h.site} — Visit ${h.visit}</div><div class="hd">${h.date}</div></div>
+      <div style="display:flex;align-items:center;">
+        <span class="pill ${pc(h.score)}">${h.score!==null?h.score+'%':'—'}</span>
+        ${editBtn}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Admin edit — temporarily unlock a locked visit for editing
+let adminEditingSite=null, adminEditingVi=null;
+
+function adminEditVisit(site,vi){
+  if(!adminUnlocked){alert('Please unlock admin access first.');return;}
+  // Temporarily unlock the visit
+  S.visits[site][vi].locked=false;
+  adminEditingSite=site;
+  adminEditingVi=vi;
+  // Navigate to the site tab and render the visit
+  const sIdx=SITES.indexOf(site);
+  const tabEl=document.querySelectorAll('.ntab')[sIdx+1];
+  document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  tabEl.classList.add('active');
+  document.getElementById('view-'+SIDS[sIdx]).classList.add('active');
+  rSite(SIDS[sIdx],site,vi);
+  // Scroll to top
+  window.scrollTo(0,0);
+}
+
+// Override cVisit to handle admin re-locking after edit
+const _origCVisit=typeof cVisit!=='undefined'?cVisit:null;
+function cVisit(site,vi){
+  const v=S.visits[site][vi];
+  if(!v.checkins.some(c=>c.done)){alert('Please mark at least one bar team check-in as complete before closing this visit.');return;}
+  v.locked=true;
+  v.date=v.date||new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  // Update history score
+  const newScore=pct(v);
+  const histIdx=S.history.findIndex(h=>h.site===site&&h.visit===vi+1);
+  if(histIdx>=0){ S.history[histIdx].score=newScore; }
+  else { S.history.unshift({site,score:newScore,date:new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'}),visit:vi+1}); }
+  adminEditingSite=null; adminEditingVi=null;
+  save();
+  rSite(sid(site),site,vi);
 }
 
 document.getElementById('today-label').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
