@@ -35,7 +35,7 @@ p.sub{font-size:12px;color:#5f5e5a;margin-top:2px;}
 .ctitle{font-size:13px;font-weight:500;margin-bottom:10px;}
 .bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
 .bar-row:last-child{margin-bottom:0;}
-.bar-lbl{font-size:11px;color:#5f5e5a;width:90px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bar-lbl{font-size:11px;color:#5f5e5a;width:110px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .bar-track{flex:1;background:#f1efe8;border-radius:4px;height:16px;position:relative;overflow:hidden;}
 .bar-fill{height:100%;border-radius:4px;transition:width 0.3s;}
 .bar-tgt{position:absolute;top:0;height:100%;width:1.5px;background:rgba(180,80,50,0.45);}
@@ -55,7 +55,6 @@ p.sub{font-size:12px;color:#5f5e5a;margin-top:2px;}
 .mini-tgt{position:absolute;top:-3px;width:2px;height:12px;background:rgba(150,100,50,0.4);border-radius:1px;}
 .field-tgt{font-size:11px;color:#888780;margin-top:3px;}
 .num-input{width:70px;font-size:13px;padding:4px 8px;text-align:right;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;background:#fff;color:#1a1a18;font-family:inherit;}
-.text-input{flex:1;font-size:13px;padding:4px 8px;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;background:#fff;color:#1a1a18;font-family:inherit;}
 .save-row{display:flex;gap:8px;justify-content:flex-end;}
 .history-item{background:#fff;border:0.5px solid rgba(0,0,0,0.12);border-radius:12px;padding:0.85rem 1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
 .loading{text-align:center;padding:3rem;color:#5f5e5a;font-size:14px;}
@@ -63,8 +62,6 @@ p.sub{font-size:12px;color:#5f5e5a;margin-top:2px;}
 .sync-saving{background:#FAEEDA;color:#854F0B;display:block;}
 .sync-saved{background:#EAF3DE;color:#3B6D11;display:block;}
 .sync-error{background:#FCEBEB;color:#A32D2D;display:block;}
-.section-divider{font-size:13px;font-weight:500;color:#5f5e5a;margin:1.25rem 0 0.75rem;padding-bottom:6px;border-bottom:0.5px solid rgba(0,0,0,0.1);}
-.initiative-box{background:#f1efe8;border-radius:8px;padding:0.75rem;font-size:13px;color:#1a1a18;min-height:60px;white-space:pre-wrap;word-break:break-word;}
 table{width:100%;border-collapse:collapse;font-size:13px;}
 th{text-align:left;color:#5f5e5a;font-weight:400;padding:4px 6px 8px;border-bottom:0.5px solid rgba(0,0,0,0.1);}
 td{padding:7px 6px;border-bottom:0.5px solid rgba(0,0,0,0.08);color:#1a1a18;}
@@ -90,34 +87,24 @@ const firebaseConfig = {
 
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
-
-const PUBS = ["Nancy Spains Shoreditch","Nancy Spains Monument","Nancy Spains Manchester"];
-const SHORT = {"Nancy Spains Shoreditch":"Shoreditch","Nancy Spains Monument":"Monument","Nancy Spains Manchester":"Manchester"};
 const STORE_KEY = "culture_kpi_weeks";
-const ADMIN_PASSWORD = "culture2026";
+const ADMIN_PASSWORD = "nancys2026";
 
-// Per-pub numeric KPIs
-const PUB_FIELDS = [
-  {key:"mystery",    label:"Mystery Shopper %",       suffix:"%", min:0, max:100, step:1,   lb:false, target:90},
-  {key:"engagement", label:"Employee Engagement %",   suffix:"%", min:0, max:100, step:1,   lb:false, target:90},
+const FIELDS = [
+  {key:"siteVisitScore",    label:"Overall site visit score",         suffix:"%", min:0, max:100, step:1,   lb:false, target:90},
+  {key:"teamSatisfaction",  label:"Avg team satisfaction score",      suffix:"%", min:0, max:100, step:1,   lb:false, target:90},
+  {key:"atmosphereScore",   label:"Atmosphere score",                 suffix:"%", min:0, max:100, step:1,   lb:false, target:90},
+  {key:"quizCompletion",    label:"Staff quiz completion rate",       suffix:"%", min:0, max:100, step:1,   lb:false, target:85},
+  {key:"mysteryScore",      label:"Mystery shopper score",            suffix:"%", min:0, max:100, step:1,   lb:false, target:90},
+  {key:"readyToMove",       label:"Team ready for next role",         suffix:"%", min:0, max:100, step:1,   lb:false, target:30},
+  {key:"staffTurnover",     label:"Staff turnover",                   suffix:"%", min:0, max:100, step:0.1, lb:true,  target:5},
 ];
 
-// Group-wide numeric KPIs
-const GROUP_FIELDS = [
-  {key:"staffTurnover",      label:"Staff Turnover %",              suffix:"%",  min:0, max:100, step:0.1, lb:true,  target:5},
-  {key:"readyToMove",        label:"Staff ready for next role %",   suffix:"%",  min:0, max:100, step:1,   lb:false, target:30},
-  {key:"cultureInitiativesCount", label:"Culture initiatives",      suffix:"",   min:0, max:50,  step:1,   lb:false, target:2},
-  {key:"musicianScore",      label:"Musician Feedback Score",       suffix:"/10",min:0, max:10,  step:0.1, lb:false, target:8},
-  {key:"musicScore",         label:"Music Score %",                 suffix:"%",  min:0, max:100, step:1,   lb:false, target:85},
-];
-
-const BLANK_PUB   = {mystery:0, engagement:0};
-const BLANK_GROUP = {staffTurnover:0, readyToMove:0, cultureInitiativesCount:0, musicianScore:0, musicScore:0, cultureInitiatives:""};
+const BLANK = {siteVisitScore:0,teamSatisfaction:0,atmosphereScore:0,quizCompletion:0,mysteryScore:0,readyToMove:0,staffTurnover:0};
 
 const state = {
   view:"dashboard", activeWeek:currentWeekEnding(), allData:{},
-  draft:{pubs:{}, group:{...BLANK_GROUP}},
-  unlocked:false, loading:true, syncStatus:""
+  draft:{...BLANK}, unlocked:false, loading:true, syncStatus:""
 };
 
 function currentWeekEnding(){
@@ -136,10 +123,7 @@ function fmtWeek(w){
 
 async function loadWeekFromDB(week){
   const snap=await getDoc(doc(db,STORE_KEY,week));
-  if(snap.exists()) return snap.data();
-  const d={pubs:{},group:{...BLANK_GROUP}};
-  PUBS.forEach(p=>{d.pubs[p]={...BLANK_PUB};});
-  return d;
+  return snap.exists()?snap.data():{...BLANK};
 }
 async function saveWeekToDB(week,data){ await setDoc(doc(db,STORE_KEY,week),data); }
 async function loadAllWeeks(){
@@ -177,7 +161,6 @@ function barColor(val,tgt,lb){
   const diff=lb?val-tgt:tgt-val;
   return diff<=0?"#639922":diff<=3?"#BA7517":"#E24B4A";
 }
-function avg(arr,key){ return arr.length?arr.reduce((s,p)=>s+(p[key]||0),0)/arr.length:0; }
 
 function h(tag,attrs,children){
   const el=document.createElement(tag);
@@ -244,7 +227,7 @@ function renderWeekNav(){
   prev.addEventListener("click",async()=>{
     state.activeWeek=shiftWeek(state.activeWeek,-1);
     state.draft=await loadWeekFromDB(state.activeWeek);
-    listenToWeek(state.activeWeek);render();
+    listenToWeek(state.activeWeek); render();
   });
   const center=div({class:"center"});
   center.appendChild(span({class:"wlabel"},"Week ending "+fmtWeek(state.activeWeek)));
@@ -263,111 +246,95 @@ function renderWeekNav(){
 
 function renderDashboard(){
   const data=state.allData[state.activeWeek]||state.draft;
-  const pubs=data.pubs||{};
-  const group=data.group||{...BLANK_GROUP};
   const prevW=shiftWeek(state.activeWeek,-1);
   const prevData=state.allData[prevW]||null;
   const frag=document.createDocumentFragment();
 
+  // KPI summary cards
+  const kg=div({class:"kpi-grid"});
+  FIELDS.forEach(f=>{
+    const val=data[f.key]||0;
+    const s=si(val,f.target,f.lb);
+    const card=div({class:"kpi-card"});
+    card.appendChild(div({class:"klabel"},f.label));
+    card.appendChild(div({class:"kval"},val.toFixed(f.step<1?1:0)+f.suffix));
+    card.appendChild(div({class:"ktgt"},"Target: "+(f.lb?"≤":"")+f.target+f.suffix));
+    const badge=span({class:"kbadge"});badge.style.background=s.bg;badge.style.color=s.col;
+    badge.textContent=s.label; card.appendChild(badge); kg.appendChild(card);
+  });
+  frag.appendChild(kg);
+
   function makeBarRow(lbl,val,tgt,maxV,lb,suffix){
     const row=div({class:"bar-row"});
-    const l=div({class:"bar-lbl"},lbl);l.title=lbl;
+    const l=div({class:"bar-lbl"},lbl); l.title=lbl;
     const track=div({class:"bar-track"});
     const fill=div({class:"bar-fill"});
     fill.style.width=Math.min(100,(val/maxV)*100).toFixed(1)+"%";
     fill.style.background=barColor(val,tgt,lb);
     const tline=div({class:"bar-tgt"});
     tline.style.left=Math.min(100,(tgt/maxV)*100).toFixed(1)+"%";
-    track.appendChild(fill);track.appendChild(tline);
-    row.appendChild(l);row.appendChild(track);
+    track.appendChild(fill); track.appendChild(tline);
+    row.appendChild(l); row.appendChild(track);
     row.appendChild(div({class:"bar-val"},val+suffix));
     return row;
   }
   function makeChart(title,rows){
-    const c=div({class:"ccart"});c.appendChild(div({class:"ctitle"},title));
-    rows.forEach(r=>c.appendChild(r));return c;
+    const c=div({class:"ccart"}); c.appendChild(div({class:"ctitle"},title));
+    rows.forEach(r=>c.appendChild(r)); return c;
   }
 
-  // ── Summary KPI cards ──
-  const mystAvg=avg(PUBS.map(p=>pubs[p]||BLANK_PUB),"mystery");
-  const engAvg=avg(PUBS.map(p=>pubs[p]||BLANK_PUB),"engagement");
-  const summaryKPIs=[
-    {label:"Avg Mystery Shopper",   val:mystAvg,                tgt:90,  lb:false, disp:mystAvg.toFixed(0)+"%",           badge:mystAvg>=90?"Passing":"Needs work"},
-    {label:"Avg Employee Engagement",val:engAvg,               tgt:80,  lb:false, disp:engAvg.toFixed(0)+"%",            badge:engAvg>=80?"On target":"Below target"},
-    {label:"Staff Turnover",         val:group.staffTurnover||0,tgt:5,   lb:true,  disp:(group.staffTurnover||0).toFixed(1)+"%", badge:(group.staffTurnover||0)<=5?"On target":"High"},
-    {label:"Ready for next role",    val:group.readyToMove||0,  tgt:30,  lb:false, disp:(group.readyToMove||0)+"%",       badge:(group.readyToMove||0)>=30?"On target":"Below target"},
-    {label:"Culture initiatives",    val:group.cultureInitiativesCount||0, tgt:2, lb:false, disp:(group.cultureInitiativesCount||0)+"", badge:(group.cultureInitiativesCount||0)>=2?"On target":"Below target"},
-    {label:"Musician Feedback",      val:group.musicianScore||0,tgt:8,   lb:false, disp:(group.musicianScore||0).toFixed(1)+"/10", badge:(group.musicianScore||0)>=8?"On target":"Below target"},
-    {label:"Music Score",            val:group.musicScore||0,   tgt:85,  lb:false, disp:(group.musicScore||0)+"%",        badge:(group.musicScore||0)>=85?"On target":"Below target"},
-  ];
-  const kg=div({class:"kpi-grid"});
-  summaryKPIs.forEach(k=>{
-    const s=si(k.val,k.tgt,k.lb);
-    const card=div({class:"kpi-card"});
-    card.appendChild(div({class:"klabel"},k.label));
-    card.appendChild(div({class:"kval"},k.disp));
-    const badge=span({class:"kbadge"});badge.style.background=s.bg;badge.style.color=s.col;badge.textContent=k.badge;
-    card.appendChild(badge);kg.appendChild(card);
-  });
-  frag.appendChild(kg);
-
-  // ── Mystery Shopper & Employee Engagement per pub ──
+  // Row 1 — Experience scores
   const r1=div({class:"grid2"});
-  r1.appendChild(makeChart("Mystery shopper by pub",PUBS.map(p=>makeBarRow(SHORT[p],(pubs[p]||BLANK_PUB).mystery,90,100,false,"%"))));
-  r1.appendChild(makeChart("Employee engagement by pub",PUBS.map(p=>makeBarRow(SHORT[p],(pubs[p]||BLANK_PUB).engagement,80,100,false,"%"))));
+  r1.appendChild(makeChart("Experience scores",[
+    makeBarRow("Site visit",(data.siteVisitScore||0),90,100,false,"%"),
+    makeBarRow("Team satisfaction",(data.teamSatisfaction||0),90,100,false,"%"),
+    makeBarRow("Atmosphere",(data.atmosphereScore||0),90,100,false,"%"),
+  ]));
+  r1.appendChild(makeChart("People metrics",[
+    makeBarRow("Quiz completion",(data.quizCompletion||0),85,100,false,"%"),
+    makeBarRow("Mystery shopper",(data.mysteryScore||0),90,100,false,"%"),
+    makeBarRow("Ready for next role",(data.readyToMove||0),30,100,false,"%"),
+  ]));
   frag.appendChild(r1);
 
-  // ── Group KPIs ──
+  // Row 2 — Staff turnover
   const r2=div({class:"grid2"});
-  r2.appendChild(makeChart("Staff turnover & readiness",[
-    makeBarRow("Turnover",group.staffTurnover||0,20,100,true,"%"),
-    makeBarRow("Next role ready",group.readyToMove||0,30,100,false,"%"),
+  r2.appendChild(makeChart("Staff turnover",[
+    makeBarRow("Turnover",(data.staffTurnover||0),5,20,true,"%"),
   ]));
-  r2.appendChild(makeChart("Music & musician scores",[
-    makeBarRow("Musician feedback",(group.musicianScore||0)*10,80,100,false,"/10"),
-    makeBarRow("Music score",group.musicScore||0,85,100,false,"%"),
-  ]));
+  r2.appendChild(div({class:"ccart"}));
   frag.appendChild(r2);
 
-  // ── Culture initiatives ──
-  const ciCard=div({class:"ccart",style:{marginBottom:"12px"}});
-  ciCard.appendChild(div({class:"ctitle"},"Culture initiatives this week"));
-  const ciBox=div({class:"initiative-box"},group.cultureInitiatives||"No initiatives recorded this week.");
-  ciCard.appendChild(ciBox);
-  frag.appendChild(ciCard);
-
-  // ── Site comparison table ──
+  // Week on week table
   const tblCard=div({class:"ccart"});
-  tblCard.appendChild(div({class:"ctitle"},"Site comparison"));
+  tblCard.appendChild(div({class:"ctitle"},"Week on week comparison"));
   const tbl=h("table",{});
-  const thead=h("thead",{});const hrow=h("tr",{});
-  ["Site","Mystery Shopper","Employee Engagement","vs prev mystery","vs prev engagement"].forEach(hd=>hrow.appendChild(h("th",{},hd)));
-  thead.appendChild(hrow);tbl.appendChild(thead);
+  const thead=h("thead",{}); const hrow=h("tr",{});
+  ["KPI","This week","Target","vs last week"].forEach(hd=>hrow.appendChild(h("th",{},hd)));
+  thead.appendChild(hrow); tbl.appendChild(thead);
   const tbody=h("tbody",{});
-  PUBS.forEach(pub=>{
-    const pd=pubs[pub]||BLANK_PUB;
-    const prevPd=prevData?(prevData.pubs||{})[pub]:null;
+  FIELDS.forEach(f=>{
+    const val=data[f.key]||0;
+    const prev=prevData?(prevData[f.key]||0):null;
+    const s=si(val,f.target,f.lb);
     const tr=h("tr",{});
-    tr.appendChild(h("td",{style:{fontWeight:"500"}},SHORT[pub]));
-    PUB_FIELDS.forEach(f=>{
-      const s=si(pd[f.key]||0,f.target,f.lb);
-      const td=h("td",{});
-      const sp=span({class:"score-pill"});sp.style.background=s.bg;sp.style.color=s.col;
-      sp.textContent=(pd[f.key]||0)+f.suffix;td.appendChild(sp);tr.appendChild(td);
-    });
-    PUB_FIELDS.forEach(f=>{
-      const td=h("td",{});
-      if(prevPd){
-        const diff=(pd[f.key]||0)-(prevPd[f.key]||0);
-        td.textContent=Math.abs(diff)<0.05?"→":diff>0?"+"+diff.toFixed(0):diff.toFixed(0);
-        td.style.color=diff>0?"#3B6D11":diff<0?"#A32D2D":"#888780";
-        td.style.fontSize="12px";
-      }else{td.textContent="—";td.style.color="#888780";}
-      tr.appendChild(td);
-    });
-    tbody.appendChild(tr);
+    tr.appendChild(h("td",{style:{color:"#5f5e5a"}},f.label));
+    const vtd=h("td",{}); const vsp=span({class:"score-pill"});
+    vsp.style.background=s.bg; vsp.style.color=s.col;
+    vsp.textContent=val.toFixed(f.step<1?1:0)+f.suffix;
+    vtd.appendChild(vsp); tr.appendChild(vtd);
+    tr.appendChild(h("td",{style:{color:"#888780",fontSize:"12px"}},(f.lb?"≤":"")+f.target+f.suffix));
+    const chTd=h("td",{});
+    if(prev!==null){
+      const diff=val-prev;
+      const better=f.lb?diff<0:diff>0;
+      chTd.textContent=Math.abs(diff)<0.05?"→":diff>0?"+"+diff.toFixed(1):diff.toFixed(1);
+      chTd.style.color=better?"#3B6D11":diff===0?"#888780":"#A32D2D";
+      chTd.style.fontSize="12px";
+    }else{chTd.textContent="—";chTd.style.color="#888780";}
+    tr.appendChild(chTd); tbody.appendChild(tr);
   });
-  tbl.appendChild(tbody);tblCard.appendChild(tbl);frag.appendChild(tblCard);
+  tbl.appendChild(tbody); tblCard.appendChild(tbl); frag.appendChild(tblCard);
   return frag;
 }
 
@@ -388,66 +355,21 @@ function renderEntry(){
     }
     unlockBtn.addEventListener("click",tryUnlock);
     pinInput.addEventListener("keydown",e=>{if(e.key==="Enter")tryUnlock();});
-    gate.appendChild(pinInput);gate.appendChild(errMsg);gate.appendChild(unlockBtn);
+    gate.appendChild(pinInput); gate.appendChild(errMsg); gate.appendChild(unlockBtn);
     return gate;
   }
 
   const frag=document.createDocumentFragment();
-  if(!state.draft.pubs) state.draft.pubs={};
-  if(!state.draft.group) state.draft.group={...BLANK_GROUP};
-  PUBS.forEach(p=>{if(!state.draft.pubs[p]) state.draft.pubs[p]={...BLANK_PUB};});
+  const card=div({class:"entry-card"});
+  const ehead=div({class:"entry-head"});
+  ehead.appendChild(div({class:"avatar"},"CB"));
+  const einfo=div({});
+  einfo.appendChild(h("p",{style:{fontWeight:"500",fontSize:"14px",color:"#1a1a18",margin:"0"}},"Culture & Brand Manager"));
+  einfo.appendChild(h("p",{style:{fontSize:"12px",color:"#5f5e5a",margin:"0"}},"Week ending "+fmtWeek(state.activeWeek)));
+  ehead.appendChild(einfo); card.appendChild(ehead);
 
-  // ── Per-pub ──
-  frag.appendChild(div({class:"section-divider"},"Per site figures"));
-  PUBS.forEach(pub=>{
-    const pd=state.draft.pubs[pub];
-    const initials=pub.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
-    const card=div({class:"entry-card"});
-    const ehead=div({class:"entry-head"});
-    const av=div({class:"avatar"},initials);
-    const einfo=div({});
-    einfo.appendChild(h("p",{style:{fontWeight:"500",fontSize:"14px",color:"#1a1a18",margin:"0"}},pub));
-    einfo.appendChild(h("p",{style:{fontSize:"12px",color:"#5f5e5a",margin:"0"}},"Week ending "+fmtWeek(state.activeWeek)));
-    ehead.appendChild(av);ehead.appendChild(einfo);card.appendChild(ehead);
-    PUB_FIELDS.forEach(f=>{
-      const val=pd[f.key]!=null?pd[f.key]:0;
-      const s=si(val,f.target,f.lb);
-      const pct=((val-f.min)/(f.max-f.min))*100;
-      const tpct=((f.target-f.min)/(f.max-f.min))*100;
-      const row=div({class:"field-row"});
-      const top=div({class:"field-top"});
-      const right=div({class:"field-right"});
-      const sp=span({class:"status-pill"});sp.style.background=s.bg;sp.style.color=s.col;sp.textContent=s.label;
-      const sv=span({class:"field-val"});sv.textContent=val.toFixed(f.step<1?1:0)+f.suffix;
-      right.appendChild(sp);right.appendChild(sv);
-      top.appendChild(span({class:"field-label"},f.label));top.appendChild(right);row.appendChild(top);
-      const bwrap=div({class:"field-bar-wrap"});
-      const track=div({class:"mini-track"});
-      const fill=div({class:"mini-fill"});fill.style.width=Math.min(100,pct).toFixed(1)+"%";fill.style.background=s.col;
-      const tline=div({class:"mini-tgt"});tline.style.left=tpct.toFixed(1)+"%";
-      track.appendChild(fill);track.appendChild(tline);
-      const inp=h("input",{type:"number",min:f.min,max:f.max,step:f.step,class:"num-input"});
-      inp.value=val;
-      inp.addEventListener("input",function(){state.draft.pubs[pub][f.key]=parseFloat(this.value)||0;render();});
-      bwrap.appendChild(track);bwrap.appendChild(inp);row.appendChild(bwrap);
-      row.appendChild(div({class:"field-tgt"},"Target: "+f.target+f.suffix));
-      card.appendChild(row);
-    });
-    frag.appendChild(card);
-  });
-
-  // ── Group-wide ──
-  frag.appendChild(div({class:"section-divider"},"Group-wide figures"));
-  const groupCard=div({class:"entry-card"});
-  const ghead=div({class:"entry-head"});
-  const gav=div({class:"avatar",style:{background:"#FBEAF0",color:"#993556"}},"NS");
-  const ginfo=div({});
-  ginfo.appendChild(h("p",{style:{fontWeight:"500",fontSize:"14px",color:"#1a1a18",margin:"0"}},"Nancy Spain's Group"));
-  ginfo.appendChild(h("p",{style:{fontSize:"12px",color:"#5f5e5a",margin:"0"}},"Week ending "+fmtWeek(state.activeWeek)));
-  ghead.appendChild(gav);ghead.appendChild(ginfo);groupCard.appendChild(ghead);
-
-  GROUP_FIELDS.forEach(f=>{
-    const val=state.draft.group[f.key]!=null?state.draft.group[f.key]:0;
+  FIELDS.forEach(f=>{
+    const val=state.draft[f.key]!=null?state.draft[f.key]:0;
     const s=si(val,f.target,f.lb);
     const pct=((val-f.min)/(f.max-f.min))*100;
     const tpct=((f.target-f.min)/(f.max-f.min))*100;
@@ -456,31 +378,21 @@ function renderEntry(){
     const right=div({class:"field-right"});
     const sp=span({class:"status-pill"});sp.style.background=s.bg;sp.style.color=s.col;sp.textContent=s.label;
     const sv=span({class:"field-val"});sv.textContent=val.toFixed(f.step<1?1:0)+f.suffix;
-    right.appendChild(sp);right.appendChild(sv);
-    top.appendChild(span({class:"field-label"},f.label));top.appendChild(right);row.appendChild(top);
+    right.appendChild(sp); right.appendChild(sv);
+    top.appendChild(span({class:"field-label"},f.label)); top.appendChild(right); row.appendChild(top);
     const bwrap=div({class:"field-bar-wrap"});
     const track=div({class:"mini-track"});
     const fill=div({class:"mini-fill"});fill.style.width=Math.min(100,pct).toFixed(1)+"%";fill.style.background=s.col;
-    const tline=div({class:"mini-tgt"});tline.style.left=tpct.toFixed(1)+"%";
-    track.appendChild(fill);track.appendChild(tline);
+    const tline=div({class:"mini-tgt"});tline.style.left=Math.min(100,tpct).toFixed(1)+"%";
+    track.appendChild(fill); track.appendChild(tline);
     const inp=h("input",{type:"number",min:f.min,max:f.max,step:f.step,class:"num-input"});
     inp.value=val;
-    inp.addEventListener("input",function(){state.draft.group[f.key]=parseFloat(this.value)||0;render();});
-    bwrap.appendChild(track);bwrap.appendChild(inp);row.appendChild(bwrap);
-    row.appendChild(div({class:"field-tgt"},"Target: "+f.target+f.suffix));
-    groupCard.appendChild(row);
+    inp.addEventListener("input",function(){state.draft[f.key]=parseFloat(this.value)||0;render();});
+    bwrap.appendChild(track); bwrap.appendChild(inp); row.appendChild(bwrap);
+    row.appendChild(div({class:"field-tgt"},"Target: "+(f.lb?"≤":"")+f.target+f.suffix));
+    card.appendChild(row);
   });
-
-  // Culture initiatives text field
-  const ciRow=div({class:"field-row"});
-  ciRow.appendChild(div({class:"field-label",style:{marginBottom:"6px"}},"Culture initiatives this week"));
-  const ciTA=h("textarea",{class:"text-input",rows:"4",placeholder:"Describe this week's culture initiatives..."});
-  ciTA.style.cssText="width:100%;font-size:13px;padding:8px;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;background:#fff;color:#1a1a18;font-family:inherit;resize:vertical;";
-  ciTA.value=state.draft.group.cultureInitiatives||"";
-  ciTA.addEventListener("input",function(){state.draft.group.cultureInitiatives=this.value;});
-  ciRow.appendChild(ciTA);
-  groupCard.appendChild(ciRow);
-  frag.appendChild(groupCard);
+  frag.appendChild(card);
 
   const srow=div({class:"save-row"});
   const lockBtn=btn("🔒 Lock",{class:"btn"});
@@ -490,15 +402,15 @@ function renderEntry(){
   const sb=btn("Save & publish live",{class:"btn"});
   sb.style.cssText="background:#f1efe8;font-weight:500;color:#1a1a18;";
   sb.addEventListener("click",async()=>{
-    state.syncStatus="saving";render();
+    state.syncStatus="saving"; render();
     try{
       await saveWeekToDB(state.activeWeek,state.draft);
       state.allData[state.activeWeek]=JSON.parse(JSON.stringify(state.draft));
-      state.syncStatus="saved";render();
+      state.syncStatus="saved"; render();
       setTimeout(()=>{state.syncStatus="";render();},3000);
     }catch(e){state.syncStatus="error";render();}
   });
-  srow.appendChild(sb);frag.appendChild(srow);
+  srow.appendChild(sb); frag.appendChild(srow);
   return frag;
 }
 
@@ -508,61 +420,47 @@ function renderHistory(){
   const topRow=div({style:{display:"flex",justifyContent:"flex-end",marginBottom:"12px"}});
   const allEx=btn("Export all weeks CSV ↓",{class:"btn"});
   allEx.addEventListener("click",()=>exportAllCSV(state.allData));
-  topRow.appendChild(allEx);frag.appendChild(topRow);
+  topRow.appendChild(allEx); frag.appendChild(topRow);
   if(!weeks.length){
     frag.appendChild(div({style:{padding:"2rem",textAlign:"center",color:"#5f5e5a",fontSize:"14px"}},"No saved weeks yet."));
     return frag;
   }
   weeks.forEach(w=>{
     const d=state.allData[w];
-    const pubs=d.pubs||{};const group=d.group||BLANK_GROUP;
-    const mystAvg=avg(PUBS.map(p=>pubs[p]||BLANK_PUB),"mystery");
-    const engAvg=avg(PUBS.map(p=>pubs[p]||BLANK_PUB),"engagement");
     const item=div({class:"history-item"});
     const left=div({});
     left.appendChild(div({style:{fontSize:"14px",fontWeight:"500",color:"#1a1a18"}},"Week ending "+fmtWeek(w)));
     left.appendChild(div({style:{fontSize:"12px",color:"#5f5e5a",marginTop:"3px"}},
-      "Mystery "+mystAvg.toFixed(0)+"% · Engagement "+engAvg.toFixed(0)+"% · Turnover "+(group.staffTurnover||0).toFixed(1)+"%"));
+      "Site visit "+(d.siteVisitScore||0)+"% · Mystery shopper "+(d.mysteryScore||0)+"% · Turnover "+(d.staffTurnover||0).toFixed(1)+"%"));
     const right=div({style:{display:"flex",gap:"6px"}});
     const vb=btn("View",{class:"btn small"});
     vb.addEventListener("click",async()=>{state.activeWeek=w;state.view="dashboard";listenToWeek(w);render();});
     const eb=btn("CSV ↓",{class:"btn small"});
     eb.addEventListener("click",()=>exportCSV(w,d));
-    right.appendChild(vb);right.appendChild(eb);
-    item.appendChild(left);item.appendChild(right);frag.appendChild(item);
+    right.appendChild(vb); right.appendChild(eb);
+    item.appendChild(left); item.appendChild(right); frag.appendChild(item);
   });
   return frag;
 }
 
 function exportCSV(week,data){
-  const pubs=(data&&data.pubs)||{};
-  const group=(data&&data.group)||BLANK_GROUP;
-  const rows=[["Site","Week ending","Mystery Shopper %","Employee Engagement %","Staff Turnover %","Ready for next role %","Musician Feedback","Music Score %","Culture Initiatives"]];
-  PUBS.forEach(pub=>{
-    const pd=pubs[pub]||BLANK_PUB;
-    rows.push([pub,week,pd.mystery,pd.engagement,group.staffTurnover,group.readyToMove,group.musicianScore,group.musicScore,group.cultureInitiatives||""]);
-  });
-  const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const rows=[["Week ending","Site Visit Score %","Team Satisfaction %","Atmosphere Score %","Quiz Completion %","Mystery Shopper %","Ready for Next Role %","Staff Turnover %"]];
+  rows.push([week,data.siteVisitScore||0,data.teamSatisfaction||0,data.atmosphereScore||0,data.quizCompletion||0,data.mysteryScore||0,data.readyToMove||0,data.staffTurnover||0]);
+  const csv=rows.map(r=>r.map(v=>`"${v}"`).join(",")).join("\n");
   const a=document.createElement("a");
   a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);
-  a.download="nancy-spains-culture-kpi-"+week+".csv";
-  a.click();
+  a.download="nancy-spains-culture-kpi-"+week+".csv"; a.click();
 }
 function exportAllCSV(allData){
-  const rows=[["Site","Week ending","Mystery Shopper %","Employee Engagement %","Staff Turnover %","Ready for next role %","Musician Feedback","Music Score %","Culture Initiatives"]];
+  const rows=[["Week ending","Site Visit Score %","Team Satisfaction %","Atmosphere Score %","Quiz Completion %","Mystery Shopper %","Ready for Next Role %","Staff Turnover %"]];
   Object.keys(allData).sort().forEach(week=>{
-    const pubs=(allData[week]&&allData[week].pubs)||{};
-    const group=(allData[week]&&allData[week].group)||BLANK_GROUP;
-    PUBS.forEach(pub=>{
-      const pd=pubs[pub]||BLANK_PUB;
-      rows.push([pub,week,pd.mystery,pd.engagement,group.staffTurnover,group.readyToMove,group.musicianScore,group.musicScore,group.cultureInitiatives||""]);
-    });
+    const d=allData[week];
+    rows.push([week,d.siteVisitScore||0,d.teamSatisfaction||0,d.atmosphereScore||0,d.quizCompletion||0,d.mysteryScore||0,d.readyToMove||0,d.staffTurnover||0]);
   });
-  const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const csv=rows.map(r=>r.map(v=>`"${v}"`).join(",")).join("\n");
   const a=document.createElement("a");
   a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);
-  a.download="nancy-spains-culture-kpi-all-weeks.csv";
-  a.click();
+  a.download="nancy-spains-culture-kpi-all-weeks.csv"; a.click();
 }
 
 init();
