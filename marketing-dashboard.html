@@ -35,11 +35,11 @@ p.sub{font-size:12px;color:#5f5e5a;margin-top:2px;}
 .ctitle{font-size:13px;font-weight:500;margin-bottom:10px;}
 .bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
 .bar-row:last-child{margin-bottom:0;}
-.bar-lbl{font-size:11px;color:#5f5e5a;width:110px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bar-lbl{font-size:11px;color:#5f5e5a;width:120px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .bar-track{flex:1;background:#f1efe8;border-radius:4px;height:16px;position:relative;overflow:hidden;}
 .bar-fill{height:100%;border-radius:4px;transition:width 0.3s;}
 .bar-tgt{position:absolute;top:0;height:100%;width:1.5px;background:rgba(180,80,50,0.45);}
-.bar-val{font-size:11px;color:#5f5e5a;width:52px;text-align:right;flex-shrink:0;}
+.bar-val{font-size:11px;color:#5f5e5a;width:48px;text-align:right;flex-shrink:0;}
 .entry-card{background:#fff;border:0.5px solid rgba(0,0,0,0.12);border-radius:12px;padding:1.25rem;margin-bottom:1rem;}
 .entry-head{display:flex;align-items:center;gap:12px;margin-bottom:1.25rem;}
 .avatar{width:40px;height:40px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:#185FA5;flex-shrink:0;}
@@ -62,7 +62,6 @@ p.sub{font-size:12px;color:#5f5e5a;margin-top:2px;}
 .sync-saving{background:#FAEEDA;color:#854F0B;display:block;}
 .sync-saved{background:#EAF3DE;color:#3B6D11;display:block;}
 .sync-error{background:#FCEBEB;color:#A32D2D;display:block;}
-.section-divider{font-size:13px;font-weight:500;color:#5f5e5a;margin:1.25rem 0 0.75rem;padding-bottom:6px;border-bottom:0.5px solid rgba(0,0,0,0.1);}
 table{width:100%;border-collapse:collapse;font-size:13px;}
 th{text-align:left;color:#5f5e5a;font-weight:400;padding:4px 6px 8px;border-bottom:0.5px solid rgba(0,0,0,0.1);}
 td{padding:7px 6px;border-bottom:0.5px solid rgba(0,0,0,0.08);color:#1a1a18;}
@@ -91,16 +90,16 @@ const db = getFirestore(firebaseApp);
 const STORE_KEY = "marketing_kpi_weeks";
 const ADMIN_PASSWORD = "nancys2026";
 
+// Note: Instagram engagement target is a range (1.5-2%), we use 1.5 as minimum target
 const FIELDS = [
-  {key:"romi",          label:"Return on Marketing Investment", suffix:"%",  min:0, max:500, step:0.1, lb:false, target:80,    disp:v=>v.toFixed(1)+"%"},
-  {key:"bookingConv",   label:"Booking Conversion Rate",        suffix:"%",  min:0, max:100, step:0.1, lb:false, target:20,    disp:v=>v.toFixed(1)+"%"},
-  {key:"dbGrowth",      label:"Database Growth",                suffix:"%",  min:0, max:100, step:0.1, lb:false, target:5,     disp:v=>v.toFixed(1)+"%"},
-  {key:"tiktokGrowth",  label:"TikTok Follower Growth",         suffix:"%",  min:0, max:100, step:0.1, lb:false, target:5,     disp:v=>v.toFixed(1)+"%"},
-  {key:"tiktokViews",   label:"Avg TikTok Video Views",         suffix:"",   min:0, max:1000000, step:100, lb:false, target:60000, disp:v=>v>=1000?(v/1000).toFixed(1)+"k":v+""},
-  {key:"strategyExec",  label:"Marketing Strategy Executed",    suffix:"%",  min:0, max:100, step:1,   lb:false, target:90,    disp:v=>v.toFixed(0)+"%"},
+  {key:"igEngagement",     label:"Instagram Engagement",   suffix:"%",   min:0, max:20,   step:0.1, lb:false, target:1.5,  targetLabel:"1.5–2%",  disp:v=>v.toFixed(1)+"%"},
+  {key:"tiktokEngagement", label:"TikTok Engagement",      suffix:"%",   min:0, max:100,  step:0.1, lb:false, target:10,   targetLabel:"10%",      disp:v=>v.toFixed(1)+"%"},
+  {key:"igReach",          label:"Instagram Reach",        suffix:"%",   min:0, max:200,  step:0.1, lb:false, target:25,   targetLabel:"25%",      disp:v=>v.toFixed(1)+"%"},
+  {key:"tiktokReach",      label:"TikTok Reach",           suffix:"%",   min:0, max:1000, step:1,   lb:false, target:400,  targetLabel:"400%",     disp:v=>v.toFixed(0)+"%"},
+  {key:"videoCompletion",  label:"Video Completion Rate",  suffix:"%",   min:0, max:100,  step:0.1, lb:false, target:60,   targetLabel:"60%",      disp:v=>v.toFixed(1)+"%"},
 ];
 
-const BLANK = {romi:0, bookingConv:0, dbGrowth:0, tiktokGrowth:0, tiktokViews:0, strategyExec:0};
+const BLANK = {igEngagement:0,tiktokEngagement:0,igReach:0,tiktokReach:0,videoCompletion:0};
 
 const state = {
   view:"dashboard", activeWeek:currentWeekEnding(), allData:{},
@@ -227,7 +226,7 @@ function renderWeekNav(){
   prev.addEventListener("click",async()=>{
     state.activeWeek=shiftWeek(state.activeWeek,-1);
     state.draft=await loadWeekFromDB(state.activeWeek);
-    listenToWeek(state.activeWeek);render();
+    listenToWeek(state.activeWeek); render();
   });
   const center=div({class:"center"});
   center.appendChild(span({class:"wlabel"},"Week ending "+fmtWeek(state.activeWeek)));
@@ -250,7 +249,7 @@ function renderDashboard(){
   const prevData=state.allData[prevW]||null;
   const frag=document.createDocumentFragment();
 
-  // ── KPI summary cards ──
+  // KPI summary cards
   const kg=div({class:"kpi-grid"});
   FIELDS.forEach(f=>{
     const val=data[f.key]||0;
@@ -258,17 +257,17 @@ function renderDashboard(){
     const card=div({class:"kpi-card"});
     card.appendChild(div({class:"klabel"},f.label));
     card.appendChild(div({class:"kval"},f.disp(val)));
-    card.appendChild(div({class:"ktgt"},"Target: "+f.disp(f.target)));
+    card.appendChild(div({class:"ktgt"},"Target: "+f.targetLabel));
     const badge=span({class:"kbadge"});badge.style.background=s.bg;badge.style.color=s.col;
     badge.textContent=val>=f.target?"On target":"Below target";
-    card.appendChild(badge);kg.appendChild(card);
+    card.appendChild(badge); kg.appendChild(card);
   });
   frag.appendChild(kg);
 
-  // ── Bar charts ──
+  // Bar charts
   function makeBarRow(lbl,val,tgt,maxV,lb,dispVal){
     const row=div({class:"bar-row"});
-    const l=div({class:"bar-lbl"},lbl);l.title=lbl;
+    const l=div({class:"bar-lbl"},lbl); l.title=lbl;
     const track=div({class:"bar-track"});
     const pct=Math.min(100,(val/maxV)*100);
     const tpct=Math.min(100,(tgt/maxV)*100);
@@ -279,37 +278,36 @@ function renderDashboard(){
     return row;
   }
   function makeChart(title,rows){
-    const c=div({class:"ccart"});c.appendChild(div({class:"ctitle"},title));
-    rows.forEach(r=>c.appendChild(r));return c;
+    const c=div({class:"ccart"}); c.appendChild(div({class:"ctitle"},title));
+    rows.forEach(r=>c.appendChild(r)); return c;
   }
 
+  // Instagram vs TikTok engagement
   const r1=div({class:"grid2"});
-  r1.appendChild(makeChart("Revenue metrics",[
-    makeBarRow("ROMI",data.romi||0,80,200,false,(data.romi||0).toFixed(1)+"%"),
-    makeBarRow("Booking conv.",data.bookingConv||0,20,100,false,(data.bookingConv||0).toFixed(1)+"%"),
+  r1.appendChild(makeChart("Engagement rate",[
+    makeBarRow("Instagram",(data.igEngagement||0),1.5,20,false,(data.igEngagement||0).toFixed(1)+"%"),
+    makeBarRow("TikTok",(data.tiktokEngagement||0),10,100,false,(data.tiktokEngagement||0).toFixed(1)+"%"),
   ]));
-  r1.appendChild(makeChart("Growth metrics",[
-    makeBarRow("DB growth",data.dbGrowth||0,5,50,false,(data.dbGrowth||0).toFixed(1)+"%"),
-    makeBarRow("TikTok followers",data.tiktokGrowth||0,5,50,false,(data.tiktokGrowth||0).toFixed(1)+"%"),
+  r1.appendChild(makeChart("Reach",[
+    makeBarRow("Instagram",(data.igReach||0),25,200,false,(data.igReach||0).toFixed(1)+"%"),
+    makeBarRow("TikTok",(data.tiktokReach||0),400,1000,false,(data.tiktokReach||0).toFixed(0)+"%"),
   ]));
   frag.appendChild(r1);
 
   const r2=div({class:"grid2"});
-  r2.appendChild(makeChart("TikTok performance",[
-    makeBarRow("Avg video views",data.tiktokViews||0,60000,200000,false,((data.tiktokViews||0)>=1000?((data.tiktokViews||0)/1000).toFixed(1)+"k":(data.tiktokViews||0)+"")),
+  r2.appendChild(makeChart("Video completion rate",[
+    makeBarRow("Completion rate",(data.videoCompletion||0),60,100,false,(data.videoCompletion||0).toFixed(1)+"%"),
   ]));
-  r2.appendChild(makeChart("Strategy execution",[
-    makeBarRow("Strategy executed",data.strategyExec||0,90,100,false,(data.strategyExec||0)+"%"),
-  ]));
+  r2.appendChild(div({class:"ccart"}));
   frag.appendChild(r2);
 
-  // ── Week on week comparison table ──
+  // Week on week comparison table
   const tblCard=div({class:"ccart"});
   tblCard.appendChild(div({class:"ctitle"},"Week on week comparison"));
   const tbl=h("table",{});
-  const thead=h("thead",{});const hrow=h("tr",{});
+  const thead=h("thead",{}); const hrow=h("tr",{});
   ["KPI","This week","Target","vs last week"].forEach(hd=>hrow.appendChild(h("th",{},hd)));
-  thead.appendChild(hrow);tbl.appendChild(thead);
+  thead.appendChild(hrow); tbl.appendChild(thead);
   const tbody=h("tbody",{});
   FIELDS.forEach(f=>{
     const val=data[f.key]||0;
@@ -317,22 +315,21 @@ function renderDashboard(){
     const s=si(val,f.target,f.lb);
     const tr=h("tr",{});
     tr.appendChild(h("td",{style:{color:"#5f5e5a"}},f.label));
-    const vtd=h("td",{});
-    const vsp=span({class:"score-pill"});vsp.style.background=s.bg;vsp.style.color=s.col;vsp.textContent=f.disp(val);
-    vtd.appendChild(vsp);tr.appendChild(vtd);
-    tr.appendChild(h("td",{style:{color:"#888780",fontSize:"12px"}},f.disp(f.target)));
+    const vtd=h("td",{}); const vsp=span({class:"score-pill"});
+    vsp.style.background=s.bg; vsp.style.color=s.col; vsp.textContent=f.disp(val);
+    vtd.appendChild(vsp); tr.appendChild(vtd);
+    tr.appendChild(h("td",{style:{color:"#888780",fontSize:"12px"}},f.targetLabel));
     const chTd=h("td",{});
     if(prev!==null){
       const diff=val-prev;
       const better=f.lb?diff<0:diff>0;
-      const dispDiff=f.key==="tiktokViews"?(Math.abs(diff)>=1000?(diff/1000).toFixed(1)+"k":diff+""):diff.toFixed(f.step<1?1:0);
-      chTd.textContent=Math.abs(diff)<0.05?"→":diff>0?"+"+dispDiff:dispDiff;
+      chTd.textContent=Math.abs(diff)<0.05?"→":diff>0?"+"+diff.toFixed(1):diff.toFixed(1);
       chTd.style.color=better?"#3B6D11":diff===0?"#888780":"#A32D2D";
       chTd.style.fontSize="12px";
     }else{chTd.textContent="—";chTd.style.color="#888780";}
-    tr.appendChild(chTd);tbody.appendChild(tr);
+    tr.appendChild(chTd); tbody.appendChild(tr);
   });
-  tbl.appendChild(tbody);tblCard.appendChild(tbl);frag.appendChild(tblCard);
+  tbl.appendChild(tbody); tblCard.appendChild(tbl); frag.appendChild(tblCard);
   return frag;
 }
 
@@ -353,7 +350,7 @@ function renderEntry(){
     }
     unlockBtn.addEventListener("click",tryUnlock);
     pinInput.addEventListener("keydown",e=>{if(e.key==="Enter")tryUnlock();});
-    gate.appendChild(pinInput);gate.appendChild(errMsg);gate.appendChild(unlockBtn);
+    gate.appendChild(pinInput); gate.appendChild(errMsg); gate.appendChild(unlockBtn);
     return gate;
   }
 
@@ -364,7 +361,7 @@ function renderEntry(){
   const einfo=div({});
   einfo.appendChild(h("p",{style:{fontWeight:"500",fontSize:"14px",color:"#1a1a18",margin:"0"}},"Marketing Director"));
   einfo.appendChild(h("p",{style:{fontSize:"12px",color:"#5f5e5a",margin:"0"}},"Week ending "+fmtWeek(state.activeWeek)));
-  ehead.appendChild(einfo);card.appendChild(ehead);
+  ehead.appendChild(einfo); card.appendChild(ehead);
 
   FIELDS.forEach(f=>{
     const val=state.draft[f.key]!=null?state.draft[f.key]:0;
@@ -376,18 +373,18 @@ function renderEntry(){
     const right=div({class:"field-right"});
     const sp=span({class:"status-pill"});sp.style.background=s.bg;sp.style.color=s.col;sp.textContent=s.label;
     const sv=span({class:"field-val"});sv.textContent=f.disp(val);
-    right.appendChild(sp);right.appendChild(sv);
-    top.appendChild(span({class:"field-label"},f.label));top.appendChild(right);row.appendChild(top);
+    right.appendChild(sp); right.appendChild(sv);
+    top.appendChild(span({class:"field-label"},f.label)); top.appendChild(right); row.appendChild(top);
     const bwrap=div({class:"field-bar-wrap"});
     const track=div({class:"mini-track"});
     const fill=div({class:"mini-fill"});fill.style.width=Math.min(100,pct).toFixed(1)+"%";fill.style.background=s.col;
     const tline=div({class:"mini-tgt"});tline.style.left=Math.min(100,tpct).toFixed(1)+"%";
-    track.appendChild(fill);track.appendChild(tline);
+    track.appendChild(fill); track.appendChild(tline);
     const inp=h("input",{type:"number",min:f.min,max:f.max,step:f.step,class:"num-input"});
     inp.value=val;
     inp.addEventListener("input",function(){state.draft[f.key]=parseFloat(this.value)||0;render();});
-    bwrap.appendChild(track);bwrap.appendChild(inp);row.appendChild(bwrap);
-    row.appendChild(div({class:"field-tgt"},"Target: "+f.disp(f.target)));
+    bwrap.appendChild(track); bwrap.appendChild(inp); row.appendChild(bwrap);
+    row.appendChild(div({class:"field-tgt"},"Target: "+f.targetLabel));
     card.appendChild(row);
   });
   frag.appendChild(card);
@@ -400,15 +397,15 @@ function renderEntry(){
   const sb=btn("Save & publish live",{class:"btn"});
   sb.style.cssText="background:#f1efe8;font-weight:500;color:#1a1a18;";
   sb.addEventListener("click",async()=>{
-    state.syncStatus="saving";render();
+    state.syncStatus="saving"; render();
     try{
       await saveWeekToDB(state.activeWeek,state.draft);
       state.allData[state.activeWeek]=JSON.parse(JSON.stringify(state.draft));
-      state.syncStatus="saved";render();
+      state.syncStatus="saved"; render();
       setTimeout(()=>{state.syncStatus="";render();},3000);
     }catch(e){state.syncStatus="error";render();}
   });
-  srow.appendChild(sb);frag.appendChild(srow);
+  srow.appendChild(sb); frag.appendChild(srow);
   return frag;
 }
 
@@ -418,7 +415,7 @@ function renderHistory(){
   const topRow=div({style:{display:"flex",justifyContent:"flex-end",marginBottom:"12px"}});
   const allEx=btn("Export all weeks CSV ↓",{class:"btn"});
   allEx.addEventListener("click",()=>exportAllCSV(state.allData));
-  topRow.appendChild(allEx);frag.appendChild(topRow);
+  topRow.appendChild(allEx); frag.appendChild(topRow);
   if(!weeks.length){
     frag.appendChild(div({style:{padding:"2rem",textAlign:"center",color:"#5f5e5a",fontSize:"14px"}},"No saved weeks yet."));
     return frag;
@@ -429,38 +426,36 @@ function renderHistory(){
     const left=div({});
     left.appendChild(div({style:{fontSize:"14px",fontWeight:"500",color:"#1a1a18"}},"Week ending "+fmtWeek(w)));
     left.appendChild(div({style:{fontSize:"12px",color:"#5f5e5a",marginTop:"3px"}},
-      "ROMI "+(d.romi||0).toFixed(1)+"% · Booking conv. "+(d.bookingConv||0).toFixed(1)+"% · TikTok views "+((d.tiktokViews||0)>=1000?((d.tiktokViews||0)/1000).toFixed(1)+"k":(d.tiktokViews||0))));
+      "IG engagement "+(d.igEngagement||0).toFixed(1)+"% · TikTok engagement "+(d.tiktokEngagement||0).toFixed(1)+"% · Video completion "+(d.videoCompletion||0).toFixed(1)+"%"));
     const right=div({style:{display:"flex",gap:"6px"}});
     const vb=btn("View",{class:"btn small"});
     vb.addEventListener("click",async()=>{state.activeWeek=w;state.view="dashboard";listenToWeek(w);render();});
     const eb=btn("CSV ↓",{class:"btn small"});
     eb.addEventListener("click",()=>exportCSV(w,d));
-    right.appendChild(vb);right.appendChild(eb);
-    item.appendChild(left);item.appendChild(right);frag.appendChild(item);
+    right.appendChild(vb); right.appendChild(eb);
+    item.appendChild(left); item.appendChild(right); frag.appendChild(item);
   });
   return frag;
 }
 
 function exportCSV(week,data){
-  const rows=[["Week ending","ROMI %","Booking Conversion %","Database Growth %","TikTok Follower Growth %","Avg TikTok Views","Marketing Strategy Executed %"]];
-  rows.push([week,data.romi||0,data.bookingConv||0,data.dbGrowth||0,data.tiktokGrowth||0,data.tiktokViews||0,data.strategyExec||0]);
+  const rows=[["Week ending","IG Engagement %","TikTok Engagement %","IG Reach %","TikTok Reach %","Video Completion %"]];
+  rows.push([week,data.igEngagement||0,data.tiktokEngagement||0,data.igReach||0,data.tiktokReach||0,data.videoCompletion||0]);
   const csv=rows.map(r=>r.map(v=>`"${v}"`).join(",")).join("\n");
   const a=document.createElement("a");
   a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);
-  a.download="nancy-spains-marketing-kpi-"+week+".csv";
-  a.click();
+  a.download="nancy-spains-marketing-kpi-"+week+".csv"; a.click();
 }
 function exportAllCSV(allData){
-  const rows=[["Week ending","ROMI %","Booking Conversion %","Database Growth %","TikTok Follower Growth %","Avg TikTok Views","Marketing Strategy Executed %"]];
+  const rows=[["Week ending","IG Engagement %","TikTok Engagement %","IG Reach %","TikTok Reach %","Video Completion %"]];
   Object.keys(allData).sort().forEach(week=>{
     const d=allData[week];
-    rows.push([week,d.romi||0,d.bookingConv||0,d.dbGrowth||0,d.tiktokGrowth||0,d.tiktokViews||0,d.strategyExec||0]);
+    rows.push([week,d.igEngagement||0,d.tiktokEngagement||0,d.igReach||0,d.tiktokReach||0,d.videoCompletion||0]);
   });
   const csv=rows.map(r=>r.map(v=>`"${v}"`).join(",")).join("\n");
   const a=document.createElement("a");
   a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);
-  a.download="nancy-spains-marketing-kpi-all-weeks.csv";
-  a.click();
+  a.download="nancy-spains-marketing-kpi-all-weeks.csv"; a.click();
 }
 
 init();
