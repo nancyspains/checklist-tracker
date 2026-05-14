@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Nancy Spain's — Ops Director KPI</title>
+<title>Nancy Spain's — KPI Manager</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f5f4f0;color:#1a1a18;min-height:100vh;}
@@ -24,14 +24,13 @@ p.sub{font-size:12px;color:#5f5e5a;margin-top:2px;}
 .pill-purple{background:#EEEDFE;color:#534AB7;}
 .pill-green{background:#EAF3DE;color:#3B6D11;}
 .pill-gray{background:#f1efe8;color:#888780;}
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:1.25rem;}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:1.25rem;}
 .kpi-card{background:#f1efe8;border-radius:8px;padding:0.85rem;}
 .klabel{font-size:11px;color:#5f5e5a;margin-bottom:5px;}
 .kval{font-size:22px;font-weight:500;line-height:1;}
 .ktgt{font-size:11px;color:#888780;margin-top:3px;}
 .kbadge{display:inline-block;font-size:11px;padding:2px 7px;border-radius:20px;margin-top:5px;font-weight:500;}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
-.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;}
 .ccart{background:#fff;border:0.5px solid rgba(0,0,0,0.12);border-radius:12px;padding:1rem;}
 .ctitle{font-size:13px;font-weight:500;margin-bottom:10px;}
 .bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
@@ -41,9 +40,14 @@ p.sub{font-size:12px;color:#5f5e5a;margin-top:2px;}
 .bar-fill{height:100%;border-radius:4px;transition:width 0.3s;}
 .bar-tgt{position:absolute;top:0;height:100%;width:1.5px;background:rgba(180,80,50,0.45);}
 .bar-val{font-size:11px;color:#5f5e5a;width:38px;text-align:right;flex-shrink:0;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;color:#5f5e5a;font-weight:400;padding:4px 6px 8px;border-bottom:0.5px solid rgba(0,0,0,0.1);}
+td{padding:7px 6px;border-bottom:0.5px solid rgba(0,0,0,0.08);color:#1a1a18;}
+tr:last-child td{border-bottom:none;}
+.score-pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:12px;font-weight:500;}
 .entry-card{background:#fff;border:0.5px solid rgba(0,0,0,0.12);border-radius:12px;padding:1.25rem;margin-bottom:1rem;}
 .entry-head{display:flex;align-items:center;gap:12px;margin-bottom:1.25rem;}
-.avatar{width:40px;height:40px;border-radius:50%;background:#E1F5EE;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:#0F6E56;flex-shrink:0;}
+.avatar{width:40px;height:40px;border-radius:50%;background:#EEEDFE;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:#534AB7;flex-shrink:0;}
 .field-row{margin-bottom:14px;}
 .field-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
 .field-label{font-size:13px;color:#5f5e5a;}
@@ -63,18 +67,13 @@ p.sub{font-size:12px;color:#5f5e5a;margin-top:2px;}
 .sync-saving{background:#FAEEDA;color:#854F0B;display:block;}
 .sync-saved{background:#EAF3DE;color:#3B6D11;display:block;}
 .sync-error{background:#FCEBEB;color:#A32D2D;display:block;}
-.section-divider{font-size:13px;font-weight:500;color:#5f5e5a;margin:1.25rem 0 0.75rem;padding-bottom:6px;border-bottom:0.5px solid rgba(0,0,0,0.1);}
-table{width:100%;border-collapse:collapse;font-size:13px;}
-th{text-align:left;color:#5f5e5a;font-weight:400;padding:4px 6px 8px;border-bottom:0.5px solid rgba(0,0,0,0.1);}
-td{padding:7px 6px;border-bottom:0.5px solid rgba(0,0,0,0.08);color:#1a1a18;}
-tr:last-child td{border-bottom:none;}
-.score-pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:12px;font-weight:500;}
-@media(max-width:600px){.grid2,.grid3{grid-template-columns:1fr;}}
+.pub-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem;}
+.filter-row{display:flex;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap;align-items:center;justify-content:space-between;}
+@media(max-width:600px){.grid2{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
 <div class="wrap" id="app"><div class="loading">Connecting to database...</div></div>
-
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, doc, setDoc, getDoc, collection, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -91,36 +90,35 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
 
-// ── Config ──
 const PUBS = ["Nancy Spains Shoreditch","Nancy Spains Monument","Nancy Spains Manchester"];
 const SHORT = {"Nancy Spains Shoreditch":"Shoreditch","Nancy Spains Monument":"Monument","Nancy Spains Manchester":"Manchester"};
-
-// KPIs that are per-pub
-const PUB_FIELDS = [
-  {key:"mystery", label:"Mystery Shopper %", suffix:"%", min:0, max:100, step:1, lb:false, target:90},
-  {key:"audit",   label:"Audit Score %",     suffix:"%", min:0, max:100, step:1, lb:false, target:85},
+const TARGETS = {labour:18,gp:80,tasks:90,audit:85,mystery:90,reviews:4.8,reviewCount:0,newReviews:4,stockVar:1};
+const FIELDS = [
+  {key:"labour",      label:"Labour %",             suffix:"%",    min:0, max:60,   step:0.1, lb:true},
+  {key:"gp",          label:"GP %",                 suffix:"%",    min:0, max:100,  step:0.1, lb:false},
+  {key:"tasks",       label:"Tasks completed %",    suffix:"%",    min:0, max:100,  step:1,   lb:false},
+  {key:"audit",       label:"Audit score %",        suffix:"%",    min:0, max:100,  step:1,   lb:false},
+  {key:"mystery",     label:"Mystery shopper %",    suffix:"%",    min:0, max:100,  step:1,   lb:false},
+  {key:"reviews",     label:"Avg review score",     suffix:" / 5", min:1, max:5,    step:0.1, lb:false},
+  {key:"reviewCount", label:"Total Google reviews", suffix:"",     min:0, max:9999, step:1,   lb:false},
+  {key:"newReviews",  label:"New reviews this week",suffix:"",     min:0, max:999,  step:1,   lb:false},
+  {key:"stockVar",    label:"Stock variance %",     suffix:"%",    min:0, max:10,   step:0.1, lb:true},
 ];
-
-// KPIs that are group-wide
-const GROUP_FIELDS = [
-  {key:"compliance", label:"Compliance Checklists %", suffix:"%", min:0, max:100, step:1,   lb:false, target:90},
-  {key:"gp",         label:"GP %",                    suffix:"%", min:0, max:100, step:0.1, lb:false, target:80},
-];
-
-const BLANK_PUB  = {mystery:0, audit:0};
-const BLANK_GROUP = {compliance:0, gp:0};
-
+const BLANK = {labour:0,gp:0,tasks:0,audit:0,mystery:0,reviews:0,stockVar:0,reviewCount:0,newReviews:0,trend:""};
+const SAMPLE = {
+  "Nancy Spains Shoreditch":{labour:28,gp:71,tasks:88,audit:82,mystery:79,reviews:4.3,stockVar:1.2,reviewCount:142,newReviews:3,trend:"+0.2"},
+  "Nancy Spains Monument":  {labour:31,gp:68,tasks:73,audit:91,mystery:88,reviews:4.6,stockVar:0.6,reviewCount:210,newReviews:5,trend:"+0.1"},
+  "Nancy Spains Manchester":{labour:25,gp:72,tasks:95,audit:95,mystery:93,reviews:4.8,stockVar:0.3,reviewCount:97, newReviews:4,trend:"+0.3"},
+};
 const ADMIN_PASSWORD = "nancys2026";
-const STORE_KEY = "ops_kpi_weeks";
+const STORE_KEY = "ns_kpi_weeks";
 
-// ── State ──
 const state = {
-  view:"dashboard", activeWeek:currentWeekEnding(), allData:{},
-  draft:{pubs:{}, group:{}}, saved:false, unlocked:false,
-  loading:true, syncStatus:""
+  view:"dashboard", activeWeek:currentWeekEnding(), filter:"all",
+  allData:{}, draft:{}, saved:false, unlocked:false,
+  entryPub:PUBS[0], loading:true, syncStatus:""
 };
 
-// ── Date helpers ──
 function currentWeekEnding(){
   const t=new Date(); const day=t.getDay();
   const diff=t.getDate()-day+(day===0?0:7);
@@ -135,22 +133,16 @@ function fmtWeek(w){
   return new Date(w+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
 }
 
-// ── Firebase ──
 async function loadWeekFromDB(week){
-  const ref=doc(db,STORE_KEY,week);
-  const snap=await getDoc(ref);
+  const snap=await getDoc(doc(db,STORE_KEY,week));
   if(snap.exists()) return snap.data();
-  const d={pubs:{},group:{...BLANK_GROUP}};
-  PUBS.forEach(p=>{d.pubs[p]={...BLANK_PUB};});
-  return d;
+  if(week===currentWeekEnding()) return JSON.parse(JSON.stringify(SAMPLE));
+  const d={}; PUBS.forEach(p=>{d[p]={...BLANK};}); return d;
 }
-async function saveWeekToDB(week,data){
-  await setDoc(doc(db,STORE_KEY,week),data);
-}
+async function saveWeekToDB(week,data){ await setDoc(doc(db,STORE_KEY,week),data); }
 async function loadAllWeeks(){
   const snap=await getDocs(collection(db,STORE_KEY));
-  const all={};snap.forEach(d=>{all[d.id]=d.data();});
-  return all;
+  const all={}; snap.forEach(d=>{all[d.id]=d.data();}); return all;
 }
 
 let unsubscribe=null;
@@ -173,7 +165,6 @@ async function init(){
   render();
 }
 
-// ── Helpers ──
 function si(val,tgt,lb){
   const diff=lb?val-tgt:tgt-val;
   if(diff<=0) return{bg:"#EAF3DE",col:"#3B6D11",label:"On target"};
@@ -184,32 +175,47 @@ function barColor(val,tgt,lb){
   const diff=lb?val-tgt:tgt-val;
   return diff<=0?"#639922":diff<=3?"#BA7517":"#E24B4A";
 }
-function avg(arr,key){
-  if(!arr.length) return 0;
-  return arr.reduce((s,p)=>s+(p[key]||0),0)/arr.length;
-}
+function avg(arr,key){ return arr.length?arr.reduce((s,p)=>s+(p[key]||0),0)/arr.length:0; }
+
 function h(tag,attrs,children){
   const el=document.createElement(tag);
   if(attrs) Object.keys(attrs).forEach(k=>{
-    if(k==="style"&&typeof attrs[k]==="object"){Object.assign(el.style,attrs[k]);}
-    else if(k.startsWith("on")){el.addEventListener(k.slice(2).toLowerCase(),attrs[k]);}
-    else{el.setAttribute(k,attrs[k]);}
+    if(k==="style"&&typeof attrs[k]==="object") Object.assign(el.style,attrs[k]);
+    else if(k.startsWith("on")) el.addEventListener(k.slice(2).toLowerCase(),attrs[k]);
+    else el.setAttribute(k,attrs[k]);
   });
   if(children){
     if(!Array.isArray(children)) children=[children];
     children.forEach(c=>{
       if(c==null) return;
-      if(typeof c==="string"||typeof c==="number"){el.appendChild(document.createTextNode(c));}
-      else{el.appendChild(c);}
+      if(typeof c==="string"||typeof c==="number") el.appendChild(document.createTextNode(c));
+      else el.appendChild(c);
     });
   }
   return el;
 }
-function div(attrs,children){return h("div",attrs,children);}
-function span(attrs,children){return h("span",attrs,children);}
-function btn(label,attrs){return h("button",Object.assign({class:"btn"},attrs||{}),[label]);}
+function div(a,c){return h("div",a,c);}
+function span(a,c){return h("span",a,c);}
+function btn(l,a){return h("button",Object.assign({class:"btn"},a||{}),[l]);}
 
-// ── Render ──
+function scorePub(pd){
+  function scoreHigh(val,tgt){ return Math.max(0,Math.min(100,Math.round((val/tgt)*100))); }
+  function scoreLow(val,tgt){
+    if(val<=tgt) return 100;
+    return Math.max(0,Math.round(100-((val-tgt)/tgt)*100));
+  }
+  const scores=[];
+  if(pd.labour!=null)     scores.push(scoreLow(pd.labour,18));
+  if(pd.gp!=null)         scores.push(scoreHigh(pd.gp,80));
+  if(pd.tasks!=null)      scores.push(scoreHigh(pd.tasks,90));
+  if(pd.audit!=null)      scores.push(scoreHigh(pd.audit,85));
+  if(pd.mystery!=null)    scores.push(scoreHigh(pd.mystery,90));
+  if(pd.reviews!=null)    scores.push(scoreHigh(pd.reviews*10,48));
+  if(pd.newReviews!=null) scores.push(scoreHigh(pd.newReviews,4));
+  if(pd.stockVar!=null)   scores.push(scoreLow(pd.stockVar,1));
+  return scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):0;
+}
+
 function render(){
   const app=document.getElementById("app");
   app.innerHTML="";
@@ -220,20 +226,21 @@ function render(){
   if(state.syncStatus==="saved")  sb.textContent="✓ Saved — all users will see the update instantly";
   if(state.syncStatus==="error")  sb.textContent="Error saving — please try again";
   app.appendChild(sb);
-  app.appendChild(renderWeekNav());
-  if(state.view==="dashboard") app.appendChild(renderDashboard());
-  if(state.view==="entry")     app.appendChild(renderEntry());
-  if(state.view==="history")   app.appendChild(renderHistory());
+  if(state.view!=="history") app.appendChild(renderWeekNav());
+  if(state.view==="dashboard")   app.appendChild(renderDashboard());
+  if(state.view==="entry")       app.appendChild(renderEntry());
+  if(state.view==="leaderboard") app.appendChild(renderLeaderboard());
+  if(state.view==="history")     app.appendChild(renderHistory());
 }
 
 function renderTopBar(){
   const wrap=div({class:"topbar"});
   const left=div({});
-  left.appendChild(h("h1",{},"Nancy Spain's — Ops Director KPI"));
+  left.appendChild(h("h1",{},"Nancy Spain's — KPI Manager"));
   left.appendChild(h("p",{class:"sub"},"Live dashboard · updates instantly for everyone"));
   wrap.appendChild(left);
   const right=div({class:"tabs"});
-  [["dashboard","Dashboard"],["entry","Enter figures"],["history","History"]].forEach(t=>{
+  [["dashboard","Dashboard"],["entry","Enter figures"],["leaderboard","Leaderboard"],["history","History"]].forEach(t=>{
     const b=btn(t[1],{class:"btn"+(state.view===t[0]?" active":"")});
     b.addEventListener("click",()=>{state.view=t[0];render();});
     right.appendChild(b);
@@ -254,18 +261,18 @@ function renderWeekNav(){
   prev.addEventListener("click",async()=>{
     state.activeWeek=shiftWeek(state.activeWeek,-1);
     state.draft=await loadWeekFromDB(state.activeWeek);
-    listenToWeek(state.activeWeek);render();
+    state.filter="all"; listenToWeek(state.activeWeek); render();
   });
   const center=div({class:"center"});
   center.appendChild(span({class:"wlabel"},"Week ending "+fmtWeek(state.activeWeek)));
-  if(isCur)       center.appendChild(span({class:"pill pill-purple"},"Current week"));
-  else if(saved)  center.appendChild(span({class:"pill pill-green"},"Saved"));
-  else            center.appendChild(span({class:"pill pill-gray"},"No data"));
+  if(isCur)      center.appendChild(span({class:"pill pill-purple"},"Current week"));
+  else if(saved) center.appendChild(span({class:"pill pill-green"},"Saved"));
+  else           center.appendChild(span({class:"pill pill-gray"},"No data"));
   const next=h("button",{class:"arrow"},"›");
   if(state.activeWeek>=cur) next.disabled=true;
   next.addEventListener("click",async()=>{
     const n=shiftWeek(state.activeWeek,1);
-    if(n<=cur){state.activeWeek=n;state.draft=await loadWeekFromDB(n);listenToWeek(n);render();}
+    if(n<=cur){state.activeWeek=n;state.draft=await loadWeekFromDB(n);state.filter="all";listenToWeek(n);render();}
   });
   wrap.appendChild(prev);wrap.appendChild(center);wrap.appendChild(next);
   return wrap;
@@ -273,37 +280,36 @@ function renderWeekNav(){
 
 function renderDashboard(){
   const data=state.allData[state.activeWeek]||state.draft;
-  const pubs=data.pubs||{};
-  const group=data.group||BLANK_GROUP;
   const prevW=shiftWeek(state.activeWeek,-1);
   const prevData=state.allData[prevW]||null;
+  const filtered=state.filter==="all"?PUBS.map(n=>Object.assign({name:n},data[n]||BLANK)):[{name:state.filter,...(data[state.filter]||BLANK)}];
   const frag=document.createDocumentFragment();
 
-  function makeBarRow(lbl,val,tgt,maxV,lb,suffix){
-    const row=div({class:"bar-row"});
-    const l=div({class:"bar-lbl"},lbl);l.title=lbl;
-    const track=div({class:"bar-track"});
-    const pct=Math.min(100,(val/maxV)*100);
-    const tpct=Math.min(100,(tgt/maxV)*100);
-    const fill=div({class:"bar-fill"});fill.style.width=pct.toFixed(1)+"%";fill.style.background=barColor(val,tgt,lb);
-    const tline=div({class:"bar-tgt"});tline.style.left=tpct.toFixed(1)+"%";
-    track.appendChild(fill);track.appendChild(tline);
-    row.appendChild(l);row.appendChild(track);row.appendChild(div({class:"bar-val"},val+suffix));
-    return row;
-  }
-  function makeChart(title,rows){
-    const c=div({class:"ccart"});c.appendChild(div({class:"ctitle"},title));
-    rows.forEach(r=>c.appendChild(r));return c;
-  }
+  const fr=div({class:"filter-row"});
+  const fd=div({style:{fontSize:"13px",color:"#5f5e5a"}});
+  fd.textContent="Week ending ";
+  fd.appendChild(span({style:{fontWeight:"500",color:"#1a1a18"}},fmtWeek(state.activeWeek)));
+  fr.appendChild(fd);
+  const fb=div({class:"tabs"});
+  ["all",...PUBS].forEach(p=>{
+    const b=btn(p==="all"?"All pubs":SHORT[p],{class:"btn small"+(state.filter===p?" active":"")});
+    b.addEventListener("click",()=>{state.filter=p;render();});
+    fb.appendChild(b);
+  });
+  fr.appendChild(fb); frag.appendChild(fr);
 
-  // ── Summary KPI cards ──
-  const mysteryAvg=avg(PUBS.map(p=>pubs[p]||BLANK_PUB),"mystery");
-  const auditAvg=avg(PUBS.map(p=>pubs[p]||BLANK_PUB),"audit");
+  const labour=avg(filtered,"labour"),gp=avg(filtered,"gp"),tasks=avg(filtered,"tasks");
+  const audit=avg(filtered,"audit"),mystery=avg(filtered,"mystery");
+  const stock=avg(filtered,"stockVar"),rev=avg(filtered,"reviews"),newRev=avg(filtered,"newReviews");
   const kpis=[
-    {label:"Avg Mystery Shopper", val:mysteryAvg, tgt:90,  lb:false, disp:mysteryAvg.toFixed(0)+"%",       tgtLabel:"Target: 90%", badge:mysteryAvg>=90?"Passing":"Needs work"},
-    {label:"Avg Audit Score",     val:auditAvg,   tgt:85,  lb:false, disp:auditAvg.toFixed(0)+"%",         tgtLabel:"Target: 85%", badge:auditAvg>=85?"Passing":"Needs work"},
-    {label:"Compliance %",        val:group.compliance||0, tgt:90, lb:false, disp:(group.compliance||0)+"%", tgtLabel:"Target: 90%", badge:(group.compliance||0)>=90?"On target":"Below target"},
-    {label:"GP %",                val:group.gp||0, tgt:80, lb:false, disp:(group.gp||0).toFixed(1)+"%",    tgtLabel:"Target: 80%", badge:(group.gp||0)>=80?"On target":"Below target"},
+    {label:"Labour %",       val:labour,  tgt:18,  lb:true,  disp:labour.toFixed(1)+"%",   tgtL:"Target: 18%",  badge:labour<=18?"On target":"Over target"},
+    {label:"GP %",           val:gp,      tgt:80,  lb:false, disp:gp.toFixed(1)+"%",       tgtL:"Target: 80%",  badge:gp>=80?"On target":"Below target"},
+    {label:"Tasks completed",val:tasks,   tgt:90,  lb:false, disp:tasks.toFixed(0)+"%",    tgtL:"Target: 90%",  badge:tasks>=90?"On target":"Below target"},
+    {label:"Audit score",    val:audit,   tgt:85,  lb:false, disp:audit.toFixed(0)+"%",    tgtL:"Target: 85%",  badge:audit>=85?"Passing":"Needs work"},
+    {label:"Mystery shopper",val:mystery, tgt:90,  lb:false, disp:mystery.toFixed(0)+"%",  tgtL:"Target: 90%",  badge:mystery>=90?"Passing":"Needs work"},
+    {label:"Avg review",     val:rev,     tgt:4.8, lb:false, disp:rev.toFixed(1)+" ★",     tgtL:"Target: 4.8",  badge:rev>=4.8?"Excellent":"Improving"},
+    {label:"New reviews",    val:newRev,  tgt:4,   lb:false, disp:newRev.toFixed(0),        tgtL:"Target: 4/wk", badge:newRev>=4?"On target":"Below target"},
+    {label:"Stock variance", val:stock,   tgt:1,   lb:true,  disp:stock.toFixed(1)+"%",    tgtL:"Target: <1%",  badge:stock<=1?"In range":"High variance"},
   ];
   const kg=div({class:"kpi-grid"});
   kpis.forEach(k=>{
@@ -311,63 +317,77 @@ function renderDashboard(){
     const card=div({class:"kpi-card"});
     card.appendChild(div({class:"klabel"},k.label));
     card.appendChild(div({class:"kval"},k.disp));
-    card.appendChild(div({class:"ktgt"},k.tgtLabel));
+    card.appendChild(div({class:"ktgt"},k.tgtL));
     const badge=span({class:"kbadge"});badge.style.background=s.bg;badge.style.color=s.col;badge.textContent=k.badge;
-    card.appendChild(badge);kg.appendChild(card);
+    card.appendChild(badge); kg.appendChild(card);
   });
   frag.appendChild(kg);
 
-  // ── Mystery shopper & Audit per pub ──
+  function makeBarRow(lbl,val,tgt,maxV,lb,suffix){
+    const row=div({class:"bar-row"});
+    const l=div({class:"bar-lbl"},lbl); l.title=lbl;
+    const track=div({class:"bar-track"});
+    const fill=div({class:"bar-fill"});
+    fill.style.width=Math.min(100,(val/maxV)*100).toFixed(1)+"%";
+    fill.style.background=barColor(val,tgt,lb);
+    const tline=div({class:"bar-tgt"});
+    tline.style.left=Math.min(100,(tgt/maxV)*100).toFixed(1)+"%";
+    track.appendChild(fill); track.appendChild(tline);
+    row.appendChild(l); row.appendChild(track);
+    row.appendChild(div({class:"bar-val"},val+suffix));
+    return row;
+  }
+  function makeChart(title,rows){
+    const c=div({class:"ccart"}); c.appendChild(div({class:"ctitle"},title));
+    rows.forEach(r=>c.appendChild(r)); return c;
+  }
+
   const r1=div({class:"grid2"});
-  r1.appendChild(makeChart("Mystery shopper by pub",PUBS.map(p=>makeBarRow(SHORT[p],(pubs[p]||BLANK_PUB).mystery,90,100,false,"%"))));
-  r1.appendChild(makeChart("Audit score by pub",PUBS.map(p=>makeBarRow(SHORT[p],(pubs[p]||BLANK_PUB).audit,85,100,false,"%"))));
+  r1.appendChild(makeChart("Labour % of GP",filtered.map(p=>makeBarRow(SHORT[p.name],p.labour,18,45,true,"%"))));
+  r1.appendChild(makeChart("GP% by pub",filtered.map(p=>makeBarRow(SHORT[p.name],p.gp,80,100,false,"%"))));
   frag.appendChild(r1);
 
-  // ── Group KPIs ──
   const r2=div({class:"grid2"});
-  const compCard=div({class:"ccart"});
-  compCard.appendChild(div({class:"ctitle"},"Compliance checklists"));
-  compCard.appendChild(makeBarRow("Group",(group.compliance||0),90,100,false,"%"));
-  r2.appendChild(compCard);
-  const gpCard=div({class:"ccart"});
-  gpCard.appendChild(div({class:"ctitle"},"GP %"));
-  gpCard.appendChild(makeBarRow("Group",(group.gp||0),80,100,false,"%"));
-  r2.appendChild(gpCard);
+  r2.appendChild(makeChart("Tasks & duties",filtered.map(p=>makeBarRow(SHORT[p.name],p.tasks,90,100,false,"%"))));
+  r2.appendChild(makeChart("Stock variance",filtered.map(p=>makeBarRow(SHORT[p.name],p.stockVar,1,4,true,"%"))));
   frag.appendChild(r2);
 
-  // ── Comparison table ──
-  const tblCard=div({class:"ccart"});
-  tblCard.appendChild(div({class:"ctitle"},"Site comparison"));
+  const r3=div({class:"grid2"});
+  r3.appendChild(makeChart("Audit score",filtered.map(p=>makeBarRow(SHORT[p.name],p.audit,85,100,false,"%"))));
+  r3.appendChild(makeChart("Mystery shopper",filtered.map(p=>makeBarRow(SHORT[p.name],p.mystery,90,100,false,"%"))));
+  frag.appendChild(r3);
+
+  const r4=div({class:"grid2"});
+  const revCard=div({class:"ccart"}); revCard.appendChild(div({class:"ctitle"},"Online reviews"));
   const tbl=h("table",{});
-  const thead=h("thead",{});const hrow=h("tr",{});
-  ["Site","Mystery Shopper","Audit Score","vs prev mystery","vs prev audit"].forEach(hd=>hrow.appendChild(h("th",{},hd)));
-  thead.appendChild(hrow);tbl.appendChild(thead);
+  const thead=h("thead",{}); const hrow=h("tr",{});
+  ["Pub","Rating","Total","New this week","vs prev"].forEach(hd=>hrow.appendChild(h("th",{},hd)));
+  thead.appendChild(hrow); tbl.appendChild(thead);
   const tbody=h("tbody",{});
-  PUBS.forEach(pub=>{
-    const pd=pubs[pub]||BLANK_PUB;
-    const prevPd=prevData?(prevData.pubs||{})[pub]:null;
+  filtered.forEach(p=>{
     const tr=h("tr",{});
-    tr.appendChild(h("td",{style:{fontWeight:"500"}},SHORT[pub]));
-    PUB_FIELDS.forEach(f=>{
-      const s=si(pd[f.key]||0,f.target,f.lb);
-      const td=h("td",{});
-      const sp=span({class:"score-pill"});sp.style.background=s.bg;sp.style.color=s.col;sp.textContent=(pd[f.key]||0)+f.suffix;
-      td.appendChild(sp);tr.appendChild(td);
-    });
-    PUB_FIELDS.forEach(f=>{
-      const td=h("td",{});
-      if(prevPd){
-        const diff=(pd[f.key]||0)-(prevPd[f.key]||0);
-        td.textContent=Math.abs(diff)<0.05?"→":diff>0?"+"+diff.toFixed(0):diff.toFixed(0);
-        td.style.color=diff>0?"#3B6D11":diff<0?"#A32D2D":"#888780";
-        td.style.fontSize="12px";
-      }else{td.textContent="—";td.style.color="#888780";}
-      tr.appendChild(td);
-    });
-    tbody.appendChild(tr);
+    tr.appendChild(h("td",{},SHORT[p.name]));
+    const s=si(p.reviews,4.8,false);
+    const rp=span({class:"score-pill"});rp.style.background=s.bg;rp.style.color=s.col;rp.textContent=(p.reviews||0).toFixed(1);
+    const rtd=h("td",{}); rtd.appendChild(rp); tr.appendChild(rtd);
+    tr.appendChild(h("td",{style:{color:"#5f5e5a"}},(p.reviewCount||0).toLocaleString()));
+    const nr=p.newReviews||0; const nrs=si(nr,4,false);
+    const nrtd=h("td",{}); const nrsp=span({class:"score-pill"});
+    nrsp.style.background=nrs.bg; nrsp.style.color=nrs.col; nrsp.textContent=nr+" / 4";
+    nrtd.appendChild(nrsp); tr.appendChild(nrtd);
+    const prev=prevData?prevData[p.name]:null;
+    const trendTd=h("td",{});
+    if(prev){
+      const diff=(p.reviews||0)-(prev.reviews||0);
+      trendTd.textContent=Math.abs(diff)<0.05?"→":diff>0?"+"+diff.toFixed(1):diff.toFixed(1);
+      trendTd.style.color=diff>0?"#3B6D11":diff<0?"#A32D2D":"#888780";
+      trendTd.style.fontSize="12px";
+    }else{trendTd.textContent="—";trendTd.style.color="#888780";}
+    tr.appendChild(trendTd); tbody.appendChild(tr);
   });
-  tbl.appendChild(tbody);tblCard.appendChild(tbl);
-  frag.appendChild(tblCard);
+  tbl.appendChild(tbody); revCard.appendChild(tbl);
+  r4.appendChild(revCard); r4.appendChild(div({class:"ccart"}));
+  frag.appendChild(r4);
   return frag;
 }
 
@@ -388,88 +408,57 @@ function renderEntry(){
     }
     unlockBtn.addEventListener("click",tryUnlock);
     pinInput.addEventListener("keydown",e=>{if(e.key==="Enter")tryUnlock();});
-    gate.appendChild(pinInput);gate.appendChild(errMsg);gate.appendChild(unlockBtn);
+    gate.appendChild(pinInput); gate.appendChild(errMsg); gate.appendChild(unlockBtn);
     return gate;
   }
 
   const frag=document.createDocumentFragment();
-  if(!state.draft.pubs) state.draft.pubs={};
-  if(!state.draft.group) state.draft.group={...BLANK_GROUP};
-  PUBS.forEach(p=>{if(!state.draft.pubs[p]) state.draft.pubs[p]={...BLANK_PUB};});
-
-  // ── Per-pub fields ──
-  frag.appendChild(div({class:"section-divider"},"Per site figures"));
+  const pt=div({class:"pub-tabs"});
   PUBS.forEach(pub=>{
-    const pd=state.draft.pubs[pub];
-    const initials=pub.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
-    const card=div({class:"entry-card"});
-    const ehead=div({class:"entry-head"});
-    ehead.appendChild(div({class:"avatar"},initials));
-    const einfo=div({});
-    einfo.appendChild(h("p",{style:{fontWeight:"500",fontSize:"14px",color:"#1a1a18",margin:"0"}},pub));
-    einfo.appendChild(h("p",{style:{fontSize:"12px",color:"#5f5e5a",margin:"0"}},"Week ending "+fmtWeek(state.activeWeek)));
-    ehead.appendChild(einfo);card.appendChild(ehead);
-    PUB_FIELDS.forEach(f=>{
-      const val=pd[f.key]!=null?pd[f.key]:0;
-      const s=si(val,f.target,f.lb);
-      const pct=((val-f.min)/(f.max-f.min))*100;
-      const tpct=((f.target-f.min)/(f.max-f.min))*100;
-      const row=div({class:"field-row"});
-      const top=div({class:"field-top"});
-      const right=div({class:"field-right"});
-      const sp=span({class:"status-pill"});sp.style.background=s.bg;sp.style.color=s.col;sp.textContent=s.label;
-      const sv=span({class:"field-val"});sv.textContent=val.toFixed(f.step<1?1:0)+f.suffix;
-      right.appendChild(sp);right.appendChild(sv);
-      top.appendChild(span({class:"field-label"},f.label));top.appendChild(right);row.appendChild(top);
-      const bwrap=div({class:"field-bar-wrap"});
-      const track=div({class:"mini-track"});
-      const fill=div({class:"mini-fill"});fill.style.width=Math.min(100,pct).toFixed(1)+"%";fill.style.background=s.col;
-      const tline=div({class:"mini-tgt"});tline.style.left=tpct.toFixed(1)+"%";
-      track.appendChild(fill);track.appendChild(tline);
-      const inp=h("input",{type:"number",min:f.min,max:f.max,step:f.step,class:"num-input"});
-      inp.value=val;
-      inp.addEventListener("input",function(){state.draft.pubs[pub][f.key]=parseFloat(this.value)||0;state.saved=false;render();});
-      bwrap.appendChild(track);bwrap.appendChild(inp);row.appendChild(bwrap);
-      row.appendChild(div({class:"field-tgt"},"Target: "+f.target+f.suffix));
-      card.appendChild(row);
-    });
-    frag.appendChild(card);
+    const b=btn(SHORT[pub],{class:"btn small"+(state.entryPub===pub?" active":"")});
+    b.addEventListener("click",()=>{state.entryPub=pub;render();});
+    pt.appendChild(b);
   });
+  frag.appendChild(pt);
 
-  // ── Group-wide fields ──
-  frag.appendChild(div({class:"section-divider"},"Group-wide figures"));
-  const groupCard=div({class:"entry-card"});
-  const ghead=div({class:"entry-head"});
-  ghead.appendChild(div({class:"avatar",style:{background:"#E1F5EE",color:"#0F6E56"}},"NS"));
-  const ginfo=div({});
-  ginfo.appendChild(h("p",{style:{fontWeight:"500",fontSize:"14px",color:"#1a1a18",margin:"0"}},"Nancy Spain's Group"));
-  ginfo.appendChild(h("p",{style:{fontSize:"12px",color:"#5f5e5a",margin:"0"}},"Week ending "+fmtWeek(state.activeWeek)));
-  ghead.appendChild(ginfo);groupCard.appendChild(ghead);
-  GROUP_FIELDS.forEach(f=>{
-    const val=state.draft.group[f.key]!=null?state.draft.group[f.key]:0;
-    const s=si(val,f.target,f.lb);
+  const pub=state.entryPub;
+  if(!state.draft[pub]) state.draft[pub]={...BLANK};
+  const pd=state.draft[pub];
+  const initials=pub.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+  const card=div({class:"entry-card"});
+  const ehead=div({class:"entry-head"});
+  const av=div({class:"avatar"},initials);
+  const einfo=div({});
+  einfo.appendChild(h("p",{style:{fontWeight:"500",fontSize:"14px",color:"#1a1a18",margin:"0"}},pub));
+  einfo.appendChild(h("p",{style:{fontSize:"12px",color:"#5f5e5a",margin:"0"}},"Week ending "+fmtWeek(state.activeWeek)));
+  ehead.appendChild(av); ehead.appendChild(einfo); card.appendChild(ehead);
+
+  FIELDS.forEach(f=>{
+    const val=pd[f.key]!=null?pd[f.key]:0;
+    const tgt=TARGETS[f.key]||0;
+    const s=si(val,tgt,f.lb);
     const pct=((val-f.min)/(f.max-f.min))*100;
-    const tpct=((f.target-f.min)/(f.max-f.min))*100;
+    const tpct=((tgt-f.min)/(f.max-f.min))*100;
     const row=div({class:"field-row"});
     const top=div({class:"field-top"});
     const right=div({class:"field-right"});
     const sp=span({class:"status-pill"});sp.style.background=s.bg;sp.style.color=s.col;sp.textContent=s.label;
     const sv=span({class:"field-val"});sv.textContent=val.toFixed(f.step<1?1:0)+f.suffix;
-    right.appendChild(sp);right.appendChild(sv);
-    top.appendChild(span({class:"field-label"},f.label));top.appendChild(right);row.appendChild(top);
+    right.appendChild(sp); right.appendChild(sv);
+    top.appendChild(span({class:"field-label"},f.label)); top.appendChild(right); row.appendChild(top);
     const bwrap=div({class:"field-bar-wrap"});
     const track=div({class:"mini-track"});
     const fill=div({class:"mini-fill"});fill.style.width=Math.min(100,pct).toFixed(1)+"%";fill.style.background=s.col;
     const tline=div({class:"mini-tgt"});tline.style.left=tpct.toFixed(1)+"%";
-    track.appendChild(fill);track.appendChild(tline);
+    track.appendChild(fill); track.appendChild(tline);
     const inp=h("input",{type:"number",min:f.min,max:f.max,step:f.step,class:"num-input"});
     inp.value=val;
-    inp.addEventListener("input",function(){state.draft.group[f.key]=parseFloat(this.value)||0;state.saved=false;render();});
-    bwrap.appendChild(track);bwrap.appendChild(inp);row.appendChild(bwrap);
-    row.appendChild(div({class:"field-tgt"},"Target: "+f.target+f.suffix));
-    groupCard.appendChild(row);
+    inp.addEventListener("input",function(){state.draft[pub][f.key]=parseFloat(this.value)||0;state.saved=false;render();});
+    bwrap.appendChild(track); bwrap.appendChild(inp); row.appendChild(bwrap);
+    row.appendChild(div({class:"field-tgt"},"Target: "+tgt+f.suffix));
+    card.appendChild(row);
   });
-  frag.appendChild(groupCard);
+  frag.appendChild(card);
 
   const srow=div({class:"save-row"});
   const lockBtn=btn("🔒 Lock",{class:"btn"});
@@ -479,15 +468,89 @@ function renderEntry(){
   const sb=btn("Save & publish live",{class:"btn"});
   sb.style.cssText="background:#f1efe8;font-weight:500;color:#1a1a18;";
   sb.addEventListener("click",async()=>{
-    state.syncStatus="saving";render();
+    state.syncStatus="saving"; render();
     try{
       await saveWeekToDB(state.activeWeek,state.draft);
       state.allData[state.activeWeek]=JSON.parse(JSON.stringify(state.draft));
-      state.syncStatus="saved";render();
+      state.syncStatus="saved"; render();
       setTimeout(()=>{state.syncStatus="";render();},3000);
     }catch(e){state.syncStatus="error";render();}
   });
-  srow.appendChild(sb);frag.appendChild(srow);
+  srow.appendChild(sb); frag.appendChild(srow);
+  return frag;
+}
+
+function renderLeaderboard(){
+  const data=state.allData[state.activeWeek]||state.draft;
+  const prevW=shiftWeek(state.activeWeek,-1);
+  const prevData=state.allData[prevW]||null;
+  const medals=["🥇","🥈","🥉",""];
+  const scores=PUBS.map(pub=>{
+    const pd=data[pub]||BLANK;
+    const score=scorePub(pd);
+    const prevScore=prevData?scorePub(prevData[pub]||BLANK):null;
+    return{pub,pd,score,change:prevScore!==null?score-prevScore:null};
+  }).sort((a,b)=>b.score-a.score);
+
+  const frag=document.createDocumentFragment();
+  const podium=div({style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:"12px",marginBottom:"1.5rem"}});
+  scores.forEach((s,i)=>{
+    const card=div({style:{background:"#fff",border:i===0?"2px solid #BA7517":"0.5px solid rgba(0,0,0,0.12)",borderRadius:"12px",padding:"1.25rem",textAlign:"center"}});
+    card.appendChild(div({style:{fontSize:"28px",marginBottom:"6px"}},medals[i]||""));
+    card.appendChild(div({style:{fontSize:"12px",color:"#888780",marginBottom:"4px"}},(i+1)+(i===0?"st":i===1?"nd":i===2?"rd":"th")+" place"));
+    const av=div({style:{width:"44px",height:"44px",borderRadius:"50%",background:"#EEEDFE",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"14px",fontWeight:"500",color:"#534AB7",margin:"0 auto 8px"}},s.pub.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase());
+    card.appendChild(av);
+    card.appendChild(div({style:{fontSize:"13px",fontWeight:"500",color:"#1a1a18",marginBottom:"8px"}},SHORT[s.pub]));
+    card.appendChild(div({style:{fontSize:"32px",fontWeight:"500",color:i===0?"#BA7517":"#1a1a18",lineHeight:"1"}},s.score+""));
+    card.appendChild(div({style:{fontSize:"11px",color:"#888780",marginTop:"2px",marginBottom:"10px"}},"overall score"));
+    if(s.change!==null){
+      const chWrap=div({style:{fontSize:"12px",marginBottom:"10px",color:s.change>0?"#3B6D11":s.change<0?"#A32D2D":"#888780"}});
+      chWrap.textContent=s.change>0?"▲ +"+s.change+" vs last week":s.change<0?"▼ "+s.change+" vs last week":"→ No change";
+      card.appendChild(chWrap);
+    }
+    const kpiGrid=div({style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px",textAlign:"left"}});
+    [{label:"Labour",val:s.pd.labour,suffix:"%",tgt:18,lb:true},
+     {label:"GP",val:s.pd.gp,suffix:"%",tgt:80,lb:false},
+     {label:"Tasks",val:s.pd.tasks,suffix:"%",tgt:90,lb:false},
+     {label:"Audit",val:s.pd.audit,suffix:"%",tgt:85,lb:false},
+     {label:"Mystery",val:s.pd.mystery,suffix:"%",tgt:90,lb:false},
+     {label:"Reviews",val:s.pd.reviews,suffix:" ★",tgt:4.8,lb:false},
+     {label:"New revs",val:s.pd.newReviews,suffix:"",tgt:4,lb:false},
+     {label:"Stock",val:s.pd.stockVar,suffix:"%",tgt:1,lb:true}
+    ].forEach(k=>{
+      const ksi=si(k.val||0,k.tgt,k.lb);
+      const krow=div({style:{background:ksi.bg,borderRadius:"6px",padding:"3px 6px"}});
+      krow.appendChild(div({style:{fontSize:"10px",color:ksi.col,opacity:"0.8"}},k.label));
+      krow.appendChild(div({style:{fontSize:"12px",fontWeight:"500",color:ksi.col}},(k.val||0)+k.suffix));
+      kpiGrid.appendChild(krow);
+    });
+    card.appendChild(kpiGrid); podium.appendChild(card);
+  });
+  frag.appendChild(podium);
+
+  const tableCard=div({class:"ccart"}); tableCard.appendChild(div({class:"ctitle"},"Full breakdown"));
+  const tbl=h("table",{}); const thead=h("thead",{}); const hrow=h("tr",{});
+  ["Rank","Pub","Score","Labour","GP","Tasks","Audit","Mystery","Reviews","New revs","Stock"].forEach(hd=>hrow.appendChild(h("th",{},hd)));
+  thead.appendChild(hrow); tbl.appendChild(thead);
+  const tbody=h("tbody",{});
+  scores.forEach((s,i)=>{
+    const tr=h("tr",{});
+    tr.appendChild(h("td",{style:{fontWeight:"500"}},(medals[i]||"")+" "+(i+1)));
+    tr.appendChild(h("td",{style:{fontWeight:"500"}},SHORT[s.pub]));
+    const sc=h("td",{}); const scp=span({class:"score-pill"});
+    scp.style.background=i===0?"#FAEEDA":"#f1efe8"; scp.style.color=i===0?"#854F0B":"#1a1a18";
+    scp.textContent=s.score+""; sc.appendChild(scp); tr.appendChild(sc);
+    [[s.pd.labour,18,true,"%"],[s.pd.gp,80,false,"%"],[s.pd.tasks,90,false,"%"],
+     [s.pd.audit,85,false,"%"],[s.pd.mystery,90,false,"%"],[s.pd.reviews,4.8,false," ★"],
+     [s.pd.newReviews,4,false,""],[s.pd.stockVar,1,true,"%"]
+    ].forEach(([val,tgt,lb,sfx])=>{
+      const ksi=si(val||0,tgt,lb); const td=h("td",{});
+      const sp2=span({}); sp2.style.fontSize="12px"; sp2.style.fontWeight="500"; sp2.style.color=ksi.col;
+      sp2.textContent=(val||0)+sfx; td.appendChild(sp2); tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+  tbl.appendChild(tbody); tableCard.appendChild(tbl); frag.appendChild(tableCard);
   return frag;
 }
 
@@ -497,62 +560,51 @@ function renderHistory(){
   const topRow=div({style:{display:"flex",justifyContent:"flex-end",marginBottom:"12px"}});
   const allEx=btn("Export all weeks CSV ↓",{class:"btn"});
   allEx.addEventListener("click",()=>exportAllCSV(state.allData));
-  topRow.appendChild(allEx);frag.appendChild(topRow);
+  topRow.appendChild(allEx); frag.appendChild(topRow);
   if(!weeks.length){
     frag.appendChild(div({style:{padding:"2rem",textAlign:"center",color:"#5f5e5a",fontSize:"14px"}},"No saved weeks yet."));
     return frag;
   }
   weeks.forEach(w=>{
     const d=state.allData[w];
-    const pubs=d.pubs||{};
-    const group=d.group||BLANK_GROUP;
-    const mystAvg=avg(PUBS.map(p=>pubs[p]||BLANK_PUB),"mystery");
-    const auditAvg=avg(PUBS.map(p=>pubs[p]||BLANK_PUB),"audit");
+    const avgs=PUBS.map(p=>d[p]||BLANK);
     const item=div({class:"history-item"});
     const left=div({});
     left.appendChild(div({style:{fontSize:"14px",fontWeight:"500",color:"#1a1a18"}},"Week ending "+fmtWeek(w)));
     left.appendChild(div({style:{fontSize:"12px",color:"#5f5e5a",marginTop:"3px"}},
-      "Mystery "+mystAvg.toFixed(0)+"% · Audit "+auditAvg.toFixed(0)+"% · Compliance "+(group.compliance||0)+"% · GP "+(group.gp||0).toFixed(1)+"%"));
+      "Labour "+avg(avgs,"labour").toFixed(1)+"% · GP "+avg(avgs,"gp").toFixed(1)+"% · Tasks "+avg(avgs,"tasks").toFixed(0)+"%"));
     const right=div({style:{display:"flex",gap:"6px"}});
     const vb=btn("View",{class:"btn small"});
-    vb.addEventListener("click",async()=>{state.activeWeek=w;state.view="dashboard";listenToWeek(w);render();});
+    vb.addEventListener("click",async()=>{state.activeWeek=w;state.view="dashboard";state.filter="all";listenToWeek(w);render();});
     const eb=btn("CSV ↓",{class:"btn small"});
     eb.addEventListener("click",()=>exportCSV(w,d));
-    right.appendChild(vb);right.appendChild(eb);
-    item.appendChild(left);item.appendChild(right);frag.appendChild(item);
+    right.appendChild(vb); right.appendChild(eb);
+    item.appendChild(left); item.appendChild(right); frag.appendChild(item);
   });
   return frag;
 }
 
 function exportCSV(week,data){
-  const pubs=(data&&data.pubs)||{};
-  const group=(data&&data.group)||BLANK_GROUP;
-  const rows=[["Site","Week ending","Mystery Shopper %","Audit Score %","Compliance %","GP %"]];
+  const rows=[["Pub","Week ending","Labour %","GP %","Tasks %","Audit %","Mystery %","Avg Review","Total Reviews","New Reviews","Stock Variance %"]];
   PUBS.forEach(pub=>{
-    const pd=pubs[pub]||BLANK_PUB;
-    rows.push([pub,week,pd.mystery,pd.audit,group.compliance,group.gp]);
+    const d=(data&&data[pub])||BLANK;
+    rows.push([pub,week,d.labour,d.gp,d.tasks,d.audit,d.mystery,d.reviews,d.reviewCount,d.newReviews,d.stockVar]);
   });
   const csv=rows.map(r=>r.map(v=>`"${v}"`).join(",")).join("\n");
-  const a=document.createElement("a");
-  a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);
-  a.download="nancy-spains-ops-kpi-"+week+".csv";
-  a.click();
+  const a=document.createElement("a"); a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);
+  a.download="nancy-spains-kpi-"+week+".csv"; a.click();
 }
 function exportAllCSV(allData){
-  const rows=[["Site","Week ending","Mystery Shopper %","Audit Score %","Compliance %","GP %"]];
+  const rows=[["Pub","Week ending","Labour %","GP %","Tasks %","Audit %","Mystery %","Avg Review","Total Reviews","New Reviews","Stock Variance %"]];
   Object.keys(allData).sort().forEach(week=>{
-    const pubs=(allData[week]&&allData[week].pubs)||{};
-    const group=(allData[week]&&allData[week].group)||BLANK_GROUP;
     PUBS.forEach(pub=>{
-      const pd=pubs[pub]||BLANK_PUB;
-      rows.push([pub,week,pd.mystery,pd.audit,group.compliance,group.gp]);
+      const d=(allData[week]&&allData[week][pub])||BLANK;
+      rows.push([pub,week,d.labour,d.gp,d.tasks,d.audit,d.mystery,d.reviews,d.reviewCount,d.newReviews,d.stockVar]);
     });
   });
   const csv=rows.map(r=>r.map(v=>`"${v}"`).join(",")).join("\n");
-  const a=document.createElement("a");
-  a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);
-  a.download="nancy-spains-ops-kpi-all-weeks.csv";
-  a.click();
+  const a=document.createElement("a"); a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);
+  a.download="nancy-spains-kpi-all-weeks.csv"; a.click();
 }
 
 init();
