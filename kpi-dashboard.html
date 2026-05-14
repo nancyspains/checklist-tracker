@@ -93,7 +93,7 @@ const db = getFirestore(firebaseApp);
 // ── Config ──
 const PUBS = ["Nancy Spains Shoreditch","Nancy Spains Monument","Nancy Spains Manchester"];
 const SHORT = {"Nancy Spains Shoreditch":"Shoreditch","Nancy Spains Monument":"Monument","Nancy Spains Manchester":"Manchester"};
-const TARGETS = {labour:18,gp:80,tasks:90,audit:90,mystery:90,reviews:4.8,reviewCount:0,newReviews:4,stockVar:1};
+const TARGETS = {labour:18,gp:80,tasks:90,audit:85,mystery:90,reviews:4.8,reviewCount:0,newReviews:4,stockVar:1};
 const FIELDS = [
   {key:"labour",      label:"Labour %",             suffix:"%",    min:0, max:60,   step:0.1, lb:true},
   {key:"gp",          label:"GP %",                 suffix:"%",    min:0, max:100,  step:0.1, lb:false},
@@ -214,7 +214,7 @@ function scorePub(pd){
   if(pd.labour!=null)     scores.push(scoreLow(pd.labour,18));
   if(pd.gp!=null)         scores.push(scoreHigh(pd.gp,80));
   if(pd.tasks!=null)      scores.push(scoreHigh(pd.tasks,90));
-  if(pd.audit!=null)      scores.push(scoreHigh(pd.audit,90));
+  if(pd.audit!=null)      scores.push(scoreHigh(pd.audit,85));
   if(pd.mystery!=null)    scores.push(scoreHigh(pd.mystery,90));
       if(pd.reviews!=null)    scores.push(scoreHigh(pd.reviews*10,48));
   if(pd.newReviews!=null) scores.push(scoreHigh(pd.newReviews,4));
@@ -314,7 +314,7 @@ function renderDashboard(){
     {label:"Labour %",       val:labour,  tgt:18,  lb:true,  disp:labour.toFixed(1)+"%",   tgtL:"Target: 18%",  badge:labour<=18?"On target":"Over target"},
     {label:"GP %",           val:gp,      tgt:80,  lb:false, disp:gp.toFixed(1)+"%",       tgtL:"Target: 80%",  badge:gp>=80?"On target":"Below target"},
     {label:"Tasks completed",val:tasks,   tgt:90,  lb:false, disp:tasks.toFixed(0)+"%",    tgtL:"Target: 90%",  badge:tasks>=90?"On target":"Below target"},
-    {label:"Audit score",    val:audit,   tgt:90,  lb:false, disp:audit.toFixed(0)+"%",    tgtL:"Target: 90%",  badge:audit>=90?"Passing":"Needs work"},
+    {label:"Audit score",    val:audit,   tgt:85,  lb:false, disp:audit.toFixed(0)+"%",    tgtL:"Target: 85%",  badge:audit>=85?"Passing":"Needs work"},
     {label:"Mystery shopper",val:mystery, tgt:90,  lb:false, disp:mystery.toFixed(0)+"%",  tgtL:"Target: 90%",  badge:mystery>=90?"Passing":"Needs work"},
     {label:"Avg review",     val:rev,     tgt:4.8, lb:false, disp:rev.toFixed(1)+" ★",     tgtL:"Target: 4.8",  badge:rev>=4.8?"Excellent":"Improving"},
     {label:"New reviews",    val:newRev,  tgt:4,   lb:false, disp:newRev.toFixed(0),        tgtL:"Target: 4/wk", badge:newRev>=4?"On target":"Below target"},
@@ -362,7 +362,7 @@ function renderDashboard(){
   frag.appendChild(r2);
 
   const r3=div({class:"grid2"});
-  r3.appendChild(makeChart("Audit score",filtered.map(p=>makeBarRow(SHORT[p.name],p.audit,90,100,false,"%"))));
+  r3.appendChild(makeChart("Audit score",filtered.map(p=>makeBarRow(SHORT[p.name],p.audit,85,100,false,"%"))));
   r3.appendChild(makeChart("Mystery shopper",filtered.map(p=>makeBarRow(SHORT[p.name],p.mystery,90,100,false,"%"))));
   frag.appendChild(r3);
 
@@ -522,7 +522,7 @@ function renderLeaderboard(){
     [{label:"Labour",val:s.pd.labour,suffix:"%",tgt:18,lb:true},
      {label:"GP",val:s.pd.gp,suffix:"%",tgt:80,lb:false},
      {label:"Tasks",val:s.pd.tasks,suffix:"%",tgt:90,lb:false},
-     {label:"Audit",val:s.pd.audit,suffix:"%",tgt:90,lb:false},
+     {label:"Audit",val:s.pd.audit,suffix:"%",tgt:85,lb:false},
      {label:"Mystery",val:s.pd.mystery,suffix:"%",tgt:90,lb:false},
      {label:"Reviews",val:s.pd.reviews,suffix:" ★",tgt:4.8,lb:false},
      {label:"New revs",val:s.pd.newReviews,suffix:"",tgt:4,lb:false},
