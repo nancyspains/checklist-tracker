@@ -98,7 +98,7 @@ const SHORT = {"Nancy Spains Shoreditch":"Shoreditch","Nancy Spains Monument":"M
 // KPIs that are per-pub
 const PUB_FIELDS = [
   {key:"mystery", label:"Mystery Shopper %", suffix:"%", min:0, max:100, step:1, lb:false, target:90},
-  {key:"audit",   label:"Audit Score %",     suffix:"%", min:0, max:100, step:1, lb:false, target:90},
+  {key:"audit",   label:"Audit Score %",     suffix:"%", min:0, max:100, step:1, lb:false, target:85},
 ];
 
 // KPIs that are group-wide
@@ -301,7 +301,7 @@ function renderDashboard(){
   const auditAvg=avg(PUBS.map(p=>pubs[p]||BLANK_PUB),"audit");
   const kpis=[
     {label:"Avg Mystery Shopper", val:mysteryAvg, tgt:90,  lb:false, disp:mysteryAvg.toFixed(0)+"%",       tgtLabel:"Target: 90%", badge:mysteryAvg>=90?"Passing":"Needs work"},
-    {label:"Avg Audit Score",     val:auditAvg,   tgt:90,  lb:false, disp:auditAvg.toFixed(0)+"%",         tgtLabel:"Target: 90%", badge:auditAvg>=90?"Passing":"Needs work"},
+    {label:"Avg Audit Score",     val:auditAvg,   tgt:85,  lb:false, disp:auditAvg.toFixed(0)+"%",         tgtLabel:"Target: 85%", badge:auditAvg>=85?"Passing":"Needs work"},
     {label:"Compliance %",        val:group.compliance||0, tgt:90, lb:false, disp:(group.compliance||0)+"%", tgtLabel:"Target: 90%", badge:(group.compliance||0)>=90?"On target":"Below target"},
     {label:"GP %",                val:group.gp||0, tgt:80, lb:false, disp:(group.gp||0).toFixed(1)+"%",    tgtLabel:"Target: 80%", badge:(group.gp||0)>=80?"On target":"Below target"},
   ];
@@ -320,7 +320,7 @@ function renderDashboard(){
   // ── Mystery shopper & Audit per pub ──
   const r1=div({class:"grid2"});
   r1.appendChild(makeChart("Mystery shopper by pub",PUBS.map(p=>makeBarRow(SHORT[p],(pubs[p]||BLANK_PUB).mystery,90,100,false,"%"))));
-  r1.appendChild(makeChart("Audit score by pub",PUBS.map(p=>makeBarRow(SHORT[p],(pubs[p]||BLANK_PUB).audit,90,100,false,"%"))));
+  r1.appendChild(makeChart("Audit score by pub",PUBS.map(p=>makeBarRow(SHORT[p],(pubs[p]||BLANK_PUB).audit,85,100,false,"%"))));
   frag.appendChild(r1);
 
   // ── Group KPIs ──
