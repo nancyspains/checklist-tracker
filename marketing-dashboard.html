@@ -92,14 +92,14 @@ const ADMIN_PASSWORD = "nsmarketing2026";
 
 // Note: Instagram engagement target is a range (1.5-2%), we use 1.5 as minimum target
 const FIELDS = [
-  {key:"igEngagement",     label:"Instagram Engagement",   suffix:"%",   min:0, max:20,   step:0.1, lb:false, target:1.5,  targetLabel:"1.5–2%",  disp:v=>v.toFixed(1)+"%"},
+  {key:"igEngagement",     label:"Instagram Engagement",   suffix:"%",   min:0, max:20,   step:0.1, lb:false, target:1.2,  targetLabel:"1.2%",     disp:v=>v.toFixed(1)+"%"},
   {key:"tiktokEngagement", label:"TikTok Engagement",      suffix:"%",   min:0, max:100,  step:0.1, lb:false, target:10,   targetLabel:"10%",      disp:v=>v.toFixed(1)+"%"},
   {key:"igReach",          label:"Instagram Reach",        suffix:"%",   min:0, max:200,  step:0.1, lb:false, target:25,   targetLabel:"25%",      disp:v=>v.toFixed(1)+"%"},
   {key:"tiktokReach",      label:"TikTok Reach",           suffix:"%",   min:0, max:1000, step:1,   lb:false, target:400,  targetLabel:"400%",     disp:v=>v.toFixed(0)+"%"},
-  {key:"videoCompletion",  label:"Video Completion Rate",  suffix:"%",   min:0, max:100,  step:0.1, lb:false, target:60,   targetLabel:"60%",      disp:v=>v.toFixed(1)+"%"},
+  {key:"videoWatchTime",   label:"Avg video watch time",   suffix:"s",   min:0, max:120,  step:0.1, lb:false, target:5,    targetLabel:"5 seconds", disp:v=>v.toFixed(1)+"s"},
 ];
 
-const BLANK = {igEngagement:0,tiktokEngagement:0,igReach:0,tiktokReach:0,videoCompletion:0};
+const BLANK = {igEngagement:0,tiktokEngagement:0,igReach:0,tiktokReach:0,videoWatchTime:0};
 
 const state = {
   view:"dashboard", activeWeek:currentWeekEnding(), allData:{},
@@ -295,8 +295,8 @@ function renderDashboard(){
   frag.appendChild(r1);
 
   const r2=div({class:"grid2"});
-  r2.appendChild(makeChart("Video completion rate",[
-    makeBarRow("Completion rate",(data.videoCompletion||0),60,100,false,(data.videoCompletion||0).toFixed(1)+"%"),
+  r2.appendChild(makeChart("Avg video watch time",[
+    makeBarRow("Watch time",(data.videoWatchTime||0),5,30,false,(data.videoWatchTime||0).toFixed(1)+"s"),
   ]));
   r2.appendChild(div({class:"ccart"}));
   frag.appendChild(r2);
@@ -426,7 +426,7 @@ function renderHistory(){
     const left=div({});
     left.appendChild(div({style:{fontSize:"14px",fontWeight:"500",color:"#1a1a18"}},"Week ending "+fmtWeek(w)));
     left.appendChild(div({style:{fontSize:"12px",color:"#5f5e5a",marginTop:"3px"}},
-      "IG engagement "+(d.igEngagement||0).toFixed(1)+"% · TikTok engagement "+(d.tiktokEngagement||0).toFixed(1)+"% · Video completion "+(d.videoCompletion||0).toFixed(1)+"%"));
+      "IG engagement "+(d.igEngagement||0).toFixed(1)+"% · TikTok engagement "+(d.tiktokEngagement||0).toFixed(1)+"% · Avg watch time "+(d.videoWatchTime||0).toFixed(1)+"s"));
     const right=div({style:{display:"flex",gap:"6px"}});
     const vb=btn("View",{class:"btn small"});
     vb.addEventListener("click",async()=>{state.activeWeek=w;state.view="dashboard";listenToWeek(w);render();});
@@ -439,18 +439,18 @@ function renderHistory(){
 }
 
 function exportCSV(week,data){
-  const rows=[["Week ending","IG Engagement %","TikTok Engagement %","IG Reach %","TikTok Reach %","Video Completion %"]];
-  rows.push([week,data.igEngagement||0,data.tiktokEngagement||0,data.igReach||0,data.tiktokReach||0,data.videoCompletion||0]);
+  const rows=[["Week ending","IG Engagement %","TikTok Engagement %","IG Reach %","TikTok Reach %","Avg Video Watch Time (s)"]];
+  rows.push([week,data.igEngagement||0,data.tiktokEngagement||0,data.igReach||0,data.tiktokReach||0,data.videoWatchTime||0]);
   const csv=rows.map(r=>r.map(v=>`"${v}"`).join(",")).join("\n");
   const a=document.createElement("a");
   a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);
   a.download="nancy-spains-marketing-kpi-"+week+".csv"; a.click();
 }
 function exportAllCSV(allData){
-  const rows=[["Week ending","IG Engagement %","TikTok Engagement %","IG Reach %","TikTok Reach %","Video Completion %"]];
+  const rows=[["Week ending","IG Engagement %","TikTok Engagement %","IG Reach %","TikTok Reach %","Avg Video Watch Time (s)"]];
   Object.keys(allData).sort().forEach(week=>{
     const d=allData[week];
-    rows.push([week,d.igEngagement||0,d.tiktokEngagement||0,d.igReach||0,d.tiktokReach||0,d.videoCompletion||0]);
+    rows.push([week,d.igEngagement||0,d.tiktokEngagement||0,d.igReach||0,d.tiktokReach||0,d.videoWatchTime||0]);
   });
   const csv=rows.map(r=>r.map(v=>`"${v}"`).join(",")).join("\n");
   const a=document.createElement("a");
