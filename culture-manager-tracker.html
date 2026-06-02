@@ -119,7 +119,30 @@ textarea:disabled,select:disabled,input[type=text]:disabled{opacity:.55;cursor:d
 .fpr{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0ee;}
 .fpr:last-child{border-bottom:none;}
 .en{font-size:13px;color:#888;padding:8px 0;}
+.mn-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
+.mn-title{font-size:16px;font-weight:500;}
+.mn-month{font-size:13px;color:#888;}
+.retention-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:10px;}
+.ret-card{background:#f5f5f3;border-radius:8px;padding:12px;}
+.ret-site{font-size:13px;font-weight:500;color:#1a1a1a;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e5e5e3;}
+.ret-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.ret-label{font-size:12px;color:#888;}
+.ret-input{width:60px;font-size:13px;padding:4px 8px;border:1px solid #e5e5e3;border-radius:6px;background:#fff;text-align:center;}
+.ret-pct{font-size:14px;font-weight:500;}
+.event-row{display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;}
+.event-row .text-field{flex:1;}
+.remove-btn{font-size:18px;color:#ccc;background:none;border:none;cursor:pointer;padding:6px 4px;line-height:1;flex-shrink:0;}
+.remove-btn:hover{color:#E24B4A;}
+.month-nav{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid #e5e5e3;border-radius:10px;padding:10px 16px;margin-bottom:14px;}
+.month-nav span{font-size:13px;font-weight:500;}
+.month-nav button{background:none;border:none;font-size:20px;cursor:pointer;color:#888;padding:0 6px;line-height:1;}
+.monthly-locked-banner{background:#EAF3DE;border:1px solid #97C459;border-radius:8px;padding:9px 12px;font-size:12px;color:#27500A;margin-bottom:14px;}
+.health-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+.health-card{background:#fff;border:1px solid #e5e5e3;border-radius:10px;padding:12px 14px;text-align:center;}
+.health-label{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;}
+.health-val{font-size:22px;font-weight:500;color:#384137;}
 .loading{text-align:center;padding:60px 20px;color:#888;font-size:14px;}
+
 @media(max-width:580px){.sg{grid-template-columns:1fr 1fr;}.sg .sc:last-child{grid-column:span 2;}.brn{width:100px;font-size:12px;}}
 </style>
 </head>
@@ -144,6 +167,7 @@ textarea:disabled,select:disabled,input[type=text]:disabled{opacity:.55;cursor:d
   <button class="ntab" onclick="goTab('monument',this)">Monument</button>
   <button class="ntab" onclick="goTab('manchester',this)">Manchester</button>
   <button class="ntab" onclick="goTab('dashboard',this)">Dashboard</button>
+  <button class="ntab" onclick="goTab('monthly',this)">Monthly</button>
   <button class="ntab" onclick="goTab('history',this)">History</button>
 </nav>
 
@@ -178,6 +202,8 @@ textarea:disabled,select:disabled,input[type=text]:disabled{opacity:.55;cursor:d
       <div style="margin-top:14px" id="d-fps"></div>
     </div>
   </div>
+
+  <div id="view-monthly" class="view"></div>
 
   <div id="view-history" class="view">
     <div class="stabs">
@@ -216,7 +242,7 @@ function promptAdminUnlock(){
     // Re-render all site views and history to reflect unlocked state
     SITES.forEach((site,i) => rSite(SIDS[i], site, defaultIdx(site)));
     rHist('all');
-    // Reset history filter buttons
+    rMonthly();
     document.querySelectorAll('#view-history .stab').forEach((b,i)=>b.classList.toggle('active',i===0));
   } else if(pwd !== null){
     alert('Incorrect password.');
@@ -290,6 +316,9 @@ async function sbLoad(){
         if(!S.visits[site]){S.visits[site]=[];for(let i=0;i<VPW;i++)S.visits[site].push(mkVisit(site,i));}
       });
       if(!S.history) S.history=[];
+      if(!S.monthly) S.monthly={};
+      const mk=currentMonthKey();
+      if(!S.monthly[mk]) S.monthly[mk]=mkMonthlyReview(mk);
     } else {
       S=initS();
       await sbSaveNow();
@@ -348,9 +377,34 @@ function mkVisit(site,idx){
     starters:[{name:'',scores:mkSc(STARTER)}],
     checkins:[{name:'',wb:'',sat:'',sat_score:'',cult:'',followup:'',done:false}]};
 }
+function mkMonthlyReview(monthKey){
+  return {
+    monthKey,
+    locked: false,
+    oneOnOnes: SITES.map(site=>({
+      site, date:'', attendees:'', themes:'', actions:'', rating:0, done:false
+    })),
+    retention: SITES.map(site=>({
+      site, openingHeadcount:'', starters:'', leavers:'', notes:''
+    })),
+    cultureEvents: [{name:'',date:'',site:'All',description:'',outcome:''}],
+    overallNotes:''
+  };
+}
+function currentMonthKey(){
+  const d=new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+function monthLabel(key){
+  const [y,m]=key.split('-');
+  return new Date(y,m-1,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+}
+
 function initS(){
-  const s={visits:{},history:[]};
+  const s={visits:{},history:[],monthly:{}};
   SITES.forEach(site=>{s.visits[site]=[];for(let i=0;i<VPW;i++)s.visits[site].push(mkVisit(site,i));});
+  const mk=currentMonthKey();
+  s.monthly[mk]=mkMonthlyReview(mk);
   return s;
 }
 
@@ -386,6 +440,7 @@ function goTab(id,el){
   if(!isLoaded) return;
   if(id==='overview') rOV();
   if(id==='dashboard') rDash();
+  if(id==='monthly') rMonthly();
   if(id==='history') rHist('all');
   const si=SIDS.indexOf(id);
   if(si>=0) rSite(id,SITES[si],defaultIdx(SITES[si]));
@@ -897,7 +952,200 @@ function cVisit(site,vi){
   rSite(sid(site),site,vi);
 }
 
-document.getElementById('today-label').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+// ── Monthly review ────────────────────────────────────────────────────
+let mOff=0; // 0 = current month, 1 = last month, etc.
+
+function getSortedMonths(){
+  const keys=Object.keys(S.monthly||{}).sort().reverse();
+  const mk=currentMonthKey();
+  if(!keys.includes(mk)) keys.unshift(mk);
+  return keys;
+}
+
+function mPrev(){mOff=Math.min(mOff+1,getSortedMonths().length-1);rMonthly();}
+function mNext(){mOff=Math.max(mOff-1,0);rMonthly();}
+
+function isMonthLocked(mk){
+  const [y,m]=mk.split('-').map(Number);
+  const now=new Date();
+  // Lock if the month has ended
+  return (now.getFullYear()>y)||(now.getFullYear()===y&&now.getMonth()+1>m);
+}
+
+function rMonthly(){
+  const months=getSortedMonths();
+  const mk=months[mOff]||currentMonthKey();
+  if(!S.monthly[mk]) S.monthly[mk]=mkMonthlyReview(mk);
+  const mr=S.monthly[mk];
+  const locked=mr.locked||isMonthLocked(mk);
+  const d=locked; // disabled
+
+  const el=document.getElementById('view-monthly');
+
+  // Health summary stats
+  const totalStarters=mr.retention.reduce((a,r)=>a+parseInt(r.starters||0),0);
+  const totalLeavers=mr.retention.reduce((a,r)=>a+parseInt(r.leavers||0),0);
+  const totalEvents=mr.cultureEvents.filter(e=>e.name).length;
+  const oooDone=mr.oneOnOnes.filter(o=>o.done).length;
+
+  let h=`<div class="month-nav">
+    <button onclick="mPrev()">&#8249;</button>
+    <span>${monthLabel(mk)}</span>
+    <button onclick="mNext()">&#8250;</button>
+  </div>`;
+
+  if(locked&&!mr.locked){
+    h+=`<div class="lb day-locked" style="background:#f5f5f3;border:1px solid #e5e5e3;border-radius:8px;padding:9px 12px;font-size:12px;color:#888;margin-bottom:12px;">🔒 This month has ended — review is locked. Use Admin unlock to edit.</div>`;
+  } else if(mr.locked){
+    h+=`<div class="monthly-locked-banner">✓ Monthly review completed and locked on ${mr.lockedDate||''}.</div>`;
+  }
+
+  // Health at a glance
+  h+=`<div class="health-grid">
+    <div class="health-card"><div class="health-label">Manager 1-1s</div><div class="health-val">${oooDone}/${SITES.length}</div></div>
+    <div class="health-card"><div class="health-label">Staff joiners</div><div class="health-val">${totalStarters}</div></div>
+    <div class="health-card"><div class="health-label">Staff leavers</div><div class="health-val">${totalLeavers}</div></div>
+  </div>`;
+
+  // ── Section 1: Manager 1-1s ────────────────────────────────────────
+  h+=`<div class="card">
+    <div class="sec-hd"><h3>Manager 1-1s</h3><span class="sc2">${oooDone}/${SITES.length} complete</span></div>`;
+
+  mr.oneOnOnes.forEach((o,oi)=>{
+    h+=`<div class="blk" style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div style="font-size:14px;font-weight:500;color:#1a1a1a;">${o.site}</div>
+        <label class="tog${o.done?' done':''}" style="cursor:${d?'default':'pointer'};margin:0;padding:5px 10px;">
+          <input type="checkbox" ${o.done?'checked':''} ${d?'disabled':''} onchange="updO(${oi},'done',this.checked)">
+          <span style="font-size:12px;">${o.done?'1-1 complete':'Mark as complete'}</span>
+        </label>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div>
+          <label class="ql">Date</label>
+          <input type="text" placeholder="e.g. 3 Jun 2026" value="${e(o.date)}" ${d?'disabled':''} oninput="updO(${oi},'date',this.value)" onblur="updO(${oi},'date',this.value)">
+        </div>
+        <div>
+          <label class="ql">Rating (1–10)</label>
+          <select ${d?'disabled':''} onchange="updO(${oi},'rating',this.value)" style="margin-top:4px;">
+            <option value="0">Select…</option>
+            ${[10,9,8,7,6,5,4,3,2,1].map(n=>`<option value="${n}"${o.rating==n?' selected':''}>${n}/10</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <label class="ql">Key themes discussed</label>
+      <textarea ${d?'disabled':''} placeholder="What came up — team morale, operational issues, wins…" oninput="updO(${oi},'themes',this.value)" onblur="updO(${oi},'themes',this.value)">${e(o.themes)}</textarea>
+      <label class="ql">Actions agreed</label>
+      <textarea ${d?'disabled':''} placeholder="What was agreed, who owns it, by when…" oninput="updO(${oi},'actions',this.value)" onblur="updO(${oi},'actions',this.value)">${e(o.actions)}</textarea>
+    </div>`;
+  });
+  h+=`</div>`;
+
+  // ── Section 2: Staff retention ─────────────────────────────────────
+  h+=`<div class="card">
+    <div class="sec-hd"><h3>Staff retention</h3></div>
+    <div class="retention-grid">`;
+
+  mr.retention.forEach((r,ri)=>{
+    const headcount=parseInt(r.openingHeadcount||0);
+    const leavers=parseInt(r.leavers||0);
+    const turnover=headcount>0?Math.round((leavers/headcount)*100):0;
+    const tc=turnover>5?'#E24B4A':turnover>3?'#BA7517':'#27500A';
+    h+=`<div class="ret-card">
+      <div class="ret-site">${r.site}</div>
+      <div class="ret-row">
+        <span class="ret-label">Opening headcount</span>
+        <input type="number" class="ret-input" placeholder="0" value="${e(r.openingHeadcount)}" ${d?'disabled':''} oninput="updR(${ri},'openingHeadcount',this.value)" onblur="updR(${ri},'openingHeadcount',this.value)">
+      </div>
+      <div class="ret-row">
+        <span class="ret-label">Joiners this month</span>
+        <input type="number" class="ret-input" placeholder="0" value="${e(r.starters)}" ${d?'disabled':''} oninput="updR(${ri},'starters',this.value)" onblur="updR(${ri},'starters',this.value)">
+      </div>
+      <div class="ret-row">
+        <span class="ret-label">Leavers this month</span>
+        <input type="number" class="ret-input" placeholder="0" value="${e(r.leavers)}" ${d?'disabled':''} oninput="updR(${ri},'leavers',this.value)" onblur="updR(${ri},'leavers',this.value)">
+      </div>
+      <div class="ret-row" style="margin-top:8px;padding-top:8px;border-top:1px solid #e5e5e3;">
+        <span class="ret-label">Turnover %</span>
+        <span class="ret-pct" style="color:${tc}">${headcount>0?turnover+'%':'—'}</span>
+      </div>
+      <label class="ql">Notes</label>
+      <textarea style="min-height:46px;margin-top:4px;" ${d?'disabled':''} placeholder="Any context on leavers or joiners…" oninput="updR(${ri},'notes',this.value)" onblur="updR(${ri},'notes',this.value)">${e(r.notes)}</textarea>
+    </div>`;
+  });
+  h+=`</div></div>`;
+
+  // ── Section 3: Culture events ───────────────────────────────────────
+  h+=`<div class="card">
+    <div class="sec-hd"><h3>Culture events & initiatives</h3><span class="sc2">${totalEvents} this month</span></div>`;
+
+  mr.cultureEvents.forEach((ev,ei)=>{
+    h+=`<div class="blk" style="margin-bottom:8px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div>
+          <label class="ql">Event / initiative</label>
+          <input type="text" placeholder="Name…" value="${e(ev.name)}" ${d?'disabled':''} oninput="updEv(${ei},'name',this.value)" onblur="updEv(${ei},'name',this.value)">
+        </div>
+        <div>
+          <label class="ql">Date</label>
+          <input type="text" placeholder="e.g. 12 Jun 2026" value="${e(ev.date)}" ${d?'disabled':''} oninput="updEv(${ei},'date',this.value)" onblur="updEv(${ei},'date',this.value)">
+        </div>
+        <div>
+          <label class="ql">Site</label>
+          <select ${d?'disabled':''} onchange="updEv(${ei},'site',this.value)">
+            <option value="All"${ev.site==='All'?' selected':''}>All sites</option>
+            ${SITES.map(s=>`<option value="${s}"${ev.site===s?' selected':''}>${s}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <label class="ql">Description</label>
+      <textarea style="min-height:46px;" ${d?'disabled':''} placeholder="What was the event or initiative…" oninput="updEv(${ei},'description',this.value)" onblur="updEv(${ei},'description',this.value)">${e(ev.description)}</textarea>
+      <label class="ql">Outcome / impact</label>
+      <textarea style="min-height:46px;" ${d?'disabled':''} placeholder="How did it go, what was the team response, any follow-up needed…" oninput="updEv(${ei},'outcome',this.value)" onblur="updEv(${ei},'outcome',this.value)">${e(ev.outcome)}</textarea>
+      ${!d?`<button class="remove-btn" onclick="removeEv(${ei})">×</button>`:''}
+    </div>`;
+  });
+
+  if(!d) h+=`<button class="add" onclick="addEv()">+ Add culture event or initiative</button>`;
+  h+=`</div>`;
+
+  // ── Overall notes ────────────────────────────────────────────────────
+  h+=`<div class="card">
+    <div class="sec-hd"><h3>Overall monthly notes</h3></div>
+    <textarea ${d?'disabled':''} placeholder="Key themes for the month, anything to flag for the CEO report, priorities for next month…" style="min-height:80px;" oninput="updM('overallNotes',this.value)" onblur="updM('overallNotes',this.value)">${e(mr.overallNotes)}</textarea>
+  </div>`;
+
+  // Lock button
+  if(!d){
+    h+=`<div class="sf">
+      <button class="btn btn-s" onclick="lockMonthly('${mk}')">Complete &amp; lock monthly review</button>
+      <p>Lock this review at the end of the month</p>
+    </div>`;
+  }
+
+  el.innerHTML=h;
+}
+
+// Monthly mutation helpers
+function getMR(){ const months=getSortedMonths(); return S.monthly[months[mOff]]; }
+function updO(oi,f,val){ const mr=getMR(); mr.oneOnOnes[oi][f]=val; save(); if(f==='done') rMonthly(); }
+function updR(ri,f,val){ getMR().retention[ri][f]=val; save(); if(['openingHeadcount','starters','leavers'].includes(f)) rMonthly(); }
+function updEv(ei,f,val){ getMR().cultureEvents[ei][f]=val; save(); }
+function updM(f,val){ getMR()[f]=val; save(); }
+function addEv(){ getMR().cultureEvents.push({name:'',date:'',site:'All',description:'',outcome:''}); save(); rMonthly(); }
+function removeEv(ei){ getMR().cultureEvents.splice(ei,1); save(); rMonthly(); }
+
+function lockMonthly(mk){
+  const mr=S.monthly[mk];
+  const oooDone=mr.oneOnOnes.filter(o=>o.done).length;
+  if(oooDone<SITES.length){
+    if(!confirm(`${SITES.length-oooDone} manager 1-1(s) not yet marked complete. Lock anyway?`)) return;
+  }
+  mr.locked=true;
+  mr.lockedDate=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  save(); rMonthly();
+}
+
 document.getElementById('dwl').textContent=WLABELS[0];
 
 sbLoad().then(()=>{
