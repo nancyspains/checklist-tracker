@@ -223,7 +223,7 @@ async function saveAll(){
           const r=await fetch(`${SB}/rest/v1/site_visit_history`,{
             method:'POST',
             headers:{apikey:KEY,Authorization:`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'},
-            body:JSON.stringify({venue,visit_number:i+1,visited_at:todayStr,week_of:weekOf,scores:v.scores,notes:v.notes,pct:vPct(v)})
+            body:JSON.stringify({venue,visit_number:i+1,visited_at:todayStr,week_of:weekOf,scores:v.scores,notes:v.notes,cat_notes:v.catNotes||{},pct:vPct(v)})
           });
           if(r.ok) visits[venue][i].saved=true;
         }catch(e){ console.error('History error:',e); }
@@ -270,7 +270,9 @@ async function sendVisitReport(venue, vIdx){
     }).join('');
     const tot = items.filter(i=>visit.scores[i]!==null).reduce((a,i)=>a+visit.scores[i],0);
     const max = items.length * 3;
-    return `<tr><td colspan="2" style="padding:10px 8px 4px;font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.04em;border-top:1px solid #eee">${cat} — ${tot}/${max}</td></tr>${rows}`;
+    const catNote = visit.catNotes&&visit.catNotes[cat];
+    const noteRow = catNote ? `<tr><td colspan="2" style="padding:4px 8px 8px;font-size:12px;color:#666;font-style:italic">Notes: ${catNote}</td></tr>` : '';
+    return `<tr><td colspan="2" style="padding:10px 8px 4px;font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.04em;border-top:1px solid #eee">${cat} — ${tot}/${max}</td></tr>${rows}${noteRow}`;
   }).join('');
 
   const scoreColor = pct>=90?'#3b6d11':pct>=80?'#b45309':'#b91c1c';
@@ -566,13 +568,86 @@ function renderDashboard(el){
 
 function renderHistory(el){
   const hbtns=['all',...VENUES].map(v=>`<button class="vf-btn ${histVenue===v?'active':''}" onclick="setHistVenue('${v}')">${v==='all'?'All pubs':v}</button>`).join('');
-  const data=histVenue==='all'?history:history.filter(h=>h.venue===histVenue);
-  const rows=data.slice(0,100).map(h=>{
-    const d=new Date(h.visited_at).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
-    const notes=h.notes?`<div style="font-size:11px;color:#888;margin-top:2px;font-style:italic">"${h.notes.slice(0,80)}${h.notes.length>80?'...':''}"</div>`:'';
-    return `<div class="hist-row"><div><div style="font-size:14px;font-weight:500">${h.venue} — Visit ${h.visit_number}</div><div class="hist-meta">${d}</div>${notes}</div><span class="badge ${pc(h.pct)}">${h.pct}%</span></div>`;
+  const data=(histVenue==='all'?history:history.filter(h=>h.venue===histVenue));
+
+  // Group by week
+  const weeks={};
+  data.forEach(h=>{
+    const d=new Date(h.visited_at);
+    const day=d.getDay();
+    const diff=d.getDate()-day+(day===0?-6:1);
+    const mon=new Date(d); mon.setDate(diff); mon.setHours(0,0,0,0);
+    const key=mon.toISOString().split('T')[0];
+    if(!weeks[key])weeks[key]=[];
+    weeks[key].push(h);
+  });
+
+  const weekKeys=Object.keys(weeks).sort((a,b)=>b.localeCompare(a));
+
+  if(!weekKeys.length){
+    el.innerHTML=`<div class="vf-row">${hbtns}</div><div class="dash-section"><p class="empty">No visit history yet.</p></div>`;
+    return;
+  }
+
+  const labels=['0 — Fail','1 — Below','2 — Meets','3 — Exceeds'];
+
+  const weekBlocks=weekKeys.map(key=>{
+    const visits=weeks[key];
+    const mon=new Date(key);
+    const sun=new Date(mon); sun.setDate(sun.getDate()+6);
+    const fmt=d=>d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+    const weekLabel=`${fmt(mon)} – ${fmt(sun)} ${sun.getFullYear()}`;
+    const avgPct=Math.round(visits.reduce((a,h)=>a+h.pct,0)/visits.length);
+
+    const cards=visits.map(h=>{
+      const id=`hist_${h.id||key+h.venue+h.visit_number}`;
+      const d=new Date(h.visited_at).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+
+      // Full score breakdown
+      const catBreakdown=STDS.map(({cat,items})=>{
+        const tot=items.filter(i=>h.scores&&h.scores[i]!==null&&h.scores[i]!==undefined).reduce((a,i)=>a+(h.scores[i]||0),0);
+        const max=items.length*3;
+        const itemRows=items.map(item=>{
+          const v=h.scores?h.scores[item]:null;
+          const scoreLabel=v!==null&&v!==undefined?labels[v]:'—';
+          const scoreColor=v===3?'#27500a':v===2?'#27500a':v===1?'#92400e':'#791f1f';
+          return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid rgba(0,0,0,0.05);font-size:12px"><span style="color:#444">${item}</span><span style="font-weight:500;color:${scoreColor}">${scoreLabel}</span></div>`;
+        }).join('');
+        const catNote=h.cat_notes&&h.cat_notes[cat]?`<div style="font-size:11px;color:#666;font-style:italic;padding:5px 0;border-bottom:0.5px solid rgba(0,0,0,0.05)">Notes: ${h.cat_notes[cat]}</div>`:'';
+        return `<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.04em;padding:6px 0;border-bottom:0.5px solid rgba(0,0,0,0.1)">${cat} — ${tot}/${max}</div>${itemRows}${catNote}</div>`;
+      }).join('');
+
+      const notesBlock=h.notes?`<div style="margin-top:10px;padding:10px;background:#fafaf9;border-radius:8px;border:0.5px solid #eee"><div style="font-size:11px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px">Notes</div><div style="font-size:12px;color:#444;font-style:italic">${h.notes}</div></div>`:'';
+
+      return `
+        <div style="background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:10px;overflow:hidden;margin-bottom:8px">
+          <div style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none" onclick="document.getElementById('${id}').style.display=document.getElementById('${id}').style.display==='none'?'block':'none'">
+            <div>
+              <div style="font-size:14px;font-weight:500">${h.venue} — Visit ${h.visit_number}</div>
+              <div style="font-size:11px;color:#888;margin-top:2px">${d}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="badge ${pc(h.pct)}">${h.pct}%</span>
+              <span style="font-size:16px;color:#aaa">›</span>
+            </div>
+          </div>
+          <div id="${id}" style="display:none;padding:12px 14px;border-top:0.5px solid rgba(0,0,0,0.07);background:#fafaf9">
+            ${catBreakdown}${notesBlock}
+          </div>
+        </div>`;
+    }).join('');
+
+    return `
+      <div style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="font-size:13px;font-weight:600">${weekLabel}</div>
+          <span class="badge ${pc(avgPct)}">${avgPct}% avg</span>
+        </div>
+        ${cards}
+      </div>`;
   }).join('');
-  el.innerHTML=`<div class="vf-row">${hbtns}</div><div class="dash-section">${rows||'<p class="empty">No visit history yet.</p>'}</div>`;
+
+  el.innerHTML=`<div class="vf-row">${hbtns}</div><div class="dash-section" style="padding:1rem 1.25rem">${weekBlocks}</div>`;
 }
 
 document.addEventListener('DOMContentLoaded',load);
