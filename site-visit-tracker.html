@@ -118,6 +118,7 @@ textarea { width: 100%; font-size: 12px; padding: 8px 10px; border-radius: 8px; 
 const RESEND_API_KEY  = 're_ijanX9N1_7X5yHQQ1FCyEVfRvcgy42z7S';
 const EMAIL_FROM      = 'reports@nancyspains.co.uk';
 const EMAIL_TO        = ['peter@nancyspains.co.uk', 'nicholas@nancyspains.co.uk'];
+const ADMIN_PASSWORD  = 'nancys2026';  // change this to your preferred admin password
 // ─────────────────────────────────────────────
 
 const SB = 'https://vqfvklqdexakwjjyvwod.supabase.co';
@@ -154,6 +155,20 @@ function isLocked(v){
   if(v.savedDate && v.savedDate !== today()) return true;
   return false;
 }
+function adminUnlock(venue, vIdx){
+  const pwd = prompt('Enter admin password to unlock this visit for editing:');
+  if(pwd === null) return; // cancelled
+  if(pwd !== ADMIN_PASSWORD){
+    alert('Incorrect password.');
+    return;
+  }
+  visits[venue][vIdx].startedDate = today();
+  visits[venue][vIdx].completedAt = null;
+  visits[venue][vIdx].savedDate = today();
+  visits[venue][vIdx].saved = false;
+  render();
+}
+
 function vPct(v){
   const s=ALL_ITEMS.filter(i=>v.scores[i]!==null);
   if(!s.length)return 0;
@@ -440,7 +455,10 @@ function renderVenue(el,venue){
   let banner='';
   if(dayLocked){
     const lockedDate=visit.startedDate||visit.completedAt?.split('T')[0]||'a previous day';
-    banner=`<div class="banner-lock">🔒 View only — this visit was completed on ${lockedDate} and can no longer be edited.</div>`;
+    banner=`<div class="banner-lock" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <span>🔒 View only — this visit was completed on ${lockedDate}.</span>
+      <button class="btn" style="font-size:12px;padding:4px 12px;white-space:nowrap" onclick="adminUnlock('${venue}',${activeIdx[venue]})">🔑 Admin unlock</button>
+    </div>`;
   } else if(done){
     banner=`<div class="banner">✓ Visit ${activeIdx[venue]+1} complete — ${vPct(visit)}% · ${activeIdx[venue]<2?`Visit ${activeIdx[venue]+2} now unlocked.`:'All 3 visits complete this week!'}</div>`;
   }
