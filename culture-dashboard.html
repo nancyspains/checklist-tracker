@@ -91,16 +91,15 @@ const STORE_KEY = "culture_kpi_weeks";
 const ADMIN_PASSWORD = "nancys2026";
 
 const FIELDS = [
-  {key:"siteVisitScore",    label:"Overall site visit score",         suffix:"%", min:0, max:100, step:1,   lb:false, target:90},
-  {key:"teamSatisfaction",  label:"Avg team satisfaction score",      suffix:"%", min:0, max:100, step:1,   lb:false, target:90},
-  {key:"atmosphereScore",   label:"Atmosphere score",                 suffix:"%", min:0, max:100, step:1,   lb:false, target:90},
-  {key:"quizCompletion",    label:"Staff quiz completion rate",       suffix:"%", min:0, max:100, step:1,   lb:false, target:85},
-  {key:"mysteryScore",      label:"Mystery shopper score",            suffix:"%", min:0, max:100, step:1,   lb:false, target:90},
-  {key:"readyToMove",       label:"Team ready for next role",         suffix:"%", min:0, max:100, step:1,   lb:false, target:30},
-  {key:"staffTurnover",     label:"Staff turnover",                   suffix:"%", min:0, max:100, step:0.1, lb:true,  target:5},
+  {key:"siteVisitScore",   label:"Overall site visit score",    suffix:"%", min:0, max:100, step:1,   lb:false, target:90},
+  {key:"teamSatisfaction", label:"Avg team satisfaction score", suffix:"%", min:0, max:100, step:1,   lb:false, target:90},
+  {key:"trainingScore",    label:"Training score",              suffix:"%", min:0, max:100, step:1,   lb:false, target:90},
+  {key:"mysteryScore",     label:"Mystery shopper score",       suffix:"%", min:0, max:100, step:1,   lb:false, target:90},
+  {key:"readyToMove",      label:"Team ready for next role",    suffix:"%", min:0, max:100, step:1,   lb:false, target:30},
+  {key:"staffTurnover",    label:"Staff turnover",              suffix:"%", min:0, max:100, step:0.1, lb:true,  target:5},
 ];
 
-const BLANK = {siteVisitScore:0,teamSatisfaction:0,atmosphereScore:0,quizCompletion:0,mysteryScore:0,readyToMove:0,staffTurnover:0};
+const BLANK = {siteVisitScore:0,teamSatisfaction:0,trainingScore:0,mysteryScore:0,readyToMove:0,staffTurnover:0};
 
 const state = {
   view:"dashboard", activeWeek:currentWeekEnding(), allData:{},
@@ -250,7 +249,6 @@ function renderDashboard(){
   const prevData=state.allData[prevW]||null;
   const frag=document.createDocumentFragment();
 
-  // KPI summary cards
   const kg=div({class:"kpi-grid"});
   FIELDS.forEach(f=>{
     const val=data[f.key]||0;
@@ -283,29 +281,19 @@ function renderDashboard(){
     rows.forEach(r=>c.appendChild(r)); return c;
   }
 
-  // Row 1 — Experience scores
   const r1=div({class:"grid2"});
-  r1.appendChild(makeChart("Experience scores",[
+  r1.appendChild(makeChart("Scores",[
     makeBarRow("Site visit",(data.siteVisitScore||0),90,100,false,"%"),
     makeBarRow("Team satisfaction",(data.teamSatisfaction||0),90,100,false,"%"),
-    makeBarRow("Atmosphere",(data.atmosphereScore||0),90,100,false,"%"),
+    makeBarRow("Training score",(data.trainingScore||0),90,100,false,"%"),
+    makeBarRow("Mystery shopper",(data.mysteryScore||0),90,100,false,"%"),
   ]));
   r1.appendChild(makeChart("People metrics",[
-    makeBarRow("Quiz completion",(data.quizCompletion||0),85,100,false,"%"),
-    makeBarRow("Mystery shopper",(data.mysteryScore||0),90,100,false,"%"),
     makeBarRow("Ready for next role",(data.readyToMove||0),30,100,false,"%"),
+    makeBarRow("Staff turnover",(data.staffTurnover||0),5,20,true,"%"),
   ]));
   frag.appendChild(r1);
 
-  // Row 2 — Staff turnover
-  const r2=div({class:"grid2"});
-  r2.appendChild(makeChart("Staff turnover",[
-    makeBarRow("Turnover",(data.staffTurnover||0),5,20,true,"%"),
-  ]));
-  r2.appendChild(div({class:"ccart"}));
-  frag.appendChild(r2);
-
-  // Week on week table
   const tblCard=div({class:"ccart"});
   tblCard.appendChild(div({class:"ctitle"},"Week on week comparison"));
   const tbl=h("table",{});
@@ -362,9 +350,9 @@ function renderEntry(){
   const frag=document.createDocumentFragment();
   const card=div({class:"entry-card"});
   const ehead=div({class:"entry-head"});
-  ehead.appendChild(div({class:"avatar"},"CB"));
+  ehead.appendChild(div({class:"avatar"},"CT"));
   const einfo=div({});
-  einfo.appendChild(h("p",{style:{fontWeight:"500",fontSize:"14px",color:"#1a1a18",margin:"0"}},"Culture & Brand Manager"));
+  einfo.appendChild(h("p",{style:{fontWeight:"500",fontSize:"14px",color:"#1a1a18",margin:"0"}},"Culture & Training Manager"));
   einfo.appendChild(h("p",{style:{fontSize:"12px",color:"#5f5e5a",margin:"0"}},"Week ending "+fmtWeek(state.activeWeek)));
   ehead.appendChild(einfo); card.appendChild(ehead);
 
@@ -431,7 +419,7 @@ function renderHistory(){
     const left=div({});
     left.appendChild(div({style:{fontSize:"14px",fontWeight:"500",color:"#1a1a18"}},"Week ending "+fmtWeek(w)));
     left.appendChild(div({style:{fontSize:"12px",color:"#5f5e5a",marginTop:"3px"}},
-      "Site visit "+(d.siteVisitScore||0)+"% · Mystery shopper "+(d.mysteryScore||0)+"% · Turnover "+(d.staffTurnover||0).toFixed(1)+"%"));
+      "Site visit "+(d.siteVisitScore||0)+"% · Training "+(d.trainingScore||0)+"% · Turnover "+(d.staffTurnover||0).toFixed(1)+"%"));
     const right=div({style:{display:"flex",gap:"6px"}});
     const vb=btn("View",{class:"btn small"});
     vb.addEventListener("click",async()=>{state.activeWeek=w;state.view="dashboard";listenToWeek(w);render();});
@@ -444,18 +432,18 @@ function renderHistory(){
 }
 
 function exportCSV(week,data){
-  const rows=[["Week ending","Site Visit Score %","Team Satisfaction %","Atmosphere Score %","Quiz Completion %","Mystery Shopper %","Ready for Next Role %","Staff Turnover %"]];
-  rows.push([week,data.siteVisitScore||0,data.teamSatisfaction||0,data.atmosphereScore||0,data.quizCompletion||0,data.mysteryScore||0,data.readyToMove||0,data.staffTurnover||0]);
+  const rows=[["Week ending","Site Visit Score %","Team Satisfaction %","Training Score %","Mystery Shopper %","Ready for Next Role %","Staff Turnover %"]];
+  rows.push([week,data.siteVisitScore||0,data.teamSatisfaction||0,data.trainingScore||0,data.mysteryScore||0,data.readyToMove||0,data.staffTurnover||0]);
   const csv=rows.map(r=>r.map(v=>`"${v}"`).join(",")).join("\n");
   const a=document.createElement("a");
   a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);
   a.download="nancy-spains-culture-kpi-"+week+".csv"; a.click();
 }
 function exportAllCSV(allData){
-  const rows=[["Week ending","Site Visit Score %","Team Satisfaction %","Atmosphere Score %","Quiz Completion %","Mystery Shopper %","Ready for Next Role %","Staff Turnover %"]];
+  const rows=[["Week ending","Site Visit Score %","Team Satisfaction %","Training Score %","Mystery Shopper %","Ready for Next Role %","Staff Turnover %"]];
   Object.keys(allData).sort().forEach(week=>{
     const d=allData[week];
-    rows.push([week,d.siteVisitScore||0,d.teamSatisfaction||0,d.atmosphereScore||0,d.quizCompletion||0,d.mysteryScore||0,d.readyToMove||0,d.staffTurnover||0]);
+    rows.push([week,d.siteVisitScore||0,d.teamSatisfaction||0,d.trainingScore||0,d.mysteryScore||0,d.readyToMove||0,d.staffTurnover||0]);
   });
   const csv=rows.map(r=>r.map(v=>`"${v}"`).join(",")).join("\n");
   const a=document.createElement("a");
