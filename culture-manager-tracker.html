@@ -1,457 +1,1158 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Nancy Spain's — Culture & Training KPI</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Culture Manager — Site Visit Tracker</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f5f4f0;color:#1a1a18;min-height:100vh;}
-.wrap{max-width:820px;margin:0 auto;padding:1.5rem 1rem;}
-h1{font-size:19px;font-weight:500;}
-p.sub{font-size:12px;color:#5f5e5a;margin-top:2px;}
-.topbar{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:1.25rem;}
-.tabs{display:flex;gap:6px;flex-wrap:wrap;}
-.btn{font-family:inherit;font-size:13px;padding:6px 14px;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;background:transparent;color:#5f5e5a;cursor:pointer;}
-.btn.active{background:#f1efe8;color:#1a1a18;font-weight:500;border-color:rgba(0,0,0,0.35);}
-.btn.small{font-size:12px;padding:5px 10px;}
-.btn:disabled{opacity:0.35;cursor:default;}
-.week-nav{display:flex;align-items:center;gap:8px;background:#fff;border:0.5px solid rgba(0,0,0,0.12);border-radius:12px;padding:0.7rem 1rem;margin-bottom:1.25rem;}
-.arrow{font-size:18px;border:none;background:transparent;color:#5f5e5a;cursor:pointer;padding:0 4px;line-height:1;}
-.center{flex:1;text-align:center;}
-.wlabel{font-size:14px;font-weight:500;}
-.pill{display:inline-block;font-size:11px;padding:2px 7px;border-radius:20px;font-weight:500;margin-left:6px;}
-.pill-purple{background:#EEEDFE;color:#534AB7;}
-.pill-green{background:#EAF3DE;color:#3B6D11;}
-.pill-gray{background:#f1efe8;color:#888780;}
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:1.25rem;}
-.kpi-card{background:#f1efe8;border-radius:8px;padding:0.85rem;}
-.klabel{font-size:11px;color:#5f5e5a;margin-bottom:5px;}
-.kval{font-size:22px;font-weight:500;line-height:1;}
-.ktgt{font-size:11px;color:#888780;margin-top:3px;}
-.kbadge{display:inline-block;font-size:11px;padding:2px 7px;border-radius:20px;margin-top:5px;font-weight:500;}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
-.ccart{background:#fff;border:0.5px solid rgba(0,0,0,0.12);border-radius:12px;padding:1rem;}
-.ctitle{font-size:13px;font-weight:500;margin-bottom:10px;}
-.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
-.bar-row:last-child{margin-bottom:0;}
-.bar-lbl{font-size:11px;color:#5f5e5a;width:110px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.bar-track{flex:1;background:#f1efe8;border-radius:4px;height:16px;position:relative;overflow:hidden;}
-.bar-fill{height:100%;border-radius:4px;transition:width 0.3s;}
-.bar-tgt{position:absolute;top:0;height:100%;width:1.5px;background:rgba(180,80,50,0.45);}
-.bar-val{font-size:11px;color:#5f5e5a;width:38px;text-align:right;flex-shrink:0;}
-.entry-card{background:#fff;border:0.5px solid rgba(0,0,0,0.12);border-radius:12px;padding:1.25rem;margin-bottom:1rem;}
-.entry-head{display:flex;align-items:center;gap:12px;margin-bottom:1.25rem;}
-.avatar{width:40px;height:40px;border-radius:50%;background:#FBEAF0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:#993556;flex-shrink:0;}
-.field-row{margin-bottom:14px;}
-.field-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
-.field-label{font-size:13px;color:#5f5e5a;}
-.field-right{display:flex;align-items:center;gap:8px;}
-.status-pill{font-size:11px;padding:2px 7px;border-radius:20px;font-weight:500;}
-.field-val{font-size:15px;font-weight:500;min-width:50px;text-align:right;}
-.field-bar-wrap{display:flex;align-items:center;gap:10px;}
-.mini-track{flex:1;position:relative;height:6px;background:#f1efe8;border-radius:4px;}
-.mini-fill{position:absolute;left:0;top:0;height:100%;border-radius:4px;transition:width 0.2s;}
-.mini-tgt{position:absolute;top:-3px;width:2px;height:12px;background:rgba(150,100,50,0.4);border-radius:1px;}
-.field-tgt{font-size:11px;color:#888780;margin-top:3px;}
-.num-input{width:70px;font-size:13px;padding:4px 8px;text-align:right;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;background:#fff;color:#1a1a18;font-family:inherit;}
-.save-row{display:flex;gap:8px;justify-content:flex-end;}
-.history-item{background:#fff;border:0.5px solid rgba(0,0,0,0.12);border-radius:12px;padding:0.85rem 1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
-.loading{text-align:center;padding:3rem;color:#5f5e5a;font-size:14px;}
-.sync-bar{font-size:12px;padding:6px 12px;border-radius:8px;margin-bottom:1rem;display:none;}
-.sync-saving{background:#FAEEDA;color:#854F0B;display:block;}
-.sync-saved{background:#EAF3DE;color:#3B6D11;display:block;}
-.sync-error{background:#FCEBEB;color:#A32D2D;display:block;}
-table{width:100%;border-collapse:collapse;font-size:13px;}
-th{text-align:left;color:#5f5e5a;font-weight:400;padding:4px 6px 8px;border-bottom:0.5px solid rgba(0,0,0,0.1);}
-td{padding:7px 6px;border-bottom:0.5px solid rgba(0,0,0,0.08);color:#1a1a18;}
-tr:last-child td{border-bottom:none;}
-.score-pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:12px;font-weight:500;}
-@media(max-width:600px){.grid2{grid-template-columns:1fr;}}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f3;color:#1a1a1a;font-size:14px;line-height:1.5;}
+.topbar{background:#fff;border-bottom:1px solid #e5e5e3;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;gap:10px;}
+.topbar h1{font-size:17px;font-weight:500;}
+.topbar p{font-size:12px;color:#888;margin-top:1px;}
+.topbar-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.sync{display:flex;align-items:center;gap:5px;font-size:12px;}
+.sdot{width:7px;height:7px;border-radius:50%;background:#3B6D11;display:inline-block;flex-shrink:0;}
+#stxt{color:#3B6D11;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+.btn{font-size:13px;padding:7px 16px;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.btn-o{border:1px solid #ccc;background:#fff;color:#1a1a1a;}
+.btn-s{border:none;background:#1a1a1a;color:#fff;}
+.btn:hover{opacity:.8;}
+.nav{background:#fff;border-bottom:1px solid #e5e5e3;padding:0 24px;display:flex;overflow-x:auto;}
+.ntab{font-size:13px;padding:12px 16px;border:none;background:none;color:#888;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;font-family:inherit;}
+.ntab:hover{color:#444;}
+.ntab.active{color:#1a1a1a;border-bottom-color:#1a1a1a;font-weight:500;}
+.content{max-width:800px;margin:0 auto;padding:24px 20px;}
+.view{display:none;}
+.view.active{display:block;}
+.sg{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+.sc{background:#fff;border:1px solid #e5e5e3;border-radius:10px;padding:14px 16px;}
+.slbl{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;}
+.sval{font-size:26px;font-weight:500;}
+.vc{background:#fff;border:1px solid #e5e5e3;border-radius:10px;padding:14px 16px;margin-bottom:8px;}
+.vn{font-size:15px;font-weight:500;margin-bottom:2px;}
+.vs{font-size:12px;color:#888;margin-bottom:10px;}
+.bw{display:flex;align-items:center;gap:8px;}
+.bt{flex:1;height:5px;background:#f0f0ee;border-radius:4px;overflow:hidden;}
+.bf{height:100%;border-radius:4px;transition:width .3s;}
+.pill{font-size:12px;font-weight:500;padding:2px 9px;border-radius:20px;white-space:nowrap;}
+.g{background:#EAF3DE;color:#27500A;}
+.a{background:#FAEEDA;color:#633806;}
+.r{background:#FCEBEB;color:#791F1F;}
+.p{background:#EEEDFE;color:#3C3489;}
+.gr{background:#f0f0ee;color:#666;}
+.card{background:#fff;border:1px solid #e5e5e3;border-radius:10px;padding:16px 18px;margin-bottom:10px;}
+.chd{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:8px;}
+.chd h3{font-size:14px;font-weight:500;}
+.sc2{font-size:12px;color:#888;}
+.vtr{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+.vts{display:flex;gap:5px;flex-wrap:wrap;}
+.vt{font-size:12px;padding:5px 13px;border-radius:8px;border:1px solid #e5e5e3;background:#fff;color:#888;cursor:pointer;font-family:inherit;}
+.vt.active{background:#EAF3DE;border-color:#97C459;color:#27500A;font-weight:500;}
+.vt.completed{background:#EAF3DE;border-color:#97C459;color:#27500A;}
+.vt.locked{background:#f5f5f3;border-color:#e5e5e3;color:#ccc;cursor:not-allowed;}
+.wa{font-size:12px;font-weight:500;color:#854F0B;}
+.banner{border-radius:8px;padding:9px 12px;font-size:12px;margin-bottom:12px;}
+.banner.done{background:#EAF3DE;border:1px solid #97C459;color:#27500A;}
+.banner.locked-day{background:#f5f5f3;border:1px solid #e5e5e3;color:#888;}
+.banner.locked-seq{background:#FAEEDA;border:1px solid #EF9F27;color:#633806;}
+.placeholder{text-align:center;padding:40px 20px;color:#aaa;font-size:13px;}
+.item{margin-bottom:14px;}
+.il{font-size:13px;margin-bottom:6px;}
+.sbs{display:flex;gap:5px;flex-wrap:wrap;}
+.sb{font-size:12px;padding:4px 11px;border-radius:20px;border:1px solid #e5e5e3;background:#f5f5f3;color:#888;cursor:pointer;font-family:inherit;}
+.sb:hover:not(:disabled){border-color:#999;}
+.sb.s0{background:#FCEBEB;border-color:#F09595;color:#791F1F;}
+.sb.s1{background:#FAEEDA;border-color:#EF9F27;color:#633806;}
+.sb.s2,.sb.s3{background:#EAF3DE;border-color:#97C459;color:#27500A;}
+.sb:disabled{opacity:.5;cursor:default;}
+.ql{display:block;font-size:11px;font-weight:500;color:#888;text-transform:uppercase;letter-spacing:.04em;margin:10px 0 4px;}
+.qt{font-size:12px;color:#666;font-style:italic;padding:7px 10px;background:#f5f5f3;border-radius:8px;margin-bottom:5px;line-height:1.5;}
+.qt.wb{border-left:2px solid #1D9E75;}
+.qt.sa{border-left:2px solid #7F77DD;}
+.qt.cu{border-left:2px solid #D85A30;}
+textarea,select,input[type=text]{width:100%;font-size:13px;padding:8px 10px;border:1px solid #e5e5e3;border-radius:8px;background:#f5f5f3;color:#1a1a1a;font-family:inherit;line-height:1.5;}
+textarea{resize:vertical;min-height:60px;}
+textarea:focus,select:focus,input[type=text]:focus{outline:none;border-color:#999;background:#fff;}
+textarea:disabled,select:disabled,input[type=text]:disabled{opacity:.55;cursor:default;}
+.blk{background:#f5f5f3;border-radius:8px;padding:12px;margin-bottom:8px;}
+.bn{background:none;border:none;border-bottom:1px solid #ddd;width:100%;font-size:13px;font-weight:500;color:#1a1a1a;padding-bottom:5px;margin-bottom:10px;font-family:inherit;}
+.bn:focus{outline:none;border-bottom-color:#999;}
+.bn:disabled{opacity:.55;cursor:default;}
+.bdiv{height:1px;background:#e5e5e3;margin:10px 0;}
+.add{font-size:12px;color:#888;background:none;border:1px dashed #ccc;border-radius:8px;padding:8px 12px;cursor:pointer;width:100%;text-align:center;margin-top:6px;font-family:inherit;}
+.add:hover{background:#f0f0ee;border-color:#aaa;}
+.tog{display:flex;align-items:center;gap:10px;margin-top:10px;padding:8px 10px;background:#fff;border:1px solid #e5e5e3;border-radius:8px;}
+.tog input{width:16px;height:16px;cursor:pointer;accent-color:#3B6D11;flex-shrink:0;}
+.tog.done{background:#EAF3DE;border-color:#97C459;}
+.tog.done span{color:#27500A;font-weight:500;}
+.tog span{font-size:13px;color:#1a1a1a;}
+.cis{font-size:12px;color:#888;margin-top:8px;}
+.cis b{color:#27500A;}
+.sf{display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:14px;border-top:1px solid #e5e5e3;}
+.sf p{font-size:12px;color:#888;}
+.nar{display:flex;align-items:center;gap:8px;}
+.nal{display:flex;align-items:center;gap:4px;font-size:12px;color:#888;cursor:pointer;}
+.nal input{accent-color:#7F77DD;width:14px;height:14px;}
+.dg{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:4px;}
+.dc{background:#f5f5f3;border-radius:8px;padding:10px 12px;}
+.dct{font-size:12px;font-weight:500;color:#1a1a1a;margin-bottom:3px;}
+.dcv{font-size:22px;font-weight:500;}
+.dcs{font-size:11px;color:#888;margin-top:2px;}
+.br{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.brn{font-size:13px;width:155px;flex-shrink:0;}
+.blbl{font-size:11px;font-weight:500;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px;}
+.wnav{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid #e5e5e3;border-radius:10px;padding:10px 16px;margin-bottom:14px;}
+.wnav span{font-size:13px;font-weight:500;}
+.wnav button{background:none;border:none;font-size:20px;cursor:pointer;color:#888;padding:0 6px;line-height:1;}
+.stabs{display:flex;gap:5px;margin-bottom:14px;flex-wrap:wrap;}
+.stab{font-size:12px;padding:4px 12px;border-radius:20px;border:1px solid #e5e5e3;background:#fff;color:#888;cursor:pointer;font-family:inherit;}
+.stab.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a;}
+.hi{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f0f0ee;}
+.hi:last-child{border-bottom:none;}
+.hn{font-size:14px;}
+.hd{font-size:12px;color:#888;margin-top:1px;}
+.fp{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px;}
+.fp.monitor{background:#FAEEDA;color:#633806;}
+.fp.site,.fp.hr{background:#FCEBEB;color:#791F1F;}
+.fpr{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0ee;}
+.fpr:last-child{border-bottom:none;}
+.en{font-size:13px;color:#888;padding:8px 0;}
+.mn-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
+.mn-title{font-size:16px;font-weight:500;}
+.mn-month{font-size:13px;color:#888;}
+.retention-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:10px;}
+.ret-card{background:#f5f5f3;border-radius:8px;padding:12px;}
+.ret-site{font-size:13px;font-weight:500;color:#1a1a1a;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e5e5e3;}
+.ret-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.ret-label{font-size:12px;color:#888;}
+.ret-input{width:60px;font-size:13px;padding:4px 8px;border:1px solid #e5e5e3;border-radius:6px;background:#fff;text-align:center;}
+.ret-pct{font-size:14px;font-weight:500;}
+.event-row{display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;}
+.event-row .text-field{flex:1;}
+.remove-btn{font-size:18px;color:#ccc;background:none;border:none;cursor:pointer;padding:6px 4px;line-height:1;flex-shrink:0;}
+.remove-btn:hover{color:#E24B4A;}
+.month-nav{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid #e5e5e3;border-radius:10px;padding:10px 16px;margin-bottom:14px;}
+.month-nav span{font-size:13px;font-weight:500;}
+.month-nav button{background:none;border:none;font-size:20px;cursor:pointer;color:#888;padding:0 6px;line-height:1;}
+.monthly-locked-banner{background:#EAF3DE;border:1px solid #97C459;border-radius:8px;padding:9px 12px;font-size:12px;color:#27500A;margin-bottom:14px;}
+.health-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+.health-card{background:#fff;border:1px solid #e5e5e3;border-radius:10px;padding:12px 14px;text-align:center;}
+.health-label{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;}
+.health-val{font-size:22px;font-weight:500;color:#384137;}
+.loading{text-align:center;padding:60px 20px;color:#888;font-size:14px;}
+
+@media(max-width:580px){.sg{grid-template-columns:1fr 1fr;}.sg .sc:last-child{grid-column:span 2;}.brn{width:100px;font-size:12px;}}
 </style>
 </head>
 <body>
-<div class="wrap" id="app"><div class="loading">Connecting to database...</div></div>
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc, collection, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCp4Kb2mh_RC80TE8WcGjLZX2Of4huqt5E",
-  authDomain: "nancy-spains-kpi.firebaseapp.com",
-  projectId: "nancy-spains-kpi",
-  storageBucket: "nancy-spains-kpi.firebasestorage.app",
-  messagingSenderId: "1042191730060",
-  appId: "1:1042191730060:web:8819d9840616dceb7382a9"
-};
+<div class="topbar">
+  <div>
+    <h1>Culture manager — site visit tracker</h1>
+    <p id="today-label"></p>
+  </div>
+  <div class="topbar-right">
+    <div class="sync"><span class="sdot" id="sdot"></span><span id="stxt">Connecting…</span></div>
+    <button class="btn btn-o" onclick="newWeek()">New week</button>
+    <button class="btn btn-o" id="unlock-btn" onclick="promptAdminUnlock()" style="font-size:12px;padding:6px 12px;">🔒 Admin unlock</button>
+    <button class="btn btn-s" id="save-btn" onclick="manualSave()">Save</button>
+  </div>
+</div>
 
-const firebaseApp = initializeApp(firebaseConfig);
-const db = getFirestore(firebaseApp);
-const STORE_KEY = "culture_kpi_weeks";
-const ADMIN_PASSWORD = "nancys2026";
+<nav class="nav">
+  <button class="ntab active" onclick="goTab('overview',this)">Overview</button>
+  <button class="ntab" onclick="goTab('shoreditch',this)">Shoreditch</button>
+  <button class="ntab" onclick="goTab('monument',this)">Monument</button>
+  <button class="ntab" onclick="goTab('manchester',this)">Manchester</button>
+  <button class="ntab" onclick="goTab('dashboard',this)">Dashboard</button>
+  <button class="ntab" onclick="goTab('monthly',this)">Monthly</button>
+  <button class="ntab" onclick="goTab('history',this)">History</button>
+</nav>
 
-const FIELDS = [
-  {key:"siteVisitScore",   label:"Overall site visit score",    suffix:"%", min:0, max:100, step:1,   lb:false, target:90},
-  {key:"teamSatisfaction", label:"Avg team satisfaction score", suffix:"%", min:0, max:100, step:1,   lb:false, target:90},
-  {key:"trainingScore",    label:"Training score",              suffix:"%", min:0, max:100, step:1,   lb:false, target:90},
-  {key:"mysteryScore",     label:"Mystery shopper score",       suffix:"%", min:0, max:100, step:1,   lb:false, target:90},
-  {key:"readyToMove",      label:"Team ready for next role",    suffix:"%", min:0, max:100, step:1,   lb:false, target:30},
-  {key:"staffTurnover",    label:"Staff turnover",              suffix:"%", min:0, max:100, step:0.1, lb:true,  target:5},
+<div class="content">
+  <div id="view-overview" class="view active"><div class="loading">Loading…</div></div>
+  <div id="view-shoreditch" class="view"></div>
+  <div id="view-monument" class="view"></div>
+  <div id="view-manchester" class="view"></div>
+
+  <div id="view-dashboard" class="view">
+    <div class="wnav">
+      <button onclick="dPrev()">&#8249;</button>
+      <span id="dwl"></span>
+      <button onclick="dNext()">&#8250;</button>
+    </div>
+    <div class="stabs">
+      <button class="stab active" onclick="dFilter('all',this)">All pubs</button>
+      <button class="stab" onclick="dFilter('Shoreditch',this)">Shoreditch</button>
+      <button class="stab" onclick="dFilter('Monument',this)">Monument</button>
+      <button class="stab" onclick="dFilter('Manchester',this)">Manchester</button>
+    </div>
+    <div class="sg">
+      <div class="sc"><div class="slbl">Avg score</div><div class="sval" id="d-avg">—</div></div>
+      <div class="sc"><div class="slbl">Total visits</div><div class="sval" id="d-vis">0</div></div>
+      <div class="sc"><div class="slbl">Venues visited</div><div class="sval" id="d-ven">0</div></div>
+    </div>
+    <div class="card"><div class="blbl">Visit scores by venue</div><div id="d-vbars"></div></div>
+    <div class="card"><div class="blbl">Standards breakdown</div><div id="d-sbars"></div></div>
+    <div class="card">
+      <div class="chd"><h3>Bar team 1-1 check-ins</h3><span class="sc2" id="d-cit"></span></div>
+      <div class="dg" id="d-cig"></div>
+      <div style="margin-top:14px" id="d-fps"></div>
+    </div>
+  </div>
+
+  <div id="view-monthly" class="view"></div>
+
+  <div id="view-history" class="view">
+    <div class="stabs">
+      <button class="stab active" onclick="hFilter('all',this)">All pubs</button>
+      <button class="stab" onclick="hFilter('Shoreditch',this)">Shoreditch</button>
+      <button class="stab" onclick="hFilter('Monument',this)">Monument</button>
+      <button class="stab" onclick="hFilter('Manchester',this)">Manchester</button>
+    </div>
+    <div class="card"><div id="hist-list"></div></div>
+  </div>
+</div>
+
+<script>
+const SB_URL = 'https://vqfvklqdexakwjjyvwod.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxZnZrbHFkZXhha3dqanl2d29kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAwNjQsImV4cCI6MjA5MTMxNjA2NH0.JETvur4VrrIWPCwK3MbQ4zzmOiX1Tc7F_xFWC2OR93M';
+const TABLE  = 'culture_manager_tracker';
+const ROW_ID = 'main';
+
+// Visit 0 = Thursday, Visit 1 = Friday, Visit 2 = Saturday
+// JS getDay(): 4=Thu, 5=Fri, 6=Sat
+const VISIT_DAYS = {0:4, 1:5, 2:6};
+const DAY_NAMES  = {4:'Thursday', 5:'Friday', 6:'Saturday'};
+
+function todayDay(){ return new Date().getDay(); }
+
+// Password override — when unlocked, day-based locking is bypassed
+const ADMIN_PASSWORD = 'nancys2026';
+let adminUnlocked = false;
+
+function promptAdminUnlock(){
+  const pwd = prompt('Enter admin password to unlock all visits:');
+  if(pwd === ADMIN_PASSWORD){
+    adminUnlocked = true;
+    const btn = document.getElementById('unlock-btn');
+    if(btn){ btn.textContent = '🔓 Unlocked'; btn.style.background = '#EAF3DE'; btn.style.color = '#27500A'; btn.style.borderColor = '#97C459'; }
+    // Re-render all site views and history to reflect unlocked state
+    SITES.forEach((site,i) => rSite(SIDS[i], site, defaultIdx(site)));
+    rHist('all');
+    rMonthly();
+    document.querySelectorAll('#view-history .stab').forEach((b,i)=>b.classList.toggle('active',i===0));
+  } else if(pwd !== null){
+    alert('Incorrect password.');
+  }
+}
+
+/*
+  Visit access rules (all must pass):
+  - Visit 0: today >= Thursday (day 4)
+  - Visit 1: today >= Friday (day 5) AND Visit 0 is marked complete
+  - Visit 2: today >= Saturday (day 6) AND Visit 1 is marked complete
+  Admin override: if adminUnlocked, skip day-based checks
+*/
+function visitAccess(visits, idx){
+  const today = todayDay();
+  const v = visits[idx];
+  if(v.locked) return 'completed';
+  // Admin override bypasses day locking but still respects sequential locking
+  if(adminUnlocked){
+    if(idx > 0 && !visits[idx-1].locked) return 'locked-seq';
+    return 'active';
+  }
+  // Day hasn't arrived yet
+  if(today < VISIT_DAYS[idx]) return 'locked-day';
+  // Day has passed without completion — lock it
+  if(today > VISIT_DAYS[idx]) return 'locked-day';
+  // It's the right day — check previous visit is complete
+  if(idx > 0 && !visits[idx-1].locked) return 'locked-seq';
+  return 'active';
+}
+
+const SITES=['Shoreditch','Monument','Manchester'];
+const SIDS=['shoreditch','monument','manchester'];
+const VPW=3;
+const ATMOS=[
+  {id:'music_brand',label:'Music on brand and appropriate for time of day'},
+  {id:'music_vol',label:'Volume and tempo correct'},
+  {id:'venue_energy',label:'Venue energy and ambience on standard'},
+  {id:'team_pres',label:'Team presentation and uniform correct'},
 ];
+const TRAIN=[
+  {id:'train_del',label:'Training session delivered during service'},
+  {id:'team_resp',label:'Team responded positively to coaching'},
+];
+const STARTER=[
+  {id:'cult_fit',label:'New starter is a cultural fit'},
+  {id:'onboarded',label:'New starter onboarded and set up on Connect Team'},
+  {id:'progress',label:'Starter progressing to standard'},
+];
+const SECS=[
+  {id:'atmosphere',title:'Atmosphere & music',items:ATMOS},
+  {id:'training',title:'In-service training',items:TRAIN},
+  {id:'onboarding',title:'New starters',items:STARTER,na:true},
+];
+const SOPTS=[{l:'0 — Fail',c:'s0'},{l:'1 — Below',c:'s1'},{l:'2 — Meets',c:'s2'},{l:'3 — Exceeds',c:'s3'}];
+const WLABELS=['Week 5 May – 11 May 2026','Week 27 Apr – 3 May 2026','Week 20 Apr – 26 Apr 2026','Week 13 Apr – 19 Apr 2026'];
 
-const BLANK = {siteVisitScore:0,teamSatisfaction:0,trainingScore:0,mysteryScore:0,readyToMove:0,staffTurnover:0};
+let S, dFilt='all', dOff=0, saveTimer=null, isLoaded=false;
 
-const state = {
-  view:"dashboard", activeWeek:currentWeekEnding(), allData:{},
-  draft:{...BLANK}, unlocked:false, loading:true, syncStatus:""
-};
+function sbH(){ return {'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}; }
 
-function currentWeekEnding(){
-  const t=new Date(); const day=t.getDay();
-  const diff=t.getDate()-day+(day===0?0:7);
-  const s=new Date(t); s.setDate(diff);
-  return s.toISOString().split("T")[0];
-}
-function shiftWeek(w,n){
-  const d=new Date(w+"T12:00:00"); d.setDate(d.getDate()+n*7);
-  return d.toISOString().split("T")[0];
-}
-function fmtWeek(w){
-  return new Date(w+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
-}
-
-async function loadWeekFromDB(week){
-  const snap=await getDoc(doc(db,STORE_KEY,week));
-  return snap.exists()?snap.data():{...BLANK};
-}
-async function saveWeekToDB(week,data){ await setDoc(doc(db,STORE_KEY,week),data); }
-async function loadAllWeeks(){
-  const snap=await getDocs(collection(db,STORE_KEY));
-  const all={}; snap.forEach(d=>{all[d.id]=d.data();}); return all;
-}
-
-let unsubscribe=null;
-function listenToWeek(week){
-  if(unsubscribe) unsubscribe();
-  unsubscribe=onSnapshot(doc(db,STORE_KEY,week),(snap)=>{
-    if(snap.exists()){
-      state.allData[week]=snap.data();
-      if(!state.unlocked) state.draft=JSON.parse(JSON.stringify(snap.data()));
-      render();
+async function sbLoad(){
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/${TABLE}?id=eq.${ROW_ID}&select=data`,{headers:sbH()});
+    if(!r.ok) throw new Error('Load failed');
+    const rows=await r.json();
+    if(rows.length && rows[0].data && Object.keys(rows[0].data).length){
+      S=rows[0].data;
+      SITES.forEach(site=>{
+        if(!S.visits) S.visits={};
+        if(!S.visits[site]){S.visits[site]=[];for(let i=0;i<VPW;i++)S.visits[site].push(mkVisit(site,i));}
+      });
+      if(!S.history) S.history=[];
+      if(!S.monthly) S.monthly={};
+      const mk=currentMonthKey();
+      if(!S.monthly[mk]) S.monthly[mk]=mkMonthlyReview(mk);
+    } else {
+      S=initS();
+      await sbSaveNow();
     }
+    setSS('ok'); isLoaded=true;
+  } catch(err){
+    console.error(err);
+    try{const raw=localStorage.getItem('cm_svt_fb');S=raw?JSON.parse(raw):initS();}catch(e){S=initS();}
+    setSS('err'); isLoaded=true;
+  }
+}
+
+async function sbSaveNow(){
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/${TABLE}?id=eq.${ROW_ID}`,{
+      method:'PATCH',
+      headers:{...sbH(),'Prefer':'return=minimal'},
+      body:JSON.stringify({data:S,updated_at:new Date().toISOString()})
+    });
+    if(!r.ok){
+      await fetch(`${SB_URL}/rest/v1/${TABLE}`,{
+        method:'POST',
+        headers:{...sbH(),'Prefer':'resolution=merge-duplicates'},
+        body:JSON.stringify({id:ROW_ID,data:S,updated_at:new Date().toISOString()})
+      });
+    }
+    localStorage.setItem('cm_svt_fb',JSON.stringify(S));
+    setSS('ok');
+  } catch(err){
+    localStorage.setItem('cm_svt_fb',JSON.stringify(S));
+    setSS('err');
+  }
+}
+
+function save(){ setSS('saving'); clearTimeout(saveTimer); saveTimer=setTimeout(()=>sbSaveNow(),800); }
+
+async function manualSave(){
+  clearTimeout(saveTimer); setSS('saving');
+  await sbSaveNow();
+  const b=document.getElementById('save-btn');
+  b.textContent='Saved ✓'; setTimeout(()=>b.textContent='Save',1800);
+}
+
+function setSS(s){
+  const dot=document.getElementById('sdot'), txt=document.getElementById('stxt');
+  if(s==='saving'){ dot.style.background='#BA7517'; dot.style.animation='pulse 1s infinite'; txt.textContent='Saving…'; txt.style.color='#854F0B'; }
+  else if(s==='err'){ dot.style.background='#E24B4A'; dot.style.animation='none'; txt.textContent='Saved locally'; txt.style.color='#791F1F'; }
+  else { dot.style.background='#3B6D11'; dot.style.animation='none'; txt.textContent='Live sync on'; txt.style.color='#3B6D11'; }
+}
+
+function mkSc(items){const o={};items.forEach(it=>{o[it.id]=-1;});return o;}
+function mkVisit(site,idx){
+  const sc={};[...ATMOS,...TRAIN].forEach(it=>{sc[it.id]=-1;});
+  return {site,idx,locked:false,date:'',scores:sc,na:{},
+    atmos_notes:'',train_notes:'',great:'',action:'',
+    starters:[{name:'',scores:mkSc(STARTER)}],
+    checkins:[{name:'',wb:'',sat:'',sat_score:'',cult:'',followup:'',done:false}]};
+}
+function mkMonthlyReview(monthKey){
+  return {
+    monthKey,
+    locked: false,
+    oneOnOnes: SITES.map(site=>({
+      site, date:'', attendees:'', themes:'', actions:'', rating:0, done:false
+    })),
+    retention: SITES.map(site=>({
+      site, openingHeadcount:'', starters:'', leavers:'', notes:''
+    })),
+    cultureEvents: [{name:'',date:'',site:'All',description:'',outcome:''}],
+    overallNotes:''
+  };
+}
+function currentMonthKey(){
+  const d=new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+function monthLabel(key){
+  const [y,m]=key.split('-');
+  return new Date(y,m-1,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+}
+
+function initS(){
+  const s={visits:{},history:[],monthly:{}};
+  SITES.forEach(site=>{s.visits[site]=[];for(let i=0;i<VPW;i++)s.visits[site].push(mkVisit(site,i));});
+  const mk=currentMonthKey();
+  s.monthly[mk]=mkMonthlyReview(mk);
+  return s;
+}
+
+function pct(v){
+  const na=v.na&&v.na.onboarding;
+  const base=[...ATMOS,...TRAIN].map(it=>v.scores[it.id]).filter(x=>x>=0);
+  const st=na?[]:v.starters.flatMap(s=>STARTER.map(it=>s.scores[it.id]).filter(x=>x>=0));
+  const all=[...base,...st];
+  return all.length?Math.round(all.reduce((a,b)=>a+b,0)/(all.length*3)*100):null;
+}
+function pc(p){return p===null?'a':p>=85?'g':p>=70?'a':'r';}
+function bc(p){return!p?'#E24B4A':p>=85?'#639922':p>=70?'#BA7517':'#E24B4A';}
+function e(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
+function sid(site){return SIDS[SITES.indexOf(site)];}
+
+// Return the best default visit index to show for a site
+function defaultIdx(site){
+  const visits=S.visits[site];
+  const today=todayDay();
+  // Find today's visit
+  for(let i=0;i<VPW;i++){ if(VISIT_DAYS[i]===today) return i; }
+  // Before Thursday — show visit 0
+  if(today < 4) return 0;
+  // After Saturday — show last
+  return VPW-1;
+}
+
+function goTab(id,el){
+  document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('view-'+id).classList.add('active');
+  if(!isLoaded) return;
+  if(id==='overview') rOV();
+  if(id==='dashboard') rDash();
+  if(id==='monthly') rMonthly();
+  if(id==='history') rHist('all');
+  const si=SIDS.indexOf(id);
+  if(si>=0) rSite(id,SITES[si],defaultIdx(SITES[si]));
+}
+
+function rOV(){
+  const lk=SITES.flatMap(s=>S.visits[s]).filter(v=>v.locked);
+  const sc=lk.map(pct).filter(p=>p!==null);
+  const avg=sc.length?Math.round(sc.reduce((a,b)=>a+b,0)/sc.length)+'%':'—';
+  const sv=SITES.filter(s=>S.visits[s].some(v=>v.locked)).length;
+  let h=`<div class="sg">
+    <div class="sc"><div class="slbl">Visits this week</div><div class="sval">${lk.length}/${SITES.length*VPW}</div></div>
+    <div class="sc"><div class="slbl">Avg score</div><div class="sval">${avg}</div></div>
+    <div class="sc"><div class="slbl">Sites visited</div><div class="sval">${sv}/${SITES.length}</div></div>
+  </div>`;
+  SITES.forEach(site=>{
+    const done=S.visits[site].filter(v=>v.locked);
+    const ss=done.map(pct).filter(p=>p!==null);
+    const a=ss.length?Math.round(ss.reduce((x,y)=>x+y,0)/ss.length):null;
+    h+=`<div class="vc"><div class="vn">${site}</div><div class="vs">${done.length}/${VPW} visits this week</div>
+    <div class="bw"><div class="bt"><div class="bf" style="width:${a||0}%;background:${bc(a||0)}"></div></div>
+    ${a!==null?`<span class="pill ${pc(a)}">${a}%</span>`:`<span class="pill gr">No visits</span>`}
+    </div></div>`;
+  });
+  document.getElementById('view-overview').innerHTML=h;
+}
+
+function rSite(vid,site,fi){
+  const visits=S.visits[site];
+  const ai=fi!==undefined?fi:defaultIdx(site);
+  const v=visits[ai];
+  const access=visitAccess(visits,ai);
+  const editable=access==='active';
+  const d=!editable;
+
+  const ds=visits.filter(x=>x.locked).map(pct).filter(p=>p!==null);
+  const wa=ds.length?Math.round(ds.reduce((a,b)=>a+b,0)/ds.length)+'%':null;
+
+  // Visit tabs
+  let h=`<div class="vtr"><div class="vts">`;
+  visits.forEach((vv,i)=>{
+    const acc=visitAccess(visits,i);
+    const dayName=DAY_NAMES[VISIT_DAYS[i]];
+    let cls='vt';
+    if(i===ai) cls+=' active';
+    else if(acc==='completed') cls+=' completed';
+    else if(acc==='locked-day'||acc==='locked-seq') cls+=' locked';
+    const canClick = acc==='completed' || acc==='active';
+    const label=`${acc==='completed'?'✓ ':''}Visit ${i+1} <span style="font-weight:400;opacity:.7">${dayName}</span>${acc==='locked-day'||acc==='locked-seq'?' 🔒':''}`;
+    h+=`<button class="${cls}" ${canClick?`onclick="rSite('${vid}','${site}',${i})"`:''} ${canClick?'':'disabled'}>${label}</button>`;
+  });
+  h+=`</div>${wa?`<span class="wa">${wa} this week</span>`:''}</div>`;
+
+  // Status banner
+  if(access==='completed'){
+    h+=`<div class="banner done">✓ Visit completed on ${v.date}. View only.</div>`;
+  } else if(access==='locked-day'){
+    const today=todayDay();
+    const vday=VISIT_DAYS[ai];
+    if(today<vday) h+=`<div class="banner locked-day">🔒 Visit ${ai+1} unlocks on ${DAY_NAMES[vday]}.</div>`;
+    else h+=`<div class="banner locked-day">🔒 ${DAY_NAMES[vday]}'s visit window has passed.</div>`;
+  } else if(access==='locked-seq'){
+    h+=`<div class="banner locked-seq">🔒 Complete Visit ${ai} first to unlock this visit.</div>`;
+  }
+
+  // If locked show placeholder only
+  if(access==='locked-day'||access==='locked-seq'){
+    let msg='';
+    if(access==='locked-day'){
+      const today=todayDay(), vday=VISIT_DAYS[ai];
+      msg=today<vday?`Available on <strong>${DAY_NAMES[vday]}</strong>.`:`This visit day has passed.`;
+    } else {
+      msg=`Complete <strong>Visit ${ai}</strong> to unlock this visit.`;
+    }
+    h+=`<div class="card"><div class="placeholder">${msg}</div></div>`;
+    document.getElementById('view-'+vid).innerHTML=h;
+    return;
+  }
+
+  // Atmosphere & music
+  const asc=ATMOS.map(it=>v.scores[it.id]).filter(x=>x>=0);
+  h+=cHd('Atmosphere & music',asc.length?asc.reduce((a,b)=>a+b,0)+'/'+ATMOS.length*3:'—');
+  ATMOS.forEach(it=>{h+=sRow(it,v.scores[it.id],d,`sS('${site}',${ai},'${it.id}',`);});
+  h+=`<label class="ql">Atmosphere notes</label>
+  <textarea ${d?'disabled':''} placeholder="Music adjustments, atmosphere observations…" oninput="upd('${site}',${ai},'atmos_notes',this.value)" onblur="upd('${site}',${ai},'atmos_notes',this.value)">${e(v.atmos_notes)}</textarea></div>`;
+
+  // Training
+  const tsc=TRAIN.map(it=>v.scores[it.id]).filter(x=>x>=0);
+  h+=cHd('In-service training',tsc.length?tsc.reduce((a,b)=>a+b,0)+'/'+TRAIN.length*3:'—');
+  TRAIN.forEach(it=>{h+=sRow(it,v.scores[it.id],d,`sS('${site}',${ai},'${it.id}',`);});
+  h+=`<label class="ql">Training notes &amp; observations</label>
+  <textarea ${d?'disabled':''} placeholder="What was trained, who was involved, how the team responded…" oninput="upd('${site}',${ai},'train_notes',this.value)" onblur="upd('${site}',${ai},'train_notes',this.value)">${e(v.train_notes)}</textarea></div>`;
+
+  // New starters
+  const isNA=!!(v.na&&v.na.onboarding);
+  const stsc=isNA?[]:v.starters.flatMap(st=>STARTER.map(it=>st.scores[it.id]).filter(x=>x>=0));
+  const stMax=isNA?0:v.starters.length*STARTER.length*3;
+  h+=`<div class="card"><div class="chd"><h3>New starters</h3><div class="nar">
+    ${!d?`<label class="nal"><input type="checkbox" ${isNA?'checked':''} onchange="tNA('${site}',${ai},'onboarding',this.checked)"> N/A</label>`:''}
+    ${isNA?`<span class="pill p">Not applicable</span>`:`<span class="sc2">${stsc.length?stsc.reduce((a,b)=>a+b,0)+'/'+stMax:'—'}</span>`}
+  </div></div>`;
+  if(isNA){
+    h+=`<p class="en">No new starters on site this visit.</p>`;
+  } else {
+    v.starters.forEach((st,si)=>{
+      h+=`<div class="blk"><input class="bn" placeholder="Full name…" value="${e(st.name)}" ${d?'disabled':''} oninput="uSt('${site}',${ai},${si},'name',this.value)"><div class="bdiv"></div>`;
+      STARTER.forEach(it=>{
+        h+=`<div class="item"><div class="il">${it.label}</div><div class="sbs">`;
+        SOPTS.forEach((o,oi)=>{h+=`<button class="sb${st.scores[it.id]===oi?' '+o.c:''}" ${d?'disabled':''} onclick="sSt('${site}',${ai},${si},'${it.id}',${oi})">${o.l}</button>`;});
+        h+=`</div></div>`;
+      });
+      h+=`</div>`;
+    });
+    if(!d) h+=`<button class="add" onclick="addSt('${site}',${ai})">+ Add new starter</button>`;
+  }
+  h+=`</div>`;
+
+  // Check-ins
+  const cdn=v.checkins.filter(c=>c.done).length;
+  h+=`<div class="card"><div class="chd"><h3>Bar team 1-1 check-ins</h3><span class="sc2">${cdn}/${v.checkins.length} complete</span></div>`;
+  v.checkins.forEach((ci,ii)=>{
+    h+=`<div class="blk">
+    <input class="bn" placeholder="Team member name…" value="${e(ci.name)}" ${d?'disabled':''} oninput="uCI('${site}',${ai},${ii},'name',this.value)">
+    <label class="ql">Q1 — Wellbeing</label>
+    <div class="qt wb">"How have you been feeling at work lately — is there anything on your mind or anything we can do to support you better?"</div>
+    <textarea ${d?'disabled':''} placeholder="Notes…" oninput="uCI('${site}',${ai},${ii},'wb',this.value)">${e(ci.wb)}</textarea>
+    <label class="ql">Q2 — Satisfaction</label>
+    <div class="qt sa">"On a scale of 1–10, how happy are you in your role right now — and what would make it a higher score?"</div>
+    <select ${d?'disabled':''} onchange="uCI('${site}',${ai},${ii},'sat_score',this.value)" style="margin-bottom:6px">
+      <option value="">Score…</option>
+      ${[10,9,8,7,6,5,4,3,2,1].map(n=>`<option value="${n}"${ci.sat_score==n?' selected':''}>${n}</option>`).join('')}
+    </select>
+    <textarea ${d?'disabled':''} placeholder="What would make it higher? Notes…" oninput="uCI('${site}',${ai},${ii},'sat',this.value)">${e(ci.sat)}</textarea>
+    <label class="ql">Q3 — Team culture</label>
+    <div class="qt cu">"How would you describe the team culture here at the moment — and is there anything about the way we work together you'd want to change?"</div>
+    <textarea ${d?'disabled':''} placeholder="Notes…" oninput="uCI('${site}',${ai},${ii},'cult',this.value)">${e(ci.cult)}</textarea>
+    <label class="ql">Follow-up needed?</label>
+    <select ${d?'disabled':''} onchange="uCI('${site}',${ai},${ii},'followup',this.value)" style="margin-bottom:8px">
+      <option value="">Select…</option>
+      <option value="none"${ci.followup==='none'?' selected':''}>No — all good</option>
+      <option value="monitor"${ci.followup==='monitor'?' selected':''}>Monitor — check next visit</option>
+      <option value="site"${ci.followup==='site'?' selected':''}>Yes — escalate to site manager</option>
+      <option value="hr"${ci.followup==='hr'?' selected':''}>Yes — escalate to HR</option>
+    </select>
+    <label class="tog${ci.done?' done':''}" style="cursor:${d?'default':'pointer'}">
+      <input type="checkbox" ${ci.done?'checked':''} ${d?'disabled':''} onchange="tCI('${site}',${ai},${ii},this.checked)">
+      <span>${ci.done?'Check-in complete':'Mark check-in as complete'}</span>
+    </label></div>`;
+  });
+  if(!d) h+=`<button class="add" onclick="addCI('${site}',${ai})">+ Add team member</button>`;
+  if(cdn>0) h+=`<p class="cis"><b>${cdn}</b> of ${v.checkins.length} check-in${v.checkins.length!==1?'s':''} completed.</p>`;
+  h+=`</div>`;
+
+  // Summary
+  h+=`<div class="card"><div class="chd"><h3>Visit summary</h3></div>
+  <label class="ql">One thing that was great</label>
+  <textarea ${d?'disabled':''} placeholder="Specific, genuine, shareable with the team…" oninput="upd('${site}',${ai},'great',this.value)" onblur="upd('${site}',${ai},'great',this.value)">${e(v.great)}</textarea>
+  <label class="ql" style="margin-top:10px">One action before next visit</label>
+  <textarea ${d?'disabled':''} placeholder="Clear, ownable, time-bound…" oninput="upd('${site}',${ai},'action',this.value)" onblur="upd('${site}',${ai},'action',this.value)">${e(v.action)}</textarea>
+  </div>`;
+
+  if(!d) h+=`<div class="sf"><button class="btn btn-s" onclick="cVisit('${site}',${ai})">Mark visit complete</button><p>Complete on-site before leaving</p></div>`;
+  document.getElementById('view-'+vid).innerHTML=h;
+}
+
+function cHd(t,s){return`<div class="card"><div class="chd"><h3>${t}</h3><span class="sc2">${s}</span></div>`;}
+function sRow(it,sel,d,fn){
+  let h=`<div class="item"><div class="il">${it.label}</div><div class="sbs">`;
+  SOPTS.forEach((o,oi)=>{h+=`<button class="sb${sel===oi?' '+o.c:''}" ${d?'disabled':''} onclick="${fn}${oi})">${o.l}</button>`;});
+  return h+`</div></div>`;
+}
+
+function sS(site,vi,id,val){flushTextFields();S.visits[site][vi].scores[id]=val;save();rSite(sid(site),site,vi);}
+function sSt(site,vi,si,id,val){flushTextFields();S.visits[site][vi].starters[si].scores[id]=val;save();rSite(sid(site),site,vi);}
+function upd(site,vi,f,val){S.visits[site][vi][f]=val;save();}
+function uSt(site,vi,si,f,val){S.visits[site][vi].starters[si][f]=val;save();}
+function uCI(site,vi,ci,f,val){S.visits[site][vi].checkins[ci][f]=val;save();}
+function addSt(site,vi){flushTextFields();S.visits[site][vi].starters.push({name:'',scores:mkSc(STARTER)});save();rSite(sid(site),site,vi);}
+function addCI(site,vi){flushTextFields();S.visits[site][vi].checkins.push({name:'',wb:'',sat:'',sat_score:'',cult:'',followup:'',done:false});save();rSite(sid(site),site,vi);}
+function tCI(site,vi,ci,val){flushTextFields();S.visits[site][vi].checkins[ci].done=val;save();rSite(sid(site),site,vi);}
+function tNA(site,vi,sec,val){flushTextFields();if(!S.visits[site][vi].na)S.visits[site][vi].na={};S.visits[site][vi].na[sec]=val;save();rSite(sid(site),site,vi);}
+
+// Flush any unsaved text from DOM inputs/textareas back into state before a re-render
+function flushTextFields(){
+  document.querySelectorAll('textarea[oninput],input[oninput]').forEach(el=>{
+    const fn = el.getAttribute('oninput');
+    if(fn) try{ eval(fn.replace('this.value', JSON.stringify(el.value))); }catch(e){}
   });
 }
 
-async function init(){
-  state.allData=await loadAllWeeks();
-  state.draft=await loadWeekFromDB(state.activeWeek);
-  state.loading=false;
-  listenToWeek(state.activeWeek);
-  render();
-}
-
-function si(val,tgt,lb){
-  const diff=lb?val-tgt:tgt-val;
-  if(diff<=0) return{bg:"#EAF3DE",col:"#3B6D11",label:"On target"};
-  if(diff<=3) return{bg:"#FAEEDA",col:"#854F0B",label:"Near target"};
-  return{bg:"#FCEBEB",col:"#A32D2D",label:"Off target"};
-}
-function barColor(val,tgt,lb){
-  const diff=lb?val-tgt:tgt-val;
-  return diff<=0?"#639922":diff<=3?"#BA7517":"#E24B4A";
-}
-
-function h(tag,attrs,children){
-  const el=document.createElement(tag);
-  if(attrs) Object.keys(attrs).forEach(k=>{
-    if(k==="style"&&typeof attrs[k]==="object") Object.assign(el.style,attrs[k]);
-    else if(k.startsWith("on")) el.addEventListener(k.slice(2).toLowerCase(),attrs[k]);
-    else el.setAttribute(k,attrs[k]);
+function newWeek(){
+  if(!confirm('Start a new week? All current visits will be archived to history.')) return;
+  SITES.forEach(site=>{
+    S.visits[site].filter(v=>v.locked).forEach(v=>{
+      // Only add to history if not already there with full data
+      const alreadyStored=S.history.find(h=>h.site===v.site&&h.visit===v.idx+1&&h.visitData);
+      if(!alreadyStored){
+        S.history.unshift({site:v.site,score:pct(v),date:v.date,visit:v.idx+1,visitData:JSON.parse(JSON.stringify(v))});
+      }
+    });
+    S.visits[site]=Array.from({length:VPW},(_,i)=>mkVisit(site,i));
   });
-  if(children){
-    if(!Array.isArray(children)) children=[children];
-    children.forEach(c=>{
-      if(c==null) return;
-      if(typeof c==="string"||typeof c==="number") el.appendChild(document.createTextNode(c));
-      else el.appendChild(c);
+  save();rOV();
+}
+
+function dFilter(f,el){document.querySelectorAll('.stab').forEach(t=>t.classList.remove('active'));el.classList.add('active');dFilt=f;rDash();}
+function dPrev(){dOff=Math.min(dOff+1,WLABELS.length-1);rDash();}
+function dNext(){dOff=Math.max(dOff-1,0);rDash();}
+
+// Get week number from a date string (simple approach using date)
+function getWeekKey(dateStr){
+  try{
+    const d=new Date(dateStr.replace(/(\d+)\s+(\w+)\s+(\d+)/,'$2 $1 $3'));
+    if(isNaN(d)) return dateStr;
+    // Week starting Monday
+    const day=d.getDay()||7;
+    d.setDate(d.getDate()-day+1);
+    return d.toISOString().slice(0,10);
+  }catch(e){ return dateStr; }
+}
+
+// Build sorted list of unique weeks from history
+function getWeeks(){
+  const keys=new Set();
+  S.history.forEach(h=>{ if(h.date) keys.add(getWeekKey(h.date)); });
+  // Also add current week
+  const now=new Date(); const day=now.getDay()||7; now.setDate(now.getDate()-day+1);
+  keys.add(now.toISOString().slice(0,10));
+  return Array.from(keys).sort().reverse(); // most recent first
+}
+
+function weekLabel(key){
+  try{
+    const d=new Date(key);
+    const end=new Date(key); end.setDate(end.getDate()+6);
+    return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})+' – '+end.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  }catch(e){ return key; }
+}
+
+function rDash(){
+  const weeks=getWeeks();
+  // dOff 0 = current/most recent week
+  const selectedWeek=weeks[dOff]||weeks[0];
+  document.getElementById('dwl').textContent=weekLabel(selectedWeek);
+
+  const fs=dFilt==='all'?SITES:SITES.filter(s=>s===dFilt);
+
+  // For current week (dOff===0), use locked visits; for past weeks use history
+  let weekVisits, weekHistory;
+  if(dOff===0){
+    // Current week — use active locked visits + current week history entries
+    weekVisits=fs.flatMap(s=>S.visits[s].filter(v=>v.locked));
+    weekHistory=S.history.filter(h=>fs.includes(h.site)&&getWeekKey(h.date)===selectedWeek);
+  } else {
+    weekHistory=S.history.filter(h=>fs.includes(h.site)&&getWeekKey(h.date)===selectedWeek);
+    weekVisits=[]; // no visit objects for past weeks
+  }
+
+  // Stats from history for past weeks, from visits for current
+  const allScores=dOff===0
+    ? weekVisits.map(pct).filter(p=>p!==null)
+    : weekHistory.map(h=>h.score).filter(p=>p!==null);
+
+  const avg=allScores.length?Math.round(allScores.reduce((a,b)=>a+b,0)/allScores.length)+'%':'—';
+  const totalVisits=dOff===0?weekVisits.length:weekHistory.length;
+  const venuesVisited=dOff===0
+    ? fs.filter(s=>S.visits[s].some(v=>v.locked)).length
+    : fs.filter(s=>weekHistory.some(h=>h.site===s)).length;
+
+  document.getElementById('d-avg').textContent=avg;
+  document.getElementById('d-vis').textContent=totalVisits;
+  document.getElementById('d-ven').textContent=venuesVisited;
+
+  // Venue score bars
+  document.getElementById('d-vbars').innerHTML=fs.map(site=>{
+    let siteScores;
+    if(dOff===0){
+      siteScores=S.visits[site].filter(v=>v.locked).map(pct).filter(p=>p!==null);
+    } else {
+      siteScores=weekHistory.filter(h=>h.site===site).map(h=>h.score).filter(p=>p!==null);
+    }
+    const a=siteScores.length?Math.round(siteScores.reduce((x,y)=>x+y,0)/siteScores.length):null;
+    return `<div class="br"><div class="brn">${site}</div>
+    <div class="bt" style="flex:1"><div class="bf" style="width:${a||0}%;background:${bc(a||0)}"></div></div>
+    ${a!==null?`<span class="pill ${pc(a)}" style="min-width:40px;text-align:right">${a}%</span>`:`<span class="pill gr">—</span>`}
+    </div>`;
+  }).join('');
+
+  // Standards breakdown — only meaningful for current week with full visit data
+  if(dOff===0){
+    document.getElementById('d-sbars').innerHTML=SECS.map(sec=>{
+      let vals=[];
+      if(sec.id==='onboarding'){
+        vals=fs.flatMap(s=>S.visits[s].filter(v=>v.locked&&!(v.na&&v.na.onboarding)).flatMap(v=>v.starters.flatMap(st=>STARTER.map(it=>st.scores[it.id])))).filter(x=>x>=0);
+      } else {
+        vals=fs.flatMap(s=>S.visits[s].filter(v=>v.locked).flatMap(v=>sec.items.map(it=>v.scores[it.id]))).filter(x=>x>=0);
+      }
+      const a=vals.length?Math.round(vals.reduce((x,y)=>x+y,0)/(vals.length*3)*100):0;
+      return `<div class="br"><div class="brn">${sec.title}</div>
+      <div class="bt" style="flex:1"><div class="bf" style="width:${a}%;background:${bc(a)}"></div></div>
+      <span class="pill ${pc(a)}" style="min-width:40px;text-align:right">${vals.length?a+'%':'—'}</span>
+      </div>`;
+    }).join('');
+  } else {
+    document.getElementById('d-sbars').innerHTML=`<p class="en" style="padding:8px 0">Detailed standards breakdown is available for the current week only. View individual visits in the History tab.</p>`;
+  }
+
+  // Check-ins
+  const ciSource=dOff===0?fs.flatMap(s=>S.visits[s]):[];
+  const allCI=ciSource.flatMap(v=>v.checkins);
+  const doneCI=allCI.filter(c=>c.done).length;
+  document.getElementById('d-cit').textContent=dOff===0?`${doneCI}/${fs.length*VPW} completed`:`${weekHistory.length} visits recorded`;
+
+  document.getElementById('d-cig').innerHTML=fs.map(site=>{
+    if(dOff===0){
+      const sci=S.visits[site].flatMap(v=>v.checkins);
+      const sdn=sci.filter(c=>c.done).length;
+      const sats=sci.filter(c=>c.done&&c.sat_score).map(c=>parseInt(c.sat_score)).filter(n=>!isNaN(n));
+      const sa=sats.length?Math.round(sats.reduce((a,b)=>a+b,0)/sats.length):null;
+      return `<div class="dc"><div class="dct">${site}</div><div class="dcv">${sdn}/${VPW}</div>
+      <div class="dcs">check-ins complete</div>
+      ${sa!==null?`<div class="dcs" style="margin-top:3px">Avg satisfaction: <b>${sa}/10</b></div>`:''}
+      </div>`;
+    } else {
+      const siteH=weekHistory.filter(h=>h.site===site);
+      const siteAvg=siteH.length?Math.round(siteH.map(h=>h.score).filter(p=>p!==null).reduce((a,b,_,arr)=>a+b/arr.length,0)):null;
+      return `<div class="dc"><div class="dct">${site}</div>
+      <div class="dcv">${siteH.length}</div>
+      <div class="dcs">visits recorded</div>
+      ${siteAvg!==null?`<div class="dcs" style="margin-top:3px">Avg score: <b>${siteAvg}%</b></div>`:''}
+      </div>`;
+    }
+  }).join('');
+
+  // Follow-ups — current week only
+  if(dOff===0){
+    const lci=fs.flatMap(s=>S.visits[s].filter(v=>v.locked).flatMap(v=>v.checkins));
+    const fps=lci.filter(c=>c.done&&c.followup&&c.followup!=='none');
+    document.getElementById('d-fps').innerHTML=fps.length
+      ?`<div class="blbl" style="margin-bottom:8px">Follow-ups flagged this week</div>`+fps.map(c=>{
+          const l=c.followup==='monitor'?'Monitor':c.followup==='site'?'Escalate to site manager':'Escalate to HR';
+          return `<div class="fpr"><span class="fp ${c.followup}">${l}</span><span>${c.name||'Unnamed'}</span></div>`;
+        }).join('')
+      :`<p class="en">No follow-ups flagged this week.</p>`;
+  } else {
+    document.getElementById('d-fps').innerHTML='';
+  }
+}
+
+function hFilter(f,el){document.querySelectorAll('.stab').forEach(t=>t.classList.remove('active'));el.classList.add('active');rHist(f);}
+
+let expandedHist=null;
+
+function rHist(f){
+  const el=document.getElementById('hist-list');
+  const items=(f==='all'?S.history:S.history.filter(h=>h.site===f));
+  if(!items.length){el.innerHTML='<p class="en">No visits recorded yet.</p>';return;}
+
+  el.innerHTML=items.map((h,i)=>{
+    const isExpanded=expandedHist===i;
+    // Use visitData stored in history entry first, then fall back to live state
+    const visitData=h.visitData||(S.visits[h.site]?S.visits[h.site].find(v=>v.locked&&v.idx===h.visit-1):null);
+    const editBtn=adminUnlocked&&visitData
+      ?`<button onclick="adminEditVisit('${h.site}',${h.visit-1})" style="font-size:11px;padding:3px 9px;border:1px solid #B19662;background:#FAF8F3;color:#384137;border-radius:6px;cursor:pointer;margin-left:8px;">Edit</button>`
+      :'';
+
+    let detail='';
+    if(isExpanded&&visitData){
+      detail=buildVisitReport(visitData);
+    } else if(isExpanded&&!visitData){
+      detail=`<div style="padding:12px;font-size:13px;color:#666;font-style:italic">Full visit data not available for this entry — this visit was completed before full data storage was enabled. All future visits will retain their full detail.</div>`;
+    }
+
+    return `<div>
+      <div class="hi" style="cursor:pointer" onclick="toggleHistExpand(${i},'${f}')">
+        <div>
+          <div class="hn">${h.site} — Visit ${h.visit}</div>
+          <div class="hd">${h.date}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="pill ${pc(h.score)}">${h.score!==null?h.score+'%':'—'}</span>
+          <span style="font-size:12px;color:#888">${isExpanded?'▲':'▼'}</span>
+          ${editBtn}
+        </div>
+      </div>
+      ${isExpanded?`<div style="background:#f9f9f7;border-top:1px solid #f0f0ee;padding:14px;">${detail}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function toggleHistExpand(i,f){
+  expandedHist=expandedHist===i?null:i;
+  rHist(f||'all');
+}
+
+function buildVisitReport(v){
+  const SOPTS_LABEL=['0 — Fail','1 — Below','2 — Meets','3 — Exceeds'];
+  let h='';
+
+  // Atmosphere
+  h+=`<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:600;color:#384137;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Atmosphere & music</div>`;
+  ATMOS.forEach(it=>{
+    const s=v.scores[it.id];
+    h+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f0f0ee">
+      <span style="font-size:13px;color:#333">${it.label}</span>
+      <span style="font-size:12px;font-weight:500;padding:2px 8px;border-radius:20px;${s>=0?scoreStyle(s):'background:#f0f0ee;color:#999'}">${s>=0?SOPTS_LABEL[s]:'Not scored'}</span>
+    </div>`;
+  });
+  if(v.atmos_notes) h+=`<div style="font-size:13px;color:#555;margin-top:8px;font-style:italic">${v.atmos_notes}</div>`;
+  h+=`</div>`;
+
+  // Training
+  h+=`<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:600;color:#384137;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">In-service training</div>`;
+  TRAIN.forEach(it=>{
+    const s=v.scores[it.id];
+    h+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f0f0ee">
+      <span style="font-size:13px;color:#333">${it.label}</span>
+      <span style="font-size:12px;font-weight:500;padding:2px 8px;border-radius:20px;${s>=0?scoreStyle(s):'background:#f0f0ee;color:#999'}">${s>=0?SOPTS_LABEL[s]:'Not scored'}</span>
+    </div>`;
+  });
+  if(v.train_notes) h+=`<div style="font-size:13px;color:#555;margin-top:8px;font-style:italic">${v.train_notes}</div>`;
+  h+=`</div>`;
+
+  // New starters
+  const isNA=v.na&&v.na.onboarding;
+  h+=`<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:600;color:#384137;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">New starters</div>`;
+  if(isNA){
+    h+=`<p style="font-size:13px;color:#888;font-style:italic">No new starters on site this visit.</p>`;
+  } else {
+    v.starters.forEach((st,si)=>{
+      h+=`<div style="background:#f5f5f3;border-radius:6px;padding:10px;margin-bottom:6px">`;
+      h+=`<div style="font-size:13px;font-weight:500;color:#333;margin-bottom:6px">${st.name||'Starter '+(si+1)}</div>`;
+      STARTER.forEach(it=>{
+        const s=st.scores[it.id];
+        h+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #e5e5e3">
+          <span style="font-size:12px;color:#555">${it.label}</span>
+          <span style="font-size:11px;font-weight:500;padding:2px 7px;border-radius:20px;${s>=0?scoreStyle(s):'background:#f0f0ee;color:#999'}">${s>=0?SOPTS_LABEL[s]:'Not scored'}</span>
+        </div>`;
+      });
+      h+=`</div>`;
     });
   }
-  return el;
-}
-function div(a,c){return h("div",a,c);}
-function span(a,c){return h("span",a,c);}
-function btn(l,a){return h("button",Object.assign({class:"btn"},a||{}),[l]);}
+  h+=`</div>`;
 
-function render(){
-  const app=document.getElementById("app");
-  app.innerHTML="";
-  if(state.loading){app.appendChild(div({class:"loading"},"Connecting to live database..."));return;}
-  app.appendChild(renderTopBar());
-  const sb=div({class:"sync-bar sync-"+state.syncStatus});
-  if(state.syncStatus==="saving") sb.textContent="Saving to database...";
-  if(state.syncStatus==="saved")  sb.textContent="✓ Saved — all users will see the update instantly";
-  if(state.syncStatus==="error")  sb.textContent="Error saving — please try again";
-  app.appendChild(sb);
-  app.appendChild(renderWeekNav());
-  if(state.view==="dashboard") app.appendChild(renderDashboard());
-  if(state.view==="entry")     app.appendChild(renderEntry());
-  if(state.view==="history")   app.appendChild(renderHistory());
-}
-
-function renderTopBar(){
-  const wrap=div({class:"topbar"});
-  const left=div({});
-  left.appendChild(h("h1",{},"Nancy Spain's — Culture & Training KPI"));
-  left.appendChild(h("p",{class:"sub"},"Live dashboard · updates instantly for everyone"));
-  wrap.appendChild(left);
-  const right=div({class:"tabs"});
-  [["dashboard","Dashboard"],["entry","Enter figures"],["history","History"]].forEach(t=>{
-    const b=btn(t[1],{class:"btn"+(state.view===t[0]?" active":"")});
-    b.addEventListener("click",()=>{state.view=t[0];render();});
-    right.appendChild(b);
-  });
-  const ex=btn("Export CSV ↓",{class:"btn"});
-  ex.addEventListener("click",()=>exportCSV(state.activeWeek,state.allData[state.activeWeek]||state.draft));
-  right.appendChild(ex);
-  wrap.appendChild(right);
-  return wrap;
-}
-
-function renderWeekNav(){
-  const cur=currentWeekEnding();
-  const isCur=state.activeWeek===cur;
-  const saved=!!state.allData[state.activeWeek];
-  const wrap=div({class:"week-nav"});
-  const prev=h("button",{class:"arrow"},"‹");
-  prev.addEventListener("click",async()=>{
-    state.activeWeek=shiftWeek(state.activeWeek,-1);
-    state.draft=await loadWeekFromDB(state.activeWeek);
-    listenToWeek(state.activeWeek); render();
-  });
-  const center=div({class:"center"});
-  center.appendChild(span({class:"wlabel"},"Week ending "+fmtWeek(state.activeWeek)));
-  if(isCur)      center.appendChild(span({class:"pill pill-purple"},"Current week"));
-  else if(saved) center.appendChild(span({class:"pill pill-green"},"Saved"));
-  else           center.appendChild(span({class:"pill pill-gray"},"No data"));
-  const next=h("button",{class:"arrow"},"›");
-  if(state.activeWeek>=cur) next.disabled=true;
-  next.addEventListener("click",async()=>{
-    const n=shiftWeek(state.activeWeek,1);
-    if(n<=cur){state.activeWeek=n;state.draft=await loadWeekFromDB(n);listenToWeek(n);render();}
-  });
-  wrap.appendChild(prev);wrap.appendChild(center);wrap.appendChild(next);
-  return wrap;
-}
-
-function renderDashboard(){
-  const data=state.allData[state.activeWeek]||state.draft;
-  const prevW=shiftWeek(state.activeWeek,-1);
-  const prevData=state.allData[prevW]||null;
-  const frag=document.createDocumentFragment();
-
-  const kg=div({class:"kpi-grid"});
-  FIELDS.forEach(f=>{
-    const val=data[f.key]||0;
-    const s=si(val,f.target,f.lb);
-    const card=div({class:"kpi-card"});
-    card.appendChild(div({class:"klabel"},f.label));
-    card.appendChild(div({class:"kval"},val.toFixed(f.step<1?1:0)+f.suffix));
-    card.appendChild(div({class:"ktgt"},"Target: "+(f.lb?"≤":"")+f.target+f.suffix));
-    const badge=span({class:"kbadge"});badge.style.background=s.bg;badge.style.color=s.col;
-    badge.textContent=s.label; card.appendChild(badge); kg.appendChild(card);
-  });
-  frag.appendChild(kg);
-
-  function makeBarRow(lbl,val,tgt,maxV,lb,suffix){
-    const row=div({class:"bar-row"});
-    const l=div({class:"bar-lbl"},lbl); l.title=lbl;
-    const track=div({class:"bar-track"});
-    const fill=div({class:"bar-fill"});
-    fill.style.width=Math.min(100,(val/maxV)*100).toFixed(1)+"%";
-    fill.style.background=barColor(val,tgt,lb);
-    const tline=div({class:"bar-tgt"});
-    tline.style.left=Math.min(100,(tgt/maxV)*100).toFixed(1)+"%";
-    track.appendChild(fill); track.appendChild(tline);
-    row.appendChild(l); row.appendChild(track);
-    row.appendChild(div({class:"bar-val"},val+suffix));
-    return row;
-  }
-  function makeChart(title,rows){
-    const c=div({class:"ccart"}); c.appendChild(div({class:"ctitle"},title));
-    rows.forEach(r=>c.appendChild(r)); return c;
+  // Check-ins
+  if(v.checkins&&v.checkins.length){
+    h+=`<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:600;color:#384137;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Bar team 1-1 check-ins</div>`;
+    v.checkins.filter(c=>c.done).forEach(ci=>{
+      h+=`<div style="background:#f5f5f3;border-radius:6px;padding:10px;margin-bottom:6px">
+        <div style="font-size:13px;font-weight:500;color:#333;margin-bottom:8px">${ci.name||'Team member'}</div>`;
+      if(ci.wb) h+=`<div style="margin-bottom:6px"><span style="font-size:11px;font-weight:600;color:#1D6E4E;text-transform:uppercase">Wellbeing</span><div style="font-size:13px;color:#444;margin-top:3px">${ci.wb}</div></div>`;
+      if(ci.sat_score) h+=`<div style="margin-bottom:6px"><span style="font-size:11px;font-weight:600;color:#4F46A8;text-transform:uppercase">Satisfaction</span><div style="font-size:13px;color:#444;margin-top:3px">${ci.sat_score}/10${ci.sat?' — '+ci.sat:''}</div></div>`;
+      if(ci.cult) h+=`<div style="margin-bottom:6px"><span style="font-size:11px;font-weight:600;color:#712B13;text-transform:uppercase">Team culture</span><div style="font-size:13px;color:#444;margin-top:3px">${ci.cult}</div></div>`;
+      if(ci.followup&&ci.followup!=='none') h+=`<div style="font-size:12px;font-weight:500;padding:3px 8px;border-radius:20px;display:inline-block;background:#FAEEDA;color:#633806;margin-top:4px">${ci.followup==='monitor'?'Monitor':ci.followup==='site'?'Escalate to site manager':'Escalate to HR'}</div>`;
+      h+=`</div>`;
+    });
+    h+=`</div>`;
   }
 
-  const r1=div({class:"grid2"});
-  r1.appendChild(makeChart("Scores",[
-    makeBarRow("Site visit",(data.siteVisitScore||0),90,100,false,"%"),
-    makeBarRow("Team satisfaction",(data.teamSatisfaction||0),90,100,false,"%"),
-    makeBarRow("Training score",(data.trainingScore||0),90,100,false,"%"),
-    makeBarRow("Mystery shopper",(data.mysteryScore||0),90,100,false,"%"),
-  ]));
-  r1.appendChild(makeChart("People metrics",[
-    makeBarRow("Ready for next role",(data.readyToMove||0),30,100,false,"%"),
-    makeBarRow("Staff turnover",(data.staffTurnover||0),5,20,true,"%"),
-  ]));
-  frag.appendChild(r1);
-
-  const tblCard=div({class:"ccart"});
-  tblCard.appendChild(div({class:"ctitle"},"Week on week comparison"));
-  const tbl=h("table",{});
-  const thead=h("thead",{}); const hrow=h("tr",{});
-  ["KPI","This week","Target","vs last week"].forEach(hd=>hrow.appendChild(h("th",{},hd)));
-  thead.appendChild(hrow); tbl.appendChild(thead);
-  const tbody=h("tbody",{});
-  FIELDS.forEach(f=>{
-    const val=data[f.key]||0;
-    const prev=prevData?(prevData[f.key]||0):null;
-    const s=si(val,f.target,f.lb);
-    const tr=h("tr",{});
-    tr.appendChild(h("td",{style:{color:"#5f5e5a"}},f.label));
-    const vtd=h("td",{}); const vsp=span({class:"score-pill"});
-    vsp.style.background=s.bg; vsp.style.color=s.col;
-    vsp.textContent=val.toFixed(f.step<1?1:0)+f.suffix;
-    vtd.appendChild(vsp); tr.appendChild(vtd);
-    tr.appendChild(h("td",{style:{color:"#888780",fontSize:"12px"}},(f.lb?"≤":"")+f.target+f.suffix));
-    const chTd=h("td",{});
-    if(prev!==null){
-      const diff=val-prev;
-      const better=f.lb?diff<0:diff>0;
-      chTd.textContent=Math.abs(diff)<0.05?"→":diff>0?"+"+diff.toFixed(1):diff.toFixed(1);
-      chTd.style.color=better?"#3B6D11":diff===0?"#888780":"#A32D2D";
-      chTd.style.fontSize="12px";
-    }else{chTd.textContent="—";chTd.style.color="#888780";}
-    tr.appendChild(chTd); tbody.appendChild(tr);
-  });
-  tbl.appendChild(tbody); tblCard.appendChild(tbl); frag.appendChild(tblCard);
-  return frag;
-}
-
-function renderEntry(){
-  if(!state.unlocked){
-    const gate=div({style:{background:"#fff",border:"0.5px solid rgba(0,0,0,0.12)",borderRadius:"12px",padding:"2rem",maxWidth:"340px",margin:"2rem auto",textAlign:"center"}});
-    gate.appendChild(div({style:{fontSize:"32px",marginBottom:"12px"}},"🔒"));
-    gate.appendChild(h("p",{style:{fontWeight:"500",fontSize:"15px",color:"#1a1a18",marginBottom:"6px"}},"Admin access required"));
-    gate.appendChild(h("p",{style:{fontSize:"13px",color:"#5f5e5a",marginBottom:"20px"}},"Enter the password to edit figures."));
-    const pinInput=h("input",{type:"password",placeholder:"Enter password"});
-    pinInput.style.cssText="width:100%;font-size:14px;padding:8px 12px;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;margin-bottom:12px;text-align:center;font-family:inherit;background:#fff;color:#1a1a18;";
-    const errMsg=h("p",{style:{fontSize:"12px",color:"#A32D2D",marginBottom:"10px",minHeight:"16px"}},"");
-    const unlockBtn=btn("Unlock",{class:"btn"});
-    unlockBtn.style.cssText="width:100%;background:#f1efe8;font-weight:500;color:#1a1a18;";
-    function tryUnlock(){
-      if(pinInput.value===ADMIN_PASSWORD){state.unlocked=true;render();}
-      else{errMsg.textContent="Incorrect password. Please try again.";pinInput.value="";}
-    }
-    unlockBtn.addEventListener("click",tryUnlock);
-    pinInput.addEventListener("keydown",e=>{if(e.key==="Enter")tryUnlock();});
-    gate.appendChild(pinInput); gate.appendChild(errMsg); gate.appendChild(unlockBtn);
-    return gate;
+  // Summary
+  if(v.great||v.action){
+    h+=`<div style="margin-bottom:6px"><div style="font-size:12px;font-weight:600;color:#384137;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Visit summary</div>`;
+    if(v.great) h+=`<div style="margin-bottom:8px"><div style="font-size:11px;font-weight:600;color:#555;text-transform:uppercase;margin-bottom:3px">One thing that was great</div><div style="font-size:13px;color:#333">${v.great}</div></div>`;
+    if(v.action) h+=`<div><div style="font-size:11px;font-weight:600;color:#555;text-transform:uppercase;margin-bottom:3px">One action before next visit</div><div style="font-size:13px;color:#333">${v.action}</div></div>`;
+    h+=`</div>`;
   }
 
-  const frag=document.createDocumentFragment();
-  const card=div({class:"entry-card"});
-  const ehead=div({class:"entry-head"});
-  ehead.appendChild(div({class:"avatar"},"CT"));
-  const einfo=div({});
-  einfo.appendChild(h("p",{style:{fontWeight:"500",fontSize:"14px",color:"#1a1a18",margin:"0"}},"Culture & Training Manager"));
-  einfo.appendChild(h("p",{style:{fontSize:"12px",color:"#5f5e5a",margin:"0"}},"Week ending "+fmtWeek(state.activeWeek)));
-  ehead.appendChild(einfo); card.appendChild(ehead);
-
-  FIELDS.forEach(f=>{
-    const val=state.draft[f.key]!=null?state.draft[f.key]:0;
-    const s=si(val,f.target,f.lb);
-    const pct=((val-f.min)/(f.max-f.min))*100;
-    const tpct=((f.target-f.min)/(f.max-f.min))*100;
-    const row=div({class:"field-row"});
-    const top=div({class:"field-top"});
-    const right=div({class:"field-right"});
-    const sp=span({class:"status-pill"});sp.style.background=s.bg;sp.style.color=s.col;sp.textContent=s.label;
-    const sv=span({class:"field-val"});sv.textContent=val.toFixed(f.step<1?1:0)+f.suffix;
-    right.appendChild(sp); right.appendChild(sv);
-    top.appendChild(span({class:"field-label"},f.label)); top.appendChild(right); row.appendChild(top);
-    const bwrap=div({class:"field-bar-wrap"});
-    const track=div({class:"mini-track"});
-    const fill=div({class:"mini-fill"});fill.style.width=Math.min(100,pct).toFixed(1)+"%";fill.style.background=s.col;
-    const tline=div({class:"mini-tgt"});tline.style.left=Math.min(100,tpct).toFixed(1)+"%";
-    track.appendChild(fill); track.appendChild(tline);
-    const inp=h("input",{type:"number",min:f.min,max:f.max,step:f.step,class:"num-input"});
-    inp.value=val;
-    inp.addEventListener("input",function(){state.draft[f.key]=parseFloat(this.value)||0;render();});
-    bwrap.appendChild(track); bwrap.appendChild(inp); row.appendChild(bwrap);
-    row.appendChild(div({class:"field-tgt"},"Target: "+(f.lb?"≤":"")+f.target+f.suffix));
-    card.appendChild(row);
-  });
-  frag.appendChild(card);
-
-  const srow=div({class:"save-row"});
-  const lockBtn=btn("🔒 Lock",{class:"btn"});
-  lockBtn.style.color="#5f5e5a";
-  lockBtn.addEventListener("click",()=>{state.unlocked=false;state.view="dashboard";render();});
-  srow.appendChild(lockBtn);
-  const sb=btn("Save & publish live",{class:"btn"});
-  sb.style.cssText="background:#f1efe8;font-weight:500;color:#1a1a18;";
-  sb.addEventListener("click",async()=>{
-    state.syncStatus="saving"; render();
-    try{
-      await saveWeekToDB(state.activeWeek,state.draft);
-      state.allData[state.activeWeek]=JSON.parse(JSON.stringify(state.draft));
-      state.syncStatus="saved"; render();
-      setTimeout(()=>{state.syncStatus="";render();},3000);
-    }catch(e){state.syncStatus="error";render();}
-  });
-  srow.appendChild(sb); frag.appendChild(srow);
-  return frag;
+  return h;
 }
 
-function renderHistory(){
-  const weeks=Object.keys(state.allData).sort((a,b)=>b.localeCompare(a));
-  const frag=document.createDocumentFragment();
-  const topRow=div({style:{display:"flex",justifyContent:"flex-end",marginBottom:"12px"}});
-  const allEx=btn("Export all weeks CSV ↓",{class:"btn"});
-  allEx.addEventListener("click",()=>exportAllCSV(state.allData));
-  topRow.appendChild(allEx); frag.appendChild(topRow);
-  if(!weeks.length){
-    frag.appendChild(div({style:{padding:"2rem",textAlign:"center",color:"#5f5e5a",fontSize:"14px"}},"No saved weeks yet."));
-    return frag;
+function scoreStyle(s){
+  if(s===0) return 'background:#FCEBEB;color:#791F1F';
+  if(s===1) return 'background:#FAEEDA;color:#633806';
+  return 'background:#EAF3DE;color:#27500A';
+}
+
+// Admin edit — temporarily unlock a locked visit for editing
+let adminEditingSite=null, adminEditingVi=null;
+
+function adminEditVisit(site,vi){
+  if(!adminUnlocked){alert('Please unlock admin access first.');return;}
+  S.visits[site][vi].locked=false;
+  adminEditingSite=site;
+  adminEditingVi=vi;
+  const sIdx=SITES.indexOf(site);
+  const tabEl=document.querySelectorAll('.ntab')[sIdx+1];
+  document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  tabEl.classList.add('active');
+  document.getElementById('view-'+SIDS[sIdx]).classList.add('active');
+  rSite(SIDS[sIdx],site,vi);
+  window.scrollTo(0,0);
+}
+
+function cVisit(site,vi){
+  const v=S.visits[site][vi];
+  if(!v.checkins.some(c=>c.done)){alert('Please mark at least one bar team check-in as complete before closing this visit.');return;}
+  v.locked=true;
+  v.date=v.date||new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  const newScore=pct(v);
+  const histIdx=S.history.findIndex(h=>h.site===site&&h.visit===vi+1);
+  if(histIdx>=0){
+    S.history[histIdx].score=newScore;
+    S.history[histIdx].visitData=JSON.parse(JSON.stringify(v));
+  } else {
+    S.history.unshift({site,score:newScore,date:new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'}),visit:vi+1,visitData:JSON.parse(JSON.stringify(v))});
   }
-  weeks.forEach(w=>{
-    const d=state.allData[w];
-    const item=div({class:"history-item"});
-    const left=div({});
-    left.appendChild(div({style:{fontSize:"14px",fontWeight:"500",color:"#1a1a18"}},"Week ending "+fmtWeek(w)));
-    left.appendChild(div({style:{fontSize:"12px",color:"#5f5e5a",marginTop:"3px"}},
-      "Site visit "+(d.siteVisitScore||0)+"% · Training "+(d.trainingScore||0)+"% · Turnover "+(d.staffTurnover||0).toFixed(1)+"%"));
-    const right=div({style:{display:"flex",gap:"6px"}});
-    const vb=btn("View",{class:"btn small"});
-    vb.addEventListener("click",async()=>{state.activeWeek=w;state.view="dashboard";listenToWeek(w);render();});
-    const eb=btn("CSV ↓",{class:"btn small"});
-    eb.addEventListener("click",()=>exportCSV(w,d));
-    right.appendChild(vb); right.appendChild(eb);
-    item.appendChild(left); item.appendChild(right); frag.appendChild(item);
-  });
-  return frag;
+  adminEditingSite=null; adminEditingVi=null;
+  save();
+  rSite(sid(site),site,vi);
 }
 
-function exportCSV(week,data){
-  const rows=[["Week ending","Site Visit Score %","Team Satisfaction %","Training Score %","Mystery Shopper %","Ready for Next Role %","Staff Turnover %"]];
-  rows.push([week,data.siteVisitScore||0,data.teamSatisfaction||0,data.trainingScore||0,data.mysteryScore||0,data.readyToMove||0,data.staffTurnover||0]);
-  const csv=rows.map(r=>r.map(v=>`"${v}"`).join(",")).join("\n");
-  const a=document.createElement("a");
-  a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);
-  a.download="nancy-spains-culture-kpi-"+week+".csv"; a.click();
-}
-function exportAllCSV(allData){
-  const rows=[["Week ending","Site Visit Score %","Team Satisfaction %","Training Score %","Mystery Shopper %","Ready for Next Role %","Staff Turnover %"]];
-  Object.keys(allData).sort().forEach(week=>{
-    const d=allData[week];
-    rows.push([week,d.siteVisitScore||0,d.teamSatisfaction||0,d.trainingScore||0,d.mysteryScore||0,d.readyToMove||0,d.staffTurnover||0]);
-  });
-  const csv=rows.map(r=>r.map(v=>`"${v}"`).join(",")).join("\n");
-  const a=document.createElement("a");
-  a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);
-  a.download="nancy-spains-culture-kpi-all-weeks.csv"; a.click();
+// ── Monthly review ────────────────────────────────────────────────────
+let mOff=0; // 0 = current month, 1 = last month, etc.
+
+function getSortedMonths(){
+  const keys=Object.keys(S.monthly||{}).sort().reverse();
+  const mk=currentMonthKey();
+  if(!keys.includes(mk)) keys.unshift(mk);
+  return keys;
 }
 
-init();
+function mPrev(){mOff=Math.min(mOff+1,getSortedMonths().length-1);rMonthly();}
+function mNext(){mOff=Math.max(mOff-1,0);rMonthly();}
+
+function isMonthLocked(mk){
+  const [y,m]=mk.split('-').map(Number);
+  const now=new Date();
+  // Lock if the month has ended
+  return (now.getFullYear()>y)||(now.getFullYear()===y&&now.getMonth()+1>m);
+}
+
+function rMonthly(){
+  const months=getSortedMonths();
+  const mk=months[mOff]||currentMonthKey();
+  if(!S.monthly[mk]) S.monthly[mk]=mkMonthlyReview(mk);
+  const mr=S.monthly[mk];
+  const locked=mr.locked||isMonthLocked(mk);
+  const d=locked; // disabled
+
+  const el=document.getElementById('view-monthly');
+
+  // Health summary stats
+  const totalStarters=mr.retention.reduce((a,r)=>a+parseInt(r.starters||0),0);
+  const totalLeavers=mr.retention.reduce((a,r)=>a+parseInt(r.leavers||0),0);
+  const totalEvents=mr.cultureEvents.filter(e=>e.name).length;
+  const oooDone=mr.oneOnOnes.filter(o=>o.done).length;
+
+  let h=`<div class="month-nav">
+    <button onclick="mPrev()">&#8249;</button>
+    <span>${monthLabel(mk)}</span>
+    <button onclick="mNext()">&#8250;</button>
+  </div>`;
+
+  if(locked&&!mr.locked){
+    h+=`<div class="lb day-locked" style="background:#f5f5f3;border:1px solid #e5e5e3;border-radius:8px;padding:9px 12px;font-size:12px;color:#888;margin-bottom:12px;">🔒 This month has ended — review is locked. Use Admin unlock to edit.</div>`;
+  } else if(mr.locked){
+    h+=`<div class="monthly-locked-banner">✓ Monthly review completed and locked on ${mr.lockedDate||''}.</div>`;
+  }
+
+  // Health at a glance
+  h+=`<div class="health-grid">
+    <div class="health-card"><div class="health-label">Manager 1-1s</div><div class="health-val">${oooDone}/${SITES.length}</div></div>
+    <div class="health-card"><div class="health-label">Staff joiners</div><div class="health-val">${totalStarters}</div></div>
+    <div class="health-card"><div class="health-label">Staff leavers</div><div class="health-val">${totalLeavers}</div></div>
+  </div>`;
+
+  // ── Section 1: Manager 1-1s ────────────────────────────────────────
+  h+=`<div class="card">
+    <div class="sec-hd"><h3>Manager 1-1s</h3><span class="sc2">${oooDone}/${SITES.length} complete</span></div>`;
+
+  mr.oneOnOnes.forEach((o,oi)=>{
+    h+=`<div class="blk" style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div style="font-size:14px;font-weight:500;color:#1a1a1a;">${o.site}</div>
+        <label class="tog${o.done?' done':''}" style="cursor:${d?'default':'pointer'};margin:0;padding:5px 10px;">
+          <input type="checkbox" ${o.done?'checked':''} ${d?'disabled':''} onchange="updO(${oi},'done',this.checked)">
+          <span style="font-size:12px;">${o.done?'1-1 complete':'Mark as complete'}</span>
+        </label>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div>
+          <label class="ql">Date</label>
+          <input type="text" placeholder="e.g. 3 Jun 2026" value="${e(o.date)}" ${d?'disabled':''} oninput="updO(${oi},'date',this.value)" onblur="updO(${oi},'date',this.value)">
+        </div>
+        <div>
+          <label class="ql">Rating (1–10)</label>
+          <select ${d?'disabled':''} onchange="updO(${oi},'rating',this.value)" style="margin-top:4px;">
+            <option value="0">Select…</option>
+            ${[10,9,8,7,6,5,4,3,2,1].map(n=>`<option value="${n}"${o.rating==n?' selected':''}>${n}/10</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <label class="ql">Key themes discussed</label>
+      <textarea ${d?'disabled':''} placeholder="What came up — team morale, operational issues, wins…" oninput="updO(${oi},'themes',this.value)" onblur="updO(${oi},'themes',this.value)">${e(o.themes)}</textarea>
+      <label class="ql">Actions agreed</label>
+      <textarea ${d?'disabled':''} placeholder="What was agreed, who owns it, by when…" oninput="updO(${oi},'actions',this.value)" onblur="updO(${oi},'actions',this.value)">${e(o.actions)}</textarea>
+    </div>`;
+  });
+  h+=`</div>`;
+
+  // ── Section 2: Staff retention ─────────────────────────────────────
+  h+=`<div class="card">
+    <div class="sec-hd"><h3>Staff retention</h3></div>
+    <div class="retention-grid">`;
+
+  mr.retention.forEach((r,ri)=>{
+    const headcount=parseInt(r.openingHeadcount||0);
+    const leavers=parseInt(r.leavers||0);
+    const turnover=headcount>0?Math.round((leavers/headcount)*100):0;
+    const tc=turnover>5?'#E24B4A':turnover>3?'#BA7517':'#27500A';
+    h+=`<div class="ret-card">
+      <div class="ret-site">${r.site}</div>
+      <div class="ret-row">
+        <span class="ret-label">Opening headcount</span>
+        <input type="number" class="ret-input" placeholder="0" value="${e(r.openingHeadcount)}" ${d?'disabled':''} oninput="updR(${ri},'openingHeadcount',this.value)" onblur="updR(${ri},'openingHeadcount',this.value)">
+      </div>
+      <div class="ret-row">
+        <span class="ret-label">Joiners this month</span>
+        <input type="number" class="ret-input" placeholder="0" value="${e(r.starters)}" ${d?'disabled':''} oninput="updR(${ri},'starters',this.value)" onblur="updR(${ri},'starters',this.value)">
+      </div>
+      <div class="ret-row">
+        <span class="ret-label">Leavers this month</span>
+        <input type="number" class="ret-input" placeholder="0" value="${e(r.leavers)}" ${d?'disabled':''} oninput="updR(${ri},'leavers',this.value)" onblur="updR(${ri},'leavers',this.value)">
+      </div>
+      <div class="ret-row" style="margin-top:8px;padding-top:8px;border-top:1px solid #e5e5e3;">
+        <span class="ret-label">Turnover %</span>
+        <span class="ret-pct" style="color:${tc}">${headcount>0?turnover+'%':'—'}</span>
+      </div>
+      <label class="ql">Notes</label>
+      <textarea style="min-height:46px;margin-top:4px;" ${d?'disabled':''} placeholder="Any context on leavers or joiners…" oninput="updR(${ri},'notes',this.value)" onblur="updR(${ri},'notes',this.value)">${e(r.notes)}</textarea>
+    </div>`;
+  });
+  h+=`</div></div>`;
+
+  // ── Section 3: Culture events ───────────────────────────────────────
+  h+=`<div class="card">
+    <div class="sec-hd"><h3>Culture events & initiatives</h3><span class="sc2">${totalEvents} this month</span></div>`;
+
+  mr.cultureEvents.forEach((ev,ei)=>{
+    h+=`<div class="blk" style="margin-bottom:8px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div>
+          <label class="ql">Event / initiative</label>
+          <input type="text" placeholder="Name…" value="${e(ev.name)}" ${d?'disabled':''} oninput="updEv(${ei},'name',this.value)" onblur="updEv(${ei},'name',this.value)">
+        </div>
+        <div>
+          <label class="ql">Date</label>
+          <input type="text" placeholder="e.g. 12 Jun 2026" value="${e(ev.date)}" ${d?'disabled':''} oninput="updEv(${ei},'date',this.value)" onblur="updEv(${ei},'date',this.value)">
+        </div>
+        <div>
+          <label class="ql">Site</label>
+          <select ${d?'disabled':''} onchange="updEv(${ei},'site',this.value)">
+            <option value="All"${ev.site==='All'?' selected':''}>All sites</option>
+            ${SITES.map(s=>`<option value="${s}"${ev.site===s?' selected':''}>${s}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <label class="ql">Description</label>
+      <textarea style="min-height:46px;" ${d?'disabled':''} placeholder="What was the event or initiative…" oninput="updEv(${ei},'description',this.value)" onblur="updEv(${ei},'description',this.value)">${e(ev.description)}</textarea>
+      <label class="ql">Outcome / impact</label>
+      <textarea style="min-height:46px;" ${d?'disabled':''} placeholder="How did it go, what was the team response, any follow-up needed…" oninput="updEv(${ei},'outcome',this.value)" onblur="updEv(${ei},'outcome',this.value)">${e(ev.outcome)}</textarea>
+      ${!d?`<button class="remove-btn" onclick="removeEv(${ei})">×</button>`:''}
+    </div>`;
+  });
+
+  if(!d) h+=`<button class="add" onclick="addEv()">+ Add culture event or initiative</button>`;
+  h+=`</div>`;
+
+  // ── Overall notes ────────────────────────────────────────────────────
+  h+=`<div class="card">
+    <div class="sec-hd"><h3>Overall monthly notes</h3></div>
+    <textarea ${d?'disabled':''} placeholder="Key themes for the month, anything to flag for the CEO report, priorities for next month…" style="min-height:80px;" oninput="updM('overallNotes',this.value)" onblur="updM('overallNotes',this.value)">${e(mr.overallNotes)}</textarea>
+  </div>`;
+
+  // Lock button
+  if(!d){
+    h+=`<div class="sf">
+      <button class="btn btn-s" onclick="lockMonthly('${mk}')">Complete &amp; lock monthly review</button>
+      <p>Lock this review at the end of the month</p>
+    </div>`;
+  }
+
+  el.innerHTML=h;
+}
+
+// Monthly mutation helpers
+function getMR(){ const months=getSortedMonths(); return S.monthly[months[mOff]]; }
+function updO(oi,f,val){ const mr=getMR(); mr.oneOnOnes[oi][f]=val; save(); if(f==='done') rMonthly(); }
+function updR(ri,f,val){ getMR().retention[ri][f]=val; save(); if(['openingHeadcount','starters','leavers'].includes(f)) rMonthly(); }
+function updEv(ei,f,val){ getMR().cultureEvents[ei][f]=val; save(); }
+function updM(f,val){ getMR()[f]=val; save(); }
+function addEv(){ getMR().cultureEvents.push({name:'',date:'',site:'All',description:'',outcome:''}); save(); rMonthly(); }
+function removeEv(ei){ getMR().cultureEvents.splice(ei,1); save(); rMonthly(); }
+
+function lockMonthly(mk){
+  const mr=S.monthly[mk];
+  const oooDone=mr.oneOnOnes.filter(o=>o.done).length;
+  if(oooDone<SITES.length){
+    if(!confirm(`${SITES.length-oooDone} manager 1-1(s) not yet marked complete. Lock anyway?`)) return;
+  }
+  mr.locked=true;
+  mr.lockedDate=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  save(); rMonthly();
+}
+
+document.getElementById('dwl').textContent=WLABELS[0];
+
+sbLoad().then(()=>{
+  rOV();
+  SITES.forEach((site,i)=>rSite(SIDS[i],site,defaultIdx(site)));
+});
 </script>
 </body>
 </html>
