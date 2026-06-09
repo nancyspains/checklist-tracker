@@ -631,19 +631,16 @@ function flushTextFields(){
   });
 }
 
-function cVisit(site,vi){
-  const v=S.visits[site][vi];
-  if(!v.checkins.some(c=>c.done)){alert('Please mark at least one bar team check-in as complete before closing this visit.');return;}
-  v.locked=true;
-  v.date=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
-  S.history.unshift({site,score:pct(v),date:new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'}),visit:vi+1});
-  save();rSite(sid(site),site,vi);
-}
-
 function newWeek(){
   if(!confirm('Start a new week? All current visits will be archived to history.')) return;
   SITES.forEach(site=>{
-    S.visits[site].filter(v=>v.locked).forEach(v=>S.history.unshift({site:v.site,score:pct(v),date:v.date,visit:v.idx+1}));
+    S.visits[site].filter(v=>v.locked).forEach(v=>{
+      // Only add to history if not already there with full data
+      const alreadyStored=S.history.find(h=>h.site===v.site&&h.visit===v.idx+1&&h.visitData);
+      if(!alreadyStored){
+        S.history.unshift({site:v.site,score:pct(v),date:v.date,visit:v.idx+1,visitData:JSON.parse(JSON.stringify(v))});
+      }
+    });
     S.visits[site]=Array.from({length:VPW},(_,i)=>mkVisit(site,i));
   });
   save();rOV();
@@ -804,8 +801,8 @@ function rHist(f){
 
   el.innerHTML=items.map((h,i)=>{
     const isExpanded=expandedHist===i;
-    // Find matching visit data in state
-    const visitData=S.visits[h.site]?S.visits[h.site].find(v=>v.locked&&v.idx===h.visit-1):null;
+    // Use visitData stored in history entry first, then fall back to live state
+    const visitData=h.visitData||(S.visits[h.site]?S.visits[h.site].find(v=>v.locked&&v.idx===h.visit-1):null);
     const editBtn=adminUnlocked&&visitData
       ?`<button onclick="adminEditVisit('${h.site}',${h.visit-1})" style="font-size:11px;padding:3px 9px;border:1px solid #B19662;background:#FAF8F3;color:#384137;border-radius:6px;cursor:pointer;margin-left:8px;">Edit</button>`
       :'';
@@ -814,7 +811,7 @@ function rHist(f){
     if(isExpanded&&visitData){
       detail=buildVisitReport(visitData);
     } else if(isExpanded&&!visitData){
-      detail=`<div style="padding:12px;font-size:13px;color:#666;font-style:italic">Full visit data not available for this entry — visit data may have been from a previous week that was reset.</div>`;
+      detail=`<div style="padding:12px;font-size:13px;color:#666;font-style:italic">Full visit data not available for this entry — this visit was completed before full data storage was enabled. All future visits will retain their full detail.</div>`;
     }
 
     return `<div>
@@ -945,8 +942,12 @@ function cVisit(site,vi){
   v.date=v.date||new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
   const newScore=pct(v);
   const histIdx=S.history.findIndex(h=>h.site===site&&h.visit===vi+1);
-  if(histIdx>=0){ S.history[histIdx].score=newScore; }
-  else { S.history.unshift({site,score:newScore,date:new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'}),visit:vi+1}); }
+  if(histIdx>=0){
+    S.history[histIdx].score=newScore;
+    S.history[histIdx].visitData=JSON.parse(JSON.stringify(v));
+  } else {
+    S.history.unshift({site,score:newScore,date:new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'}),visit:vi+1,visitData:JSON.parse(JSON.stringify(v))});
+  }
   adminEditingSite=null; adminEditingVi=null;
   save();
   rSite(sid(site),site,vi);
