@@ -103,12 +103,13 @@ const FIELDS = [
   {key:"reviewCount", label:"Total Google reviews", suffix:"",     min:0, max:9999, step:1,   lb:false},
   {key:"newReviews",  label:"New reviews this week",suffix:"",     min:0, max:999,  step:1,   lb:false},
   {key:"stockVar",    label:"Stock variance %",     suffix:"%",    min:0, max:10,   step:0.1, lb:true},
+  {key:"avgSpend",    label:"Avg spend per head (£)",suffix:"",    min:0, max:200,  step:0.01,lb:false, noTarget:true},
 ];
-const BLANK = {labour:0,gp:0,tasks:0,audit:0,mystery:0,reviews:0,stockVar:0,reviewCount:0,newReviews:0,trend:""};
+const BLANK = {labour:0,gp:0,tasks:0,audit:0,mystery:0,reviews:0,stockVar:0,reviewCount:0,newReviews:0,trend:"",avgSpend:0};
 const SAMPLE = {
-  "Nancy Spains Shoreditch":{labour:28,gp:71,tasks:88,audit:82,mystery:79,reviews:4.3,stockVar:1.2,reviewCount:142,newReviews:3,trend:"+0.2"},
-  "Nancy Spains Monument":  {labour:31,gp:68,tasks:73,audit:91,mystery:88,reviews:4.6,stockVar:0.6,reviewCount:210,newReviews:5,trend:"+0.1"},
-  "Nancy Spains Manchester":{labour:25,gp:72,tasks:95,audit:95,mystery:93,reviews:4.8,stockVar:0.3,reviewCount:97, newReviews:4,trend:"+0.3"},
+  "Nancy Spains Shoreditch":{labour:28,gp:71,tasks:88,audit:82,mystery:79,reviews:4.3,stockVar:1.2,reviewCount:142,newReviews:3,trend:"+0.2",avgSpend:0},
+  "Nancy Spains Monument":  {labour:31,gp:68,tasks:73,audit:91,mystery:88,reviews:4.6,stockVar:0.6,reviewCount:210,newReviews:5,trend:"+0.1",avgSpend:0},
+  "Nancy Spains Manchester":{labour:25,gp:72,tasks:95,audit:95,mystery:93,reviews:4.8,stockVar:0.3,reviewCount:97, newReviews:4,trend:"+0.3",avgSpend:0},
 };
 const ADMIN_PASSWORD = "nancys2026";
 const STORE_KEY = "ns_kpi_weeks";
@@ -388,6 +389,109 @@ function renderDashboard(){
   tbl.appendChild(tbody); revCard.appendChild(tbl);
   r4.appendChild(revCard); r4.appendChild(div({class:"ccart"}));
   frag.appendChild(r4);
+
+  // ── Avg spend per head line chart ──
+  const spendWeeks = Object.keys(state.allData).sort();
+  const spendCard = div({class:"ccart",style:{marginTop:"0"}});
+  spendCard.appendChild(div({class:"ctitle"},"Avg spend per head — weekly trend (£)"));
+
+  if(spendWeeks.length < 2){
+    const msg = div({style:{fontSize:"13px",color:"#888780",padding:"1rem 0"}},
+      "Enter figures for at least 2 weeks to see the trend chart.");
+    spendCard.appendChild(msg);
+  } else {
+    const PUB_COLORS = {
+      "Nancy Spains Shoreditch":"#534AB7",
+      "Nancy Spains Monument":  "#BA7517",
+      "Nancy Spains Manchester":"#3B6D11",
+    };
+    const W=700, H=220, PAD={t:20,r:20,b:50,l:50};
+    const plotW=W-PAD.l-PAD.r, plotH=H-PAD.t-PAD.b;
+
+    // gather data
+    const series = PUBS.map(pub=>({
+      pub,
+      vals: spendWeeks.map(w=>((state.allData[w]||{})[pub]||BLANK).avgSpend||0),
+    }));
+    const allVals = series.flatMap(s=>s.vals).filter(v=>v>0);
+    const minV = allVals.length ? Math.max(0, Math.floor(Math.min(...allVals)*0.9)) : 0;
+    const maxV = allVals.length ? Math.ceil(Math.max(...allVals)*1.1) : 50;
+
+    const xScale = i => PAD.l + (i/(spendWeeks.length-1))*plotW;
+    const yScale = v => PAD.t + plotH - ((v-minV)/(maxV-minV||1))*plotH;
+
+    const svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
+    svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+    svg.setAttribute("style","width:100%;height:auto;overflow:visible;");
+
+    // grid lines
+    [0,0.25,0.5,0.75,1].forEach(t=>{
+      const y=PAD.t+plotH*(1-t);
+      const val=(minV+(maxV-minV)*t).toFixed(0);
+      const line=document.createElementNS("http://www.w3.org/2000/svg","line");
+      line.setAttribute("x1",PAD.l);line.setAttribute("x2",PAD.l+plotW);
+      line.setAttribute("y1",y);line.setAttribute("y2",y);
+      line.setAttribute("stroke","rgba(0,0,0,0.07)");line.setAttribute("stroke-width","1");
+      svg.appendChild(line);
+      const txt=document.createElementNS("http://www.w3.org/2000/svg","text");
+      txt.setAttribute("x",PAD.l-6);txt.setAttribute("y",y+4);
+      txt.setAttribute("text-anchor","end");txt.setAttribute("font-size","10");
+      txt.setAttribute("fill","#888780");txt.textContent="£"+val;
+      svg.appendChild(txt);
+    });
+
+    // x axis labels
+    spendWeeks.forEach((w,i)=>{
+      const x=xScale(i);
+      const d=new Date(w+"T12:00:00");
+      const lbl=d.toLocaleDateString("en-GB",{day:"numeric",month:"short"});
+      const txt=document.createElementNS("http://www.w3.org/2000/svg","text");
+      txt.setAttribute("x",x);txt.setAttribute("y",H-PAD.b+16);
+      txt.setAttribute("text-anchor","middle");txt.setAttribute("font-size","9");
+      txt.setAttribute("fill","#888780");txt.textContent=lbl;
+      svg.appendChild(txt);
+    });
+
+    // lines & dots
+    series.forEach(s=>{
+      const color=PUB_COLORS[s.pub]||"#534AB7";
+      const hasData=s.vals.some(v=>v>0);
+      if(!hasData) return;
+      const pts=s.vals.map((v,i)=>`${xScale(i).toFixed(1)},${yScale(v).toFixed(1)}`).join(" ");
+      const poly=document.createElementNS("http://www.w3.org/2000/svg","polyline");
+      poly.setAttribute("points",pts);poly.setAttribute("fill","none");
+      poly.setAttribute("stroke",color);poly.setAttribute("stroke-width","2");
+      poly.setAttribute("stroke-linejoin","round");poly.setAttribute("stroke-linecap","round");
+      svg.appendChild(poly);
+      s.vals.forEach((v,i)=>{
+        if(!v) return;
+        const c=document.createElementNS("http://www.w3.org/2000/svg","circle");
+        c.setAttribute("cx",xScale(i).toFixed(1));c.setAttribute("cy",yScale(v).toFixed(1));
+        c.setAttribute("r","3.5");c.setAttribute("fill",color);
+        svg.appendChild(c);
+      });
+    });
+
+    // legend
+    let lx=PAD.l;
+    series.forEach(s=>{
+      const color=PUB_COLORS[s.pub]||"#534AB7";
+      const rect=document.createElementNS("http://www.w3.org/2000/svg","rect");
+      rect.setAttribute("x",lx);rect.setAttribute("y",H-14);
+      rect.setAttribute("width","10");rect.setAttribute("height","10");
+      rect.setAttribute("fill",color);rect.setAttribute("rx","2");
+      svg.appendChild(rect);
+      const txt=document.createElementNS("http://www.w3.org/2000/svg","text");
+      txt.setAttribute("x",lx+13);txt.setAttribute("y",H-5);
+      txt.setAttribute("font-size","10");txt.setAttribute("fill","#5f5e5a");
+      txt.textContent=SHORT[s.pub];
+      svg.appendChild(txt);
+      lx+=SHORT[s.pub].length*6+22;
+    });
+
+    spendCard.appendChild(svg);
+  }
+  frag.appendChild(spendCard);
   return frag;
 }
 
@@ -436,9 +540,9 @@ function renderEntry(){
   FIELDS.forEach(f=>{
     const val=pd[f.key]!=null?pd[f.key]:0;
     const tgt=TARGETS[f.key]||0;
-    const s=si(val,tgt,f.lb);
+    const s=f.noTarget?{bg:"#f1efe8",col:"#5f5e5a",label:"Tracking"}:si(val,tgt,f.lb);
     const pct=((val-f.min)/(f.max-f.min))*100;
-    const tpct=((tgt-f.min)/(f.max-f.min))*100;
+    const tpct=f.noTarget?0:((tgt-f.min)/(f.max-f.min))*100;
     const row=div({class:"field-row"});
     const top=div({class:"field-top"});
     const right=div({class:"field-right"});
@@ -448,14 +552,14 @@ function renderEntry(){
     top.appendChild(span({class:"field-label"},f.label)); top.appendChild(right); row.appendChild(top);
     const bwrap=div({class:"field-bar-wrap"});
     const track=div({class:"mini-track"});
-    const fill=div({class:"mini-fill"});fill.style.width=Math.min(100,pct).toFixed(1)+"%";fill.style.background=s.col;
+    const fill=div({class:"mini-fill"});    fill.style.width=Math.min(100,pct).toFixed(1)+"%";fill.style.background=s.col;
     const tline=div({class:"mini-tgt"});tline.style.left=tpct.toFixed(1)+"%";
-    track.appendChild(fill); track.appendChild(tline);
+    track.appendChild(fill); if(!f.noTarget) track.appendChild(tline);
     const inp=h("input",{type:"number",min:f.min,max:f.max,step:f.step,class:"num-input"});
     inp.value=val;
     inp.addEventListener("input",function(){state.draft[pub][f.key]=parseFloat(this.value)||0;state.saved=false;render();});
     bwrap.appendChild(track); bwrap.appendChild(inp); row.appendChild(bwrap);
-    row.appendChild(div({class:"field-tgt"},"Target: "+tgt+f.suffix));
+    row.appendChild(div({class:"field-tgt"},f.noTarget?"Tracking only — no target set":"Target: "+tgt+f.suffix));
     card.appendChild(row);
   });
   frag.appendChild(card);
@@ -585,10 +689,10 @@ function renderHistory(){
 }
 
 function exportCSV(week,data){
-  const rows=[["Pub","Week ending","Labour %","GP %","Tasks %","Audit %","Mystery %","Avg Review","Total Reviews","New Reviews","Stock Variance %"]];
+  const rows=[["Pub","Week ending","Labour %","GP %","Tasks %","Audit %","Mystery %","Avg Review","Total Reviews","New Reviews","Stock Variance %","Avg Spend Per Head (£)"]];
   PUBS.forEach(pub=>{
     const d=(data&&data[pub])||BLANK;
-    rows.push([pub,week,d.labour,d.gp,d.tasks,d.audit,d.mystery,d.reviews,d.reviewCount,d.newReviews,d.stockVar]);
+    rows.push([pub,week,d.labour,d.gp,d.tasks,d.audit,d.mystery,d.reviews,d.reviewCount,d.newReviews,d.stockVar,d.avgSpend||0]);
   });
   const csv=rows.map(r=>r.map(v=>`"${v}"`).join(",")).join("\n");
   const a=document.createElement("a"); a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);
@@ -596,15 +700,16 @@ function exportCSV(week,data){
 }
 function exportAllCSV(allData){
   const rows=[["Pub","Week ending","Labour %","GP %","Tasks %","Audit %","Mystery %","Avg Review","Total Reviews","New Reviews","Stock Variance %"]];
+  const rows2=[["Pub","Week ending","Labour %","GP %","Tasks %","Audit %","Mystery %","Avg Review","Total Reviews","New Reviews","Stock Variance %","Avg Spend Per Head (£)"]];
   Object.keys(allData).sort().forEach(week=>{
     PUBS.forEach(pub=>{
       const d=(allData[week]&&allData[week][pub])||BLANK;
-      rows.push([pub,week,d.labour,d.gp,d.tasks,d.audit,d.mystery,d.reviews,d.reviewCount,d.newReviews,d.stockVar]);
+      rows2.push([pub,week,d.labour,d.gp,d.tasks,d.audit,d.mystery,d.reviews,d.reviewCount,d.newReviews,d.stockVar,d.avgSpend||0]);
     });
   });
-  const csv=rows.map(r=>r.map(v=>`"${v}"`).join(",")).join("\n");
-  const a=document.createElement("a"); a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);
-  a.download="nancy-spains-kpi-all-weeks.csv"; a.click();
+  const csv2=rows2.map(r=>r.map(v=>`"${v}"`).join(",")).join("\n");
+  const a2=document.createElement("a"); a2.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv2);
+  a2.download="nancy-spains-kpi-all-weeks.csv"; a2.click();
 }
 
 init();
