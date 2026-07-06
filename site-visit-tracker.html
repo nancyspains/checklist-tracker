@@ -148,7 +148,7 @@ function ev(){
   return { scores:Object.fromEntries(ALL_ITEMS.map(i=>[i,null])), notes:'', completedAt:null, saved:false, startedDate:null };
 }
 function today(){ return new Date().toISOString().split('T')[0]; }
-function isComplete(v){ return ALL_ITEMS.every(i=>v.scores[i]!==null); }
+function isComplete(v){ return ALL_ITEMS.every(i=>v.scores[i]!==null&&v.scores[i]!==undefined); }
 function isLocked(v){
   if(v.startedDate && v.startedDate !== today()) return true;
   if(v.completedAt && v.completedAt.split('T')[0] !== today()) return true;
@@ -170,14 +170,15 @@ function adminUnlock(venue, vIdx){
 }
 
 function vPct(v){
-  const s=ALL_ITEMS.filter(i=>v.scores[i]!==null);
+  const s=ALL_ITEMS.filter(i=>v.scores[i]!==null&&v.scores[i]!==undefined);
   if(!s.length)return 0;
-  return Math.round(s.reduce((a,i)=>a+v.scores[i],0)/(s.length*3)*100);
+  return Math.round(s.reduce((a,i)=>a+(v.scores[i]||0),0)/(s.length*3)*100);
 }
 function wPct(venue){
   const d=visits[venue].filter(isComplete);
   if(!d.length)return null;
-  return Math.round(d.reduce((a,v)=>a+vPct(v),0)/d.length);
+  const avg=Math.round(d.reduce((a,v)=>a+vPct(v),0)/d.length);
+  return isNaN(avg)?null:avg;
 }
 function pc(p){ return p>=90?'b-green':p>=80?'b-amber':'b-red'; }
 function bc(p){ return p>=90?'#3b6d11':p>=80?'#b45309':'#b91c1c'; }
