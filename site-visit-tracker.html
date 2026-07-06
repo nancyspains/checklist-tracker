@@ -149,10 +149,19 @@ function ev(){
 }
 function today(){ return new Date().toISOString().split('T')[0]; }
 function isComplete(v){ return ALL_ITEMS.every(i=>v.scores[i]!==null&&v.scores[i]!==undefined); }
+function thisWeekStart(){
+  const d=new Date(); const day=d.getDay();
+  const diff=d.getDate()-day+(day===0?-6:1);
+  const mon=new Date(d); mon.setDate(diff); mon.setHours(0,0,0,0);
+  return mon.toISOString().split('T')[0];
+}
 function isLocked(v){
-  if(v.startedDate && v.startedDate !== today()) return true;
-  if(v.completedAt && v.completedAt.split('T')[0] !== today()) return true;
-  if(v.savedDate && v.savedDate !== today()) return true;
+  const weekStart=thisWeekStart();
+  // Lock if completed on a previous day BUT still within this week (edits not allowed after day)
+  if(v.startedDate && v.startedDate !== today() && v.startedDate >= weekStart) return true;
+  if(v.completedAt && v.completedAt.split('T')[0] !== today() && v.completedAt.split('T')[0] >= weekStart) return true;
+  if(v.savedDate && v.savedDate !== today() && v.savedDate >= weekStart) return true;
+  // If dates are from a previous week entirely, treat as stale (not locked, just ignore)
   return false;
 }
 function adminUnlock(venue, vIdx){
@@ -172,7 +181,7 @@ function adminUnlock(venue, vIdx){
 function vPct(v){
   const s=ALL_ITEMS.filter(i=>v.scores[i]!==null&&v.scores[i]!==undefined);
   if(!s.length)return 0;
-  return Math.round(s.reduce((a,i)=>a+(v.scores[i]||0),0)/s.length*100);
+  return Math.round(s.filter(i=>v.scores[i]>=1).length/s.length*100);
 }
 function wPct(venue){
   const d=visits[venue].filter(isComplete);
@@ -200,8 +209,21 @@ async function load(){
         VENUES.forEach(v=>{
           while(visits[v].length<5) visits[v].push(ev());
         });
+        // Reset any visits that belong to a previous week
+        const weekStart=getWeekStart(0).toISOString().split('T')[0];
+        VENUES.forEach(v=>{
+          visits[v]=visits[v].map(visit=>{
+            const d=visit.startedDate||visit.completedAt?.split('T')[0]||visit.savedDate;
+            if(d && d < weekStart) return ev(); // stale - reset it
+            return visit;
+          });
+        });
       }
-      if(d.activeIdx)activeIdx=d.activeIdx;
+      if(d.activeIdx){
+        // Reset activeIdx for any venue where all visits were cleared
+        VENUES.forEach(v=>{ if(visits[v].every(vi=>!vi.startedDate&&!vi.completedAt)) activeIdx[v]=0; });
+        activeIdx=Object.assign(d.activeIdx, activeIdx);
+      }
     }
   }catch(e){}
   try{
@@ -301,11 +323,11 @@ async function sendVisitReport(venue, vIdx){
   const catRows = STDS.map(({cat,items})=>{
     const rows = items.map(item=>{
       const v = visit.scores[item];
-      const score = v===1?'✓ Yes':v===0?'✗ No':'Not scored';
-      const scoreColor = v===1?'#27500a':v===0?'#791f1f':'#888';
+      const score = v>=1?'✓ Yes':v===0?'✗ No':'Not scored';
+      const scoreColor = v>=1?'#27500a':v===0?'#791f1f':'#888';
       return `<tr><td style="padding:4px 8px;font-size:13px;color:#444">${item}</td><td style="padding:4px 8px;font-size:13px;font-weight:500;text-align:right;color:${scoreColor}">${score}</td></tr>`;
     }).join('');
-    const tot = items.filter(i=>visit.scores[i]===1).length;
+    const tot = items.filter(i=>visit.scores[i]>=1).length;
     const max = items.length;
     const catNote = visit.catNotes&&visit.catNotes[cat];
     const noteRow = catNote ? `<tr><td colspan="2" style="padding:4px 8px 8px;font-size:12px;color:#666;font-style:italic">Notes: ${catNote}</td></tr>` : '';
@@ -451,7 +473,7 @@ function renderOverview(el){
 
 function scorePillHTML(val){
   if(val===null||val===undefined) return `<span class="score-pill s-null">Not scored</span>`;
-  return val===1?`<span class="score-pill s2">✓ Yes</span>`:`<span class="score-pill s0">✗ No</span>`;
+  return val>=1?`<span class="score-pill s2">✓ Yes</span>`:`<span class="score-pill s0">✗ No</span>`;
 }
 
 function renderVenue(el,venue){
@@ -488,7 +510,7 @@ function renderVenue(el,venue){
   }
 
   const cats=STDS.map(({cat,items})=>{
-    const tot=items.filter(i=>visit.scores[i]!==null).reduce((a,i)=>a+visit.scores[i],0);
+    const tot=items.filter(i=>visit.scores[i]>=1).length;
     const rows=items.map(item=>{
       const cur=visit.scores[item];
       let inputHtml;
@@ -499,7 +521,7 @@ function renderVenue(el,venue){
         const safe=item.replace(/'/g,"\'");
         const btns=[1,0].map(v=>{
           const lbl=v===1?'✓ Yes':'✗ No';
-          const cls=cur===v?`sbtn ${v===1?'a2':'a0'}`:'sbtn';
+          const cls=(v===1&&cur>=1)||(v===0&&cur===0)?`sbtn ${v===1?'a2':'a0'}`:'sbtn';
           return `<button class="${cls}" onclick="setScore('${venue}',${activeIdx[venue]},'${safe}',${v})">${lbl}</button>`;
         }).join('');
         inputHtml=`<div class="sbtn-row">${btns}</div>`;
@@ -554,7 +576,7 @@ function renderDashboard(el){
       if(!h.scores)return;
       s.items.forEach(item=>{
         const v=h.scores[item];
-        if(v!==null&&v!==undefined){t+=(v===1?1:0);c++;}
+        if(v!==null&&v!==undefined){t+=(v>=1?1:0);c++;}
       });
     });
     const p=c?Math.round((t/c)*100):null;
@@ -645,12 +667,12 @@ function renderHistory(el){
 
       // Full score breakdown
       const catBreakdown=STDS.map(({cat,items})=>{
-        const tot=items.filter(i=>h.scores&&h.scores[i]===1).length;
+        const tot=items.filter(i=>h.scores&&h.scores[i]>=1).length;
         const max=items.length;
         const itemRows=items.map(item=>{
           const v=h.scores?h.scores[item]:null;
-          const scoreLabel=v===1?'✓ Yes':v===0?'✗ No':'—';
-          const scoreColor=v===1?'#27500a':'#791f1f';
+          const scoreLabel=v>=1?'✓ Yes':v===0?'✗ No':'—';
+          const scoreColor=v>=1?'#27500a':'#791f1f';
           return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid rgba(0,0,0,0.05);font-size:12px"><span style="color:#444">${item}</span><span style="font-weight:500;color:${scoreColor}">${scoreLabel}</span></div>`;
         }).join('');
         const catNote=h.cat_notes&&h.cat_notes[cat]?`<div style="font-size:11px;color:#666;font-style:italic;padding:5px 0;border-bottom:0.5px solid rgba(0,0,0,0.05)">Notes: ${h.cat_notes[cat]}</div>`:'';
