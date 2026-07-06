@@ -125,11 +125,11 @@ const SB = 'https://vqfvklqdexakwjjyvwod.supabase.co';
 const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxZnZrbHFkZXhha3dqanl2d29kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAwNjQsImV4cCI6MjA5MTMxNjA2NH0.JETvur4VrrIWPCwK3MbQ4zzmOiX1Tc7F_xFWC2OR93M';
 const VENUES = ['Shoreditch','Monument','Manchester'];
 const STDS = [
-  { cat:'Cleanliness', items:['Bar tops clean, dry and sanitised','Floors clean — no spillages or debris','No odours in venue','Bathrooms clean, stocked and odour-free','Bathroom checklist complete'] },
+  { cat:'Cleanliness', items:['Bar tops clean, dry and sanitised','Floors clean — no spillages or debris','No odours in venue','Bathrooms clean, stocked and odour-free','Bathroom checklist complete','Tables cleared, clean, and have coasters'] },
   { cat:'Maintenance', items:['All lighting fully operational','No visible damage to walls, ceilings or floors','All equipment functioning correctly','No leaks at bar, cellar or toilets','Fire exits clear'] },
-  { cat:'Staff Presentation', items:['All staff in correct uniform','Uniforms clean and ironed','Staff presenting themselves professionally'] },
-  { cat:'Beer Quality', items:['Pints poured correctly — correct head and clarity','Beer served at correct temperature','Beer tastes good'] },
-  { cat:'Stock Organisation', items:['Stock neatly stored and labelled','Cellar clean and organised','Back bar clean and fully stocked before service'] },
+  { cat:'Staff Presentation', items:['All staff in correct uniform','Uniforms clean and ironed','Staff presenting themselves professionally','Staff engaging/conversing with customers'] },
+  { cat:'Beer Quality', items:['Pints poured correctly — correct head and clarity'] },
+  { cat:'Stock Organisation', items:['Stock neatly stored and labelled','Cellar clean and organised','Back bar and fridges clean and fully stocked during service'] },
   { cat:'Music', items:['Volume appropriate — customers can hold a conversation (pre 11pm)','Indie and Irish music playing','Controlled via Soundtrack software'] },
 ];
 const ALL_ITEMS = STDS.flatMap(s=>s.items);
@@ -142,7 +142,7 @@ let history = [];
 let trendChart = null;
 let visits = {};
 let activeIdx = {};
-VENUES.forEach(v=>{ visits[v]=[ev(),ev(),ev()]; activeIdx[v]=0; });
+VENUES.forEach(v=>{ visits[v]=[ev(),ev(),ev(),ev(),ev()]; activeIdx[v]=0; });
 
 function ev(){
   return { scores:Object.fromEntries(ALL_ITEMS.map(i=>[i,null])), notes:'', completedAt:null, saved:false, startedDate:null };
@@ -265,8 +265,23 @@ async function saveAll(){
 
 function newWeek(){
   if(!confirm('Start a new week? All visits will be reset. Saved data is preserved in history.'))return;
-  VENUES.forEach(v=>{ visits[v]=[ev(),ev(),ev()]; activeIdx[v]=0; });
+  VENUES.forEach(v=>{ visits[v]=[ev(),ev(),ev(),ev(),ev()]; activeIdx[v]=0; });
   saveAll();
+}
+
+async function saveToHistory(venue, vIdx){
+  const v = visits[venue][vIdx];
+  if(v.saved) return;
+  const todayStr = new Date().toISOString().split('T')[0];
+  const weekOf = getWeekStart(0).toISOString().split('T')[0];
+  try {
+    const r = await fetch(`${SB}/rest/v1/site_visit_history`, {
+      method: 'POST',
+      headers: { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ venue, visit_number: vIdx+1, visited_at: todayStr, week_of: weekOf, scores: v.scores, notes: v.notes, cat_notes: v.catNotes||{}, pct: vPct(v) })
+    });
+    if(r.ok){ visits[venue][vIdx].saved = true; }
+  } catch(e){ console.error('Auto-save error:', e); }
 }
 
 async function sendVisitReport(venue, vIdx){
@@ -309,7 +324,7 @@ async function sendVisitReport(venue, vIdx){
             <td style="width:12px"></td>
             <td style="padding:8px;background:#f5f5f3;border-radius:8px;text-align:center">
               <div style="font-size:11px;color:#888;margin-bottom:2px">Visit</div>
-              <div style="font-size:16px;font-weight:500">${vIdx+1} of 3</div>
+              <div style="font-size:16px;font-weight:500">${['Tue','Wed','Thu','Fri','Sat'][vIdx]}</div>
             </td>
             <td style="width:12px"></td>
             <td style="padding:8px;background:${scoreBg};border-radius:8px;text-align:center">
@@ -331,7 +346,7 @@ async function sendVisitReport(venue, vIdx){
       body: JSON.stringify({
         from: EMAIL_FROM,
         to: EMAIL_TO,
-        subject: `✓ Site Visit Complete — ${venue} Visit ${vIdx+1} (${pct}%)`,
+        subject: `✓ Site Visit Complete — ${venue} ${['Tue','Wed','Thu','Fri','Sat'][vIdx]} (${pct}%)`,
         html
       })
     });
@@ -345,8 +360,9 @@ function setScore(venue,vIdx,item,val){
   visits[venue][vIdx].scores[item]=val;
   if(isComplete(visits[venue][vIdx])&&!visits[venue][vIdx].completedAt){
     visits[venue][vIdx].completedAt=new Date().toISOString();
-    if(vIdx<2) activeIdx[venue]=vIdx+1;
+    if(vIdx<4) activeIdx[venue]=vIdx+1;
     sendVisitReport(venue, vIdx);
+    saveToHistory(venue, vIdx);
   }
   render();
 }
@@ -409,17 +425,17 @@ function renderOverview(el){
   const cards=VENUES.map(v=>{
     const wp=wPct(v);
     const done=visits[v].filter(isComplete).length;
-    const bars=[0,1,2].map(i=>{
+    const bars=[0,1,2,3,4].map(i=>{
       const d=isComplete(visits[v][i]);
       const cur=activeIdx[v]===i&&!d;
       return `<div class="vbar ${d?'done':cur?'active':''}"></div>`;
     }).join('');
     const badge=wp!==null?`<span class="badge ${pc(wp)}">${wp}%</span>`:`<span class="badge b-gray">No visits</span>`;
-    return `<div class="card" onclick="switchTab('${v}')"><div class="card-title">${v}</div><div style="font-size:11px;color:#888;margin-bottom:4px">${done}/3 visits this week</div><div class="visit-bars">${bars}</div>${badge}</div>`;
+    return `<div class="card" onclick="switchTab('${v}')"><div class="card-title">${v}</div><div style="font-size:11px;color:#888;margin-bottom:4px">${done}/5 visits this week</div><div class="visit-bars">${bars}</div>${badge}</div>`;
   }).join('');
   el.innerHTML=`
     <div class="metric-grid">
-      <div class="metric"><div class="lbl">Visits this week</div><div class="val">${totalDone}/9</div></div>
+      <div class="metric"><div class="lbl">Visits this week</div><div class="val">${totalDone}/15</div></div>
       <div class="metric"><div class="lbl">Avg score</div><div class="val">${overallAvg!==null?overallAvg+'%':'—'}</div></div>
       <div class="metric"><div class="lbl">Venues visited</div><div class="val">${VENUES.filter(v=>visits[v].some(isComplete)).length}/3</div></div>
     </div>
@@ -441,7 +457,8 @@ function renderVenue(el,venue){
     const dayLocked=isLocked(v);
     // Day-locked visits are always clickable (view-only), but sequence-locked (not yet unlocked) remain disabled
     let cls='vbtn'+(done?' done':active?' active':dayLocked?' locked':locked?' locked':'');
-    const label=dayLocked?`✓ Visit ${i+1} 🔒`:done?`✓ Visit ${i+1}`:`Visit ${i+1}${locked?' 🔒':''}`;
+    const dayNames=['Tue','Wed','Thu','Fri','Sat'];
+    const label=dayLocked?`✓ ${dayNames[i]} 🔒`:done?`✓ ${dayNames[i]}`:`${dayNames[i]}${locked?' 🔒':''}`;
     // Allow clicking if day-locked (view mode) but not if sequence-locked and not yet complete
     const clickable = !locked || done || dayLocked;
     return `<button class="${cls}" ${!clickable?'disabled':''} onclick="${clickable?`switchVisit('${venue}',${i})`:''}">${label}</button>`;
@@ -460,7 +477,8 @@ function renderVenue(el,venue){
       <button class="btn" style="font-size:12px;padding:4px 12px;white-space:nowrap" onclick="adminUnlock('${venue}',${activeIdx[venue]})">🔑 Admin unlock</button>
     </div>`;
   } else if(done){
-    banner=`<div class="banner">✓ Visit ${activeIdx[venue]+1} complete — ${vPct(visit)}% · ${activeIdx[venue]<2?`Visit ${activeIdx[venue]+2} now unlocked.`:'All 3 visits complete this week!'}</div>`;
+    const dn=['Tue','Wed','Thu','Fri','Sat'];
+    banner=`<div class="banner">✓ ${dn[activeIdx[venue]]} complete — ${vPct(visit)}% · ${activeIdx[venue]<4?`${dn[activeIdx[venue]+1]} now unlocked.`:'All 5 visits complete this week!'}</div>`;
   }
 
   const cats=STDS.map(({cat,items})=>{
@@ -495,13 +513,13 @@ function renderVenue(el,venue){
     const notesText=visit.notes||(visit.notes===''?'':null);
     notesHtml=`
       <div style="margin-top:8px">
-        <label style="font-size:12px;color:#888;display:block;margin-bottom:4px">Actions & notes — Visit ${activeIdx[venue]+1}</label>
+        <label style="font-size:12px;color:#888;display:block;margin-bottom:4px">Actions & notes — ${['Tue','Wed','Thu','Fri','Sat'][activeIdx[venue]]}</label>
         <div class="notes-readonly${!notesText?' empty':''}">${notesText||'No notes recorded.'}</div>
       </div>`;
   } else {
     notesHtml=`
       <div style="margin-top:8px">
-        <label style="font-size:12px;color:#888;display:block;margin-bottom:4px">Actions & notes — Visit ${activeIdx[venue]+1}</label>
+        <label style="font-size:12px;color:#888;display:block;margin-bottom:4px">Actions & notes — ${['Tue','Wed','Thu','Fri','Sat'][activeIdx[venue]]}</label>
         <textarea placeholder="Log any actions, issues or observations..." onchange="setNotes('${venue}',${activeIdx[venue]},this.value)">${visit.notes||''}</textarea>
       </div>`;
   }
