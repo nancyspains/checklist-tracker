@@ -172,7 +172,7 @@ function adminUnlock(venue, vIdx){
 function vPct(v){
   const s=ALL_ITEMS.filter(i=>v.scores[i]!==null&&v.scores[i]!==undefined);
   if(!s.length)return 0;
-  return Math.round(s.reduce((a,i)=>a+(v.scores[i]||0),0)/(s.length*3)*100);
+  return Math.round(s.reduce((a,i)=>a+(v.scores[i]||0),0)/s.length*100);
 }
 function wPct(venue){
   const d=visits[venue].filter(isComplete);
@@ -194,7 +194,13 @@ async function load(){
     const r=await sb('config?config_key=eq.site_visit_week&select=config_value');
     if(r&&r.length){
       const d=JSON.parse(r[0].config_value);
-      if(d.visits)visits=d.visits;
+      if(d.visits){
+        visits=d.visits;
+        // Ensure all venues have exactly 5 visits (pad if loaded from older 3-visit data)
+        VENUES.forEach(v=>{
+          while(visits[v].length<5) visits[v].push(ev());
+        });
+      }
       if(d.activeIdx)activeIdx=d.activeIdx;
     }
   }catch(e){}
@@ -293,14 +299,14 @@ async function sendVisitReport(venue, vIdx){
 
   // Build category breakdown
   const catRows = STDS.map(({cat,items})=>{
-    const labels = ['0 — Fail','1 — Below','2 — Meets','3 — Exceeds'];
     const rows = items.map(item=>{
       const v = visit.scores[item];
-      const score = v !== null ? labels[v] : 'Not scored';
-      return `<tr><td style="padding:4px 8px;font-size:13px;color:#444">${item}</td><td style="padding:4px 8px;font-size:13px;font-weight:500;text-align:right">${score}</td></tr>`;
+      const score = v===1?'✓ Yes':v===0?'✗ No':'Not scored';
+      const scoreColor = v===1?'#27500a':v===0?'#791f1f':'#888';
+      return `<tr><td style="padding:4px 8px;font-size:13px;color:#444">${item}</td><td style="padding:4px 8px;font-size:13px;font-weight:500;text-align:right;color:${scoreColor}">${score}</td></tr>`;
     }).join('');
-    const tot = items.filter(i=>visit.scores[i]!==null).reduce((a,i)=>a+visit.scores[i],0);
-    const max = items.length * 3;
+    const tot = items.filter(i=>visit.scores[i]===1).length;
+    const max = items.length;
     const catNote = visit.catNotes&&visit.catNotes[cat];
     const noteRow = catNote ? `<tr><td colspan="2" style="padding:4px 8px 8px;font-size:12px;color:#666;font-style:italic">Notes: ${catNote}</td></tr>` : '';
     return `<tr><td colspan="2" style="padding:10px 8px 4px;font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.04em;border-top:1px solid #eee">${cat} — ${tot}/${max}</td></tr>${rows}${noteRow}`;
@@ -444,9 +450,8 @@ function renderOverview(el){
 }
 
 function scorePillHTML(val){
-  const labels=['0 — Fail','1 — Below','2 — Meets','3 — Exceeds'];
   if(val===null||val===undefined) return `<span class="score-pill s-null">Not scored</span>`;
-  return `<span class="score-pill s${val}">${labels[val]}</span>`;
+  return val===1?`<span class="score-pill s2">✓ Yes</span>`:`<span class="score-pill s0">✗ No</span>`;
 }
 
 function renderVenue(el,venue){
@@ -491,10 +496,10 @@ function renderVenue(el,venue){
         // Read-only: show the selected score as a pill
         inputHtml=`<div class="sbtn-readonly">${scorePillHTML(cur)}</div>`;
       } else {
-        const btns=[0,1,2,3].map(v=>{
-          const lbl=['0 — Fail','1 — Below','2 — Meets','3 — Exceeds'][v];
-          const cls=cur===v?`sbtn a${v}`:'sbtn';
-          const safe=item.replace(/'/g,"\\'");
+        const safe=item.replace(/'/g,"\'");
+        const btns=[1,0].map(v=>{
+          const lbl=v===1?'✓ Yes':'✗ No';
+          const cls=cur===v?`sbtn ${v===1?'a2':'a0'}`:'sbtn';
           return `<button class="${cls}" onclick="setScore('${venue}',${activeIdx[venue]},'${safe}',${v})">${lbl}</button>`;
         }).join('');
         inputHtml=`<div class="sbtn-row">${btns}</div>`;
@@ -506,7 +511,7 @@ function renderVenue(el,venue){
     const catNoteHtml=dayLocked
       ?`<div class="item-row" style="background:#fffbf0"><div class="item-lbl" style="color:#888;margin-bottom:4px">Section notes</div><div class="notes-readonly${!catNoteVal?' empty':''}">${catNoteVal||'No notes recorded.'}</div></div>`
       :`<div class="item-row"><div class="item-lbl" style="color:#888;margin-bottom:4px">Section notes</div><textarea style="min-height:52px" placeholder="Add notes for ${cat}..." onchange="setCatNotes('${venue}',${activeIdx[venue]},'${safeCat}',this.value)">${catNoteVal}</textarea></div>`;
-    return `<div class="cat-block${dayLocked?' locked-overlay':''}"><div class="cat-head"><span>${cat}</span><span class="cat-score">${tot}/${items.length*3}</span></div>${rows}${catNoteHtml}</div>`;
+    return `<div class="cat-block${dayLocked?' locked-overlay':''}"><div class="cat-head"><span>${cat}</span><span class="cat-score">${tot}/${items.length}</span></div>${rows}${catNoteHtml}</div>`;
   }).join('');
 
   let notesHtml;
@@ -549,10 +554,10 @@ function renderDashboard(el){
       if(!h.scores)return;
       s.items.forEach(item=>{
         const v=h.scores[item];
-        if(v!==null&&v!==undefined){t+=v;c++;}
+        if(v!==null&&v!==undefined){t+=(v===1?1:0);c++;}
       });
     });
-    const p=c?Math.round((t/(c*3))*100):null;
+    const p=c?Math.round((t/c)*100):null;
     const badge=p!==null?`<span class="badge ${pc(p)}">${p}%</span>`:`<span class="badge b-gray">No data</span>`;
     return `<div class="bar-row"><span class="bar-lbl" style="font-size:12px">${s.cat}</span><div class="bar-track"><div class="bar-fill" style="width:${p||0}%;background:${p?bc(p):'#ddd'}"></div><div class="bar-target" style="left:${TARGET}%"></div></div>${badge}</div>`;
   }).join('');
@@ -626,8 +631,6 @@ function renderHistory(el){
     return;
   }
 
-  const labels=['0 — Fail','1 — Below','2 — Meets','3 — Exceeds'];
-
   const weekBlocks=weekKeys.map(key=>{
     const visits=weeks[key];
     const mon=new Date(key);
@@ -642,12 +645,12 @@ function renderHistory(el){
 
       // Full score breakdown
       const catBreakdown=STDS.map(({cat,items})=>{
-        const tot=items.filter(i=>h.scores&&h.scores[i]!==null&&h.scores[i]!==undefined).reduce((a,i)=>a+(h.scores[i]||0),0);
-        const max=items.length*3;
+        const tot=items.filter(i=>h.scores&&h.scores[i]===1).length;
+        const max=items.length;
         const itemRows=items.map(item=>{
           const v=h.scores?h.scores[item]:null;
-          const scoreLabel=v!==null&&v!==undefined?labels[v]:'—';
-          const scoreColor=v===3?'#27500a':v===2?'#27500a':v===1?'#92400e':'#791f1f';
+          const scoreLabel=v===1?'✓ Yes':v===0?'✗ No':'—';
+          const scoreColor=v===1?'#27500a':'#791f1f';
           return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid rgba(0,0,0,0.05);font-size:12px"><span style="color:#444">${item}</span><span style="font-weight:500;color:${scoreColor}">${scoreLabel}</span></div>`;
         }).join('');
         const catNote=h.cat_notes&&h.cat_notes[cat]?`<div style="font-size:11px;color:#666;font-style:italic;padding:5px 0;border-bottom:0.5px solid rgba(0,0,0,0.05)">Notes: ${h.cat_notes[cat]}</div>`:'';
