@@ -232,8 +232,13 @@ async function load(){
   render();
   setInterval(async()=>{
     try{
-      history=await sb('site_visit_history?select=*&order=visited_at.desc&limit=500')||[];
-      render();
+      const newHistory=await sb('site_visit_history?select=*&order=visited_at.desc&limit=500')||[];
+      const changed=JSON.stringify(newHistory)!==JSON.stringify(history);
+      history=newHistory;
+      // Only re-render if data changed AND no textarea/input is currently focused
+      const focused=document.activeElement;
+      const userTyping=focused&&(focused.tagName==='TEXTAREA'||focused.tagName==='INPUT');
+      if(changed&&!userTyping) render();
     }catch(e){}
   },15000);
 }
