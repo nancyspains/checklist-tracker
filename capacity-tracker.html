@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capacity & Spend Tracker — Nancy Spains</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --green: #1a3d28;
+    --green-light: #e8f5ec;
+    --amber: #c78a1e;
+    --amber-light: #fdf3e1;
+    --red: #c0392b;
+    --red-light: #fbe9e7;
+    --grey: #888;
+    --grey-light: #f0f0f0;
+    --border: #e0e0e0;
+    --bg: #f5f5f4;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    margin: 0;
+    padding: 24px;
+    color: #1a1a1a;
+  }
+  .container { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 2px; color: var(--green); }
+  .subtitle { color: #666; font-size: 13px; margin: 0 0 20px; }
+  .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+  .sync-indicator { font-size: 12px; color: #666; }
+  .sync-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #2ecc71; margin-right: 4px; }
+  button {
+    font-family: inherit; font-size: 13px; padding: 8px 16px; border-radius: 6px;
+    border: 1px solid var(--border); background: #fff; cursor: pointer; color: #222;
+  }
+  button.primary { background: var(--green); color: #fff; border-color: var(--green); }
+  button:hover { opacity: 0.9; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
+  .tab-btn {
+    padding: 8px 16px; border-radius: 20px; border: 1px solid var(--border);
+    background: #fff; cursor: pointer; font-size: 13px; color: #333;
+  }
+  .tab-btn.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  .card {
+    background: #fff; border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px; margin-bottom: 14px;
+  }
+  .card-row { display: flex; gap: 16px; flex-wrap: wrap; }
+  .stat-box { flex: 1; min-width: 140px; text-align: center; padding: 10px; }
+  .stat-value { font-size: 28px; font-weight: bold; color: var(--green); }
+  .stat-label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+  .venue-card { border-left: 4px solid var(--green); }
+  .venue-card.incomplete { border-left-color: var(--amber); }
+  .week-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .week-nav button { padding: 6px 12px; }
+  .week-label { font-weight: bold; font-size: 14px; }
+  .day-card { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+  .day-card .day-name { min-width: 70px; font-weight: bold; color: var(--green); padding-top: 8px; }
+  .field-group { display: flex; flex-direction: column; gap: 4px; }
+  .field-group label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+  .field-group input, .field-group textarea {
+    font-family: inherit; font-size: 14px; padding: 7px 10px; border: 1px solid var(--border);
+    border-radius: 6px; width: 130px;
+  }
+  .field-group textarea { width: 220px; height: 36px; resize: vertical; }
+  .computed { font-size: 12px; color: #555; padding-top: 26px; min-width: 140px; }
+  .chip {
+    display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px;
+    font-weight: 600;
+  }
+  .chip.green { background: var(--green-light); color: var(--green); }
+  .chip.amber { background: var(--amber-light); color: var(--amber); }
+  .chip.red { background: var(--red-light); color: var(--red); }
+  .chip.grey { background: var(--grey-light); color: var(--grey); }
+  .history-row {
+    display: flex; justify-content: space-between; padding: 10px 0;
+    border-bottom: 1px solid var(--border); font-size: 13px;
+  }
+  .history-week-header { font-weight: bold; color: var(--green); margin-top: 16px; margin-bottom: 4px; }
+  canvas { max-width: 100%; }
+  .save-status { font-size: 12px; color: #2ecc71; margin-left: 12px; }
+  .note-flag { font-size: 11px; color: var(--amber); }
+  .closed-toggle {
+    font-size: 12px; padding: 7px 10px; white-space: nowrap;
+  }
+  .closed-toggle.active { background: var(--grey-light); border-color: var(--grey); color: #444; }
+  .day-card.closed { background: #fafafa; opacity: 0.85; }
+  .day-card.closed input { background: #f0f0f0; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="top-bar">
+    <div>
+      <h1>Capacity & Spend Tracker</h1>
+      <p class="subtitle" id="todayLabel"></p>
+    </div>
+    <div class="sync-indicator"><span class="sync-dot"></span>Live sync on</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="overview">Overview</button>
+    <button class="tab-btn" data-tab="Shoreditch">Shoreditch</button>
+    <button class="tab-btn" data-tab="Monument">Monument</button>
+    <button class="tab-btn" data-tab="Manchester">Manchester</button>
+    <button class="tab-btn" data-tab="dashboard">Dashboard</button>
+    <button class="tab-btn" data-tab="history">History</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="tab-content active" id="tab-overview">
+    <div class="card-row" id="overviewCards"></div>
+  </div>
+
+  <!-- VENUE TABS -->
+  <div class="tab-content" id="tab-Shoreditch"></div>
+  <div class="tab-content" id="tab-Monument"></div>
+  <div class="tab-content" id="tab-Manchester"></div>
+
+  <!-- DASHBOARD -->
+  <div class="tab-content" id="tab-dashboard">
+    <div class="card">
+      <h3 style="margin-top:0;">Weekly footfall by venue (last 8 weeks)</h3>
+      <canvas id="footfallChart" height="100"></canvas>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0;">Spend per head by venue (last 8 weeks)</h3>
+      <canvas id="spendChart" height="100"></canvas>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="tab-content" id="tab-history">
+    <div class="card" id="historyList">Loading...</div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://vqfvklqdexakwjjyvwod.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxZnZrbHFkZXhha3dqanl2d29kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAwNjQsImV4cCI6MjA5MTMxNjA2NH0.JETvur4VrrIWPCwK3MbQ4zzmOiX1Tc7F_xFWC2OR93M";
+const VENUES = { "Shoreditch": 180, "Monument": 300, "Manchester": 180 };
+const CAPTURE_DAYS = ["Wed", "Thu", "Fri", "Sat", "Sun"]; // Wed-Sun only, per confirmed capture schedule
+
+let allRows = []; // cache of every row fetched from Supabase
+let weekOffset = {}; // per-venue: 0 = current week, -1 = last week, etc.
+Object.keys(VENUES).forEach(v => weekOffset[v] = 0);
+
+function sb(path, opts = {}) {
+  return fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    ...opts,
+    headers: {
+      "apikey": SUPABASE_ANON_KEY,
+      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+      "Content-Type": "application/json",
+      ...(opts.headers || {})
+    }
+  });
+}
+
+function fmtDate(d) {
+  // Deliberately NOT using toISOString() here - that converts to UTC
+  // first, which shifts the date back a day during BST (UTC+1), since
+  // local midnight becomes 23:00 the previous day in UTC. Using local
+  // date components avoids that entirely.
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+function parseLocalDate(dateStr) {
+  // Deliberately NOT using new Date(dateStr) here - a bare "YYYY-MM-DD"
+  // string is parsed as UTC midnight per the JS spec, which then reports
+  // the wrong local day-of-week/date in any timezone ahead of UTC. Splitting
+  // and constructing from local components sidesteps the whole issue.
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+function dayName(d) { return ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()]; }
+
+function mondayOf(date) {
+  const d = new Date(date);
+  const day = d.getDay(); // 0=Sun..6=Sat
+  const diff = (day === 0 ? -6 : 1) - day;
+  d.setDate(d.getDate() + diff);
+  d.setHours(0,0,0,0);
+  return d;
+}
+
+function weekDatesFor(offset) {
+  const monday = mondayOf(new Date());
+  monday.setDate(monday.getDate() + offset * 7);
+  // Wed = Monday+2 ... Sun = Monday+6
+  return [2,3,4,5,6].map(off => {
+    const d = new Date(monday);
+    d.setDate(d.getDate() + off);
+    return d;
+  });
+}
+
+function ragChip(rag, label) {
+  return `<span class="chip ${rag}">${label}</span>`;
+}
+
+function ragForOccupancyRatio(ratio) {
+  if (ratio == null) return "grey";
+  if (ratio >= 1.0) return "green";
+  const shortfall = 1.0 - ratio;
+  if (shortfall <= 0.10) return "green";
+  if (shortfall <= 0.20) return "amber";
+  return "red";
+}
+
+async function loadAllRows() {
+  const resp = await sb("capacity_log?select=*&order=date.asc&limit=1000");
+  allRows = await resp.json();
+}
+
+function rowsForVenue(venue) {
+  return allRows.filter(r => r.venue === venue);
+}
+
+// ---------- Venue tab rendering ----------
+function renderVenueTab(venue) {
+  const container = document.getElementById(`tab-${venue}`);
+  const dates = weekDatesFor(weekOffset[venue]);
+  const rows = rowsForVenue(venue);
+  const maxCap = VENUES[venue];
+
+  const rowByDate = {};
+  rows.forEach(r => rowByDate[r.date] = r);
+
+  const dayCards = dates.map(d => {
+    const dateStr = fmtDate(d);
+    const existing = rowByDate[dateStr] || {};
+    const dName = dayName(d);
+    const isClosed = !!existing.closed;
+    return `
+    <div class="card day-card ${isClosed ? 'closed' : ''}" data-date="${dateStr}" data-closed="${isClosed}">
+      <div class="day-name">${dName}<br><span style="font-weight:normal;font-size:11px;color:#888;">${dateStr}</span></div>
+      <div class="field-group">
+        <label>Capacity in</label>
+        <input type="number" class="capacity-in" value="${existing.capacity_in ?? ''}" placeholder="guests" ${isClosed ? 'disabled' : ''}>
+      </div>
+      <div class="field-group">
+        <label>Net sales (£)</label>
+        <input type="number" step="0.01" class="net-sales" value="${existing.net_sales_gbp ?? ''}" placeholder="£" ${isClosed ? 'disabled' : ''}>
+      </div>
+      <div class="field-group">
+        <label>Notes</label>
+        <textarea class="notes" placeholder="e.g. private hire, refurb">${existing.notes ?? ''}</textarea>
+      </div>
+      <div class="field-group">
+        <label>&nbsp;</label>
+        <button type="button" class="closed-toggle ${isClosed ? 'active' : ''}" onclick="toggleClosed(this)">
+          ${isClosed ? '✓ Venue closed' : 'Mark venue closed'}
+        </button>
+      </div>
+      <div class="computed">
+        <div class="occ-display">${isClosed ? '<span class="chip grey">Closed</span>' : 'Occupancy: —'}</div>
+        <div class="spend-display">${isClosed ? '' : 'Spend/head: —'}</div>
+      </div>
+    </div>`;
+  }).join("");
+
+  container.innerHTML = `
+    <div class="week-nav">
+      <button onclick="changeWeek('${venue}', -1)">&larr; Prev week</button>
+      <span class="week-label">${fmtDate(dates[0])} to ${fmtDate(dates[4])} (max capacity ${maxCap})</span>
+      <button onclick="changeWeek('${venue}', 1)">Next week &rarr;</button>
+      <button class="primary" onclick="saveVenueWeek('${venue}')">Save week</button>
+      <span class="save-status" id="saveStatus-${venue}"></span>
+    </div>
+    ${dayCards}
+  `;
+
+  // Live-computed occupancy/spend as you type
+  container.querySelectorAll(".day-card").forEach(card => {
+    const capInput = card.querySelector(".capacity-in");
+    const salesInput = card.querySelector(".net-sales");
+    const occDisplay = card.querySelector(".occ-display");
+    const spendDisplay = card.querySelector(".spend-display");
+
+    function recompute() {
+      if (card.dataset.closed === "true") return; // display already shows the Closed chip
+      const cap = parseFloat(capInput.value);
+      const sales = parseFloat(salesInput.value);
+      if (!isNaN(cap) && cap > 0) {
+        occDisplay.textContent = `Occupancy: ${Math.round(cap / maxCap * 100)}%`;
+        if (!isNaN(sales)) {
+          spendDisplay.textContent = `Spend/head: £${(sales / cap).toFixed(2)}`;
+        } else {
+          spendDisplay.textContent = "Spend/head: —";
+        }
+      } else {
+        occDisplay.textContent = "Occupancy: —";
+        spendDisplay.textContent = "Spend/head: —";
+      }
+    }
+    capInput.addEventListener("input", recompute);
+    salesInput.addEventListener("input", recompute);
+    recompute();
+  });
+}
+
+function toggleClosed(button) {
+  const card = button.closest(".day-card");
+  const nowClosed = card.dataset.closed !== "true";
+  card.dataset.closed = String(nowClosed);
+  card.classList.toggle("closed", nowClosed);
+
+  const capInput = card.querySelector(".capacity-in");
+  const salesInput = card.querySelector(".net-sales");
+  const occDisplay = card.querySelector(".occ-display");
+  const spendDisplay = card.querySelector(".spend-display");
+
+  capInput.disabled = nowClosed;
+  salesInput.disabled = nowClosed;
+  button.classList.toggle("active", nowClosed);
+  button.textContent = nowClosed ? "✓ Venue closed" : "Mark venue closed";
+
+  if (nowClosed) {
+    occDisplay.innerHTML = '<span class="chip grey">Closed</span>';
+    spendDisplay.textContent = "";
+  } else {
+    occDisplay.textContent = "Occupancy: —";
+    spendDisplay.textContent = "Spend/head: —";
+    capInput.dispatchEvent(new Event("input"));
+  }
+}
+
+function changeWeek(venue, delta) {
+  weekOffset[venue] += delta;
+  renderVenueTab(venue);
+}
+
+async function saveVenueWeek(venue) {
+  const container = document.getElementById(`tab-${venue}`);
+  const cards = container.querySelectorAll(".day-card");
+  const payload = [];
+  cards.forEach(card => {
+    const date = card.dataset.date;
+    const day = dayName(parseLocalDate(date));
+    const isClosed = card.dataset.closed === "true";
+    const capVal = card.querySelector(".capacity-in").value;
+    const salesVal = card.querySelector(".net-sales").value;
+    const notes = card.querySelector(".notes").value;
+    payload.push({
+      venue,
+      date,
+      day,
+      closed: isClosed,
+      capacity_in: isClosed ? null : (capVal === "" ? null : parseFloat(capVal)),
+      net_sales_gbp: isClosed ? null : (salesVal === "" ? null : parseFloat(salesVal)),
+      notes: notes || null,
+    });
+  });
+
+  const statusEl = document.getElementById(`saveStatus-${venue}`);
+  statusEl.textContent = "Saving...";
+  try {
+    const resp = await sb("capacity_log?on_conflict=venue,date", {
+      method: "POST",
+      headers: { "Prefer": "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify(payload),
+    });
+    if (!resp.ok) throw new Error(await resp.text());
+    statusEl.textContent = "Saved ✓";
+    await loadAllRows();
+    renderOverview();
+    setTimeout(() => statusEl.textContent = "", 2500);
+  } catch (err) {
+    statusEl.textContent = "Save failed - check console";
+    console.error(err);
+  }
+}
+
+// ---------- Overview tab ----------
+function renderOverview() {
+  const el = document.getElementById("overviewCards");
+  const dates = weekDatesFor(0).map(fmtDate);
+
+  el.innerHTML = Object.keys(VENUES).map(venue => {
+    const rows = rowsForVenue(venue).filter(r => dates.includes(r.date));
+    const withData = rows.filter(r => r.capacity_in != null);
+    const totalGuests = withData.reduce((s, r) => s + r.capacity_in, 0);
+    const totalSales = withData.reduce((s, r) => s + (r.net_sales_gbp || 0), 0);
+    const spendPerHead = totalGuests ? (totalSales / totalGuests) : null;
+    const complete = withData.length >= 5;
+
+    return `
+    <div class="card venue-card ${complete ? '' : 'incomplete'}" style="flex:1;min-width:220px;">
+      <h3 style="margin:0 0 8px;">${venue}</h3>
+      <div class="stat-value">${withData.length}/5</div>
+      <div class="stat-label">days logged this week</div>
+      <div style="margin-top:10px;font-size:13px;color:#555;">
+        ${totalGuests} guests &middot; ${spendPerHead ? '£' + spendPerHead.toFixed(2) + '/head' : 'no spend data yet'}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ---------- History tab ----------
+function isoWeekKey(dateStr) {
+  const d = parseLocalDate(dateStr);
+  const target = new Date(d.valueOf());
+  const dayNr = (d.getDay() + 6) % 7;
+  target.setDate(target.getDate() - dayNr + 3);
+  const firstThursday = new Date(target.getFullYear(), 0, 4);
+  const week = 1 + Math.round(((target - firstThursday) / 86400000 - 3 + ((firstThursday.getDay() + 6) % 7)) / 7);
+  return `${target.getFullYear()}-W${String(week).padStart(2, '0')}`;
+}
+
+function renderHistory() {
+  const el = document.getElementById("historyList");
+  const byWeek = {};
+  allRows.filter(r => r.capacity_in != null).forEach(r => {
+    const key = isoWeekKey(r.date);
+    byWeek[key] ||= {};
+    byWeek[key][r.venue] ||= { guests: 0, sales: 0, days: 0 };
+    byWeek[key][r.venue].guests += r.capacity_in;
+    byWeek[key][r.venue].sales += (r.net_sales_gbp || 0);
+    byWeek[key][r.venue].days += 1;
+  });
+
+  const weekKeys = Object.keys(byWeek).sort().reverse().slice(0, 12);
+  if (!weekKeys.length) {
+    el.innerHTML = "No data logged yet.";
+    return;
+  }
+
+  el.innerHTML = weekKeys.map(wk => {
+    const venues = byWeek[wk];
+    const rows = Object.entries(venues).map(([venue, v]) => {
+      const spend = v.guests ? (v.sales / v.guests).toFixed(2) : "—";
+      return `<div class="history-row"><span>${venue} (${v.days} day(s))</span><span>${v.guests} guests &middot; £${spend}/head</span></div>`;
+    }).join("");
+    return `<div class="history-week-header">${wk}</div>${rows}`;
+  }).join("");
+}
+
+// ---------- Dashboard tab (charts) ----------
+let footfallChartInstance, spendChartInstance;
+
+function renderDashboardCharts() {
+  const byWeekVenue = {}; // key -> venue -> {guests, sales}
+  allRows.filter(r => r.capacity_in != null).forEach(r => {
+    const key = isoWeekKey(r.date);
+    byWeekVenue[key] ||= {};
+    byWeekVenue[key][r.venue] ||= { guests: 0, sales: 0 };
+    byWeekVenue[key][r.venue].guests += r.capacity_in;
+    byWeekVenue[key][r.venue].sales += (r.net_sales_gbp || 0);
+  });
+
+  const weekKeys = Object.keys(byWeekVenue).sort().slice(-8);
+  const colors = { Shoreditch: "#1a7d3a", Monument: "#c78a1e", Manchester: "#c0392b" };
+
+  const footfallDatasets = Object.keys(VENUES).map(venue => ({
+    label: venue,
+    data: weekKeys.map(wk => byWeekVenue[wk]?.[venue]?.guests ?? null),
+    borderColor: colors[venue],
+    backgroundColor: colors[venue],
+    fill: false,
+    tension: 0.2,
+  }));
+
+  const spendDatasets = Object.keys(VENUES).map(venue => ({
+    label: venue,
+    data: weekKeys.map(wk => {
+      const v = byWeekVenue[wk]?.[venue];
+      return v && v.guests ? +(v.sales / v.guests).toFixed(2) : null;
+    }),
+    borderColor: colors[venue],
+    backgroundColor: colors[venue],
+    fill: false,
+    tension: 0.2,
+  }));
+
+  if (footfallChartInstance) footfallChartInstance.destroy();
+  if (spendChartInstance) spendChartInstance.destroy();
+
+  footfallChartInstance = new Chart(document.getElementById("footfallChart"), {
+    type: "line",
+    data: { labels: weekKeys, datasets: footfallDatasets },
+    options: { responsive: true, plugins: { legend: { position: "bottom" } } }
+  });
+
+  spendChartInstance = new Chart(document.getElementById("spendChart"), {
+    type: "line",
+    data: { labels: weekKeys, datasets: spendDatasets },
+    options: { responsive: true, plugins: { legend: { position: "bottom" } } }
+  });
+}
+
+// ---------- Tabs ----------
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById(`tab-${btn.dataset.tab}`).classList.add("active");
+    if (btn.dataset.tab === "history") renderHistory();
+    if (btn.dataset.tab === "dashboard") renderDashboardCharts();
+  });
+});
+
+// ---------- Init ----------
+async function init() {
+  document.getElementById("todayLabel").textContent = new Date().toLocaleDateString("en-GB", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+  try {
+    await loadAllRows();
+    renderOverview();
+    Object.keys(VENUES).forEach(renderVenueTab);
+  } catch (err) {
+    console.error("Failed to load capacity data:", err);
+    document.getElementById("overviewCards").innerHTML =
+      `<div class="card" style="border-left:4px solid var(--red);">
+         <strong>Couldn't load data.</strong> Check your connection and refresh.
+         If this keeps happening, the <code>capacity_log</code> table may not exist yet in Supabase
+         (see schema.sql) or the API key may need checking.
+       </div>`;
+  }
+}
+init();
+</script>
+</body>
+</html>
