@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Matrix</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1f2a24;
+    --ink-soft:#4a534d;
+    --paper:#f4f1e8;
+    --paper-raised:#faf8f2;
+    --line:#c9c2af;
+
+    --do:#a63d2f;
+    --do-soft:#f2ded9;
+    --schedule:#2f5d62;
+    --schedule-soft:#dbe6e5;
+    --delegate:#c08a2e;
+    --delegate-soft:#f3e6cd;
+    --eliminate:#8b8478;
+    --eliminate-soft:#e8e5dd;
+  }
+
+  *{box-sizing:border-box;}
+
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .wrap{
+    max-width:1040px;
+    margin:0 auto;
+    padding:36px 24px 60px;
+  }
+
+  /* ---------- Header ---------- */
+  .header{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:20px;
+    margin-bottom:28px;
+    flex-wrap:wrap;
+  }
+
+  .title-block h1{
+    font-family:'Fraunces',serif;
+    font-optical-sizing:auto;
+    font-weight:600;
+    font-size:clamp(28px,4vw,40px);
+    margin:0 0 4px;
+    letter-spacing:-0.01em;
+  }
+
+  .title-block .sub{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+  }
+
+  .day-nav{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    font-family:'IBM Plex Mono',monospace;
+  }
+
+  .day-nav-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+
+  .day-nav button.day-nav-arrow{
+    width:30px;
+    height:30px;
+    border-radius:50%;
+    border:1px solid var(--line);
+    background:var(--paper-raised);
+    color:var(--ink);
+    cursor:pointer;
+    font-size:15px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:background .15s ease, transform .15s ease;
+    flex-shrink:0;
+  }
+  .day-nav-arrow:hover{background:#eee9db;}
+  .day-nav-arrow:active{transform:scale(0.92);}
+  .day-nav-arrow:focus-visible{outline:2px solid var(--ink); outline-offset:2px;}
+
+  .day-label{
+    font-size:13px;
+    min-width:118px;
+    text-align:center;
+    letter-spacing:0.03em;
+  }
+  .day-label.is-today{color:var(--schedule); font-weight:500;}
+
+  .today-btn{
+    font-family:'Inter',sans-serif;
+    font-size:12px;
+    font-weight:600;
+    border:none;
+    background:none;
+    color:var(--ink-soft);
+    text-decoration:underline;
+    text-underline-offset:3px;
+    cursor:pointer;
+    padding:0;
+    white-space:nowrap;
+  }
+  .today-btn:hover{color:var(--ink);}
+  .today-btn:focus-visible{outline:2px solid var(--ink); outline-offset:2px;}
+
+  /* ---------- Intake ---------- */
+  .intake{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:18px 20px;
+    margin-bottom:34px;
+  }
+
+  .intake-row{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+
+  .intake input[type="text"]{
+    flex:1 1 260px;
+    min-width:200px;
+    font-family:'Inter',sans-serif;
+    font-size:15px;
+    padding:10px 14px;
+    border-radius:9px;
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--ink);
+  }
+  .intake input[type="text"]:focus-visible{outline:2px solid var(--ink); outline-offset:1px;}
+
+  .toggle-group{
+    display:flex;
+    gap:8px;
+  }
+
+  .toggle{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    letter-spacing:0.04em;
+    padding:9px 14px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--ink-soft);
+    cursor:pointer;
+    transition:all .15s ease;
+    white-space:nowrap;
+  }
+  .toggle:hover{border-color:var(--ink-soft);}
+  .toggle:focus-visible{outline:2px solid var(--ink); outline-offset:2px;}
+  .toggle[aria-pressed="true"]{
+    background:var(--ink);
+    border-color:var(--ink);
+    color:var(--paper-raised);
+  }
+
+  .add-btn{
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    padding:10px 20px;
+    border-radius:9px;
+    border:none;
+    background:var(--ink);
+    color:var(--paper-raised);
+    cursor:pointer;
+    transition:opacity .15s ease, transform .1s ease;
+  }
+  .add-btn:hover{opacity:0.88;}
+  .add-btn:active{transform:scale(0.97);}
+  .add-btn:disabled{opacity:0.35; cursor:not-allowed;}
+  .add-btn:focus-visible{outline:2px solid var(--ink); outline-offset:2px;}
+
+  .intake-hint{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    margin-top:10px;
+    letter-spacing:0.02em;
+  }
+
+  /* ---------- Matrix / axis diagram ---------- */
+  .axis-wrap{
+    position:relative;
+    padding:34px 0 0 46px;
+  }
+
+  .axis-label-x{
+    position:absolute;
+    top:0;
+    left:46px;
+    right:0;
+    display:flex;
+    justify-content:space-between;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    padding:0 4px;
+  }
+
+  .axis-label-y{
+    position:absolute;
+    left:-14px;
+    top:34px;
+    bottom:0;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    align-items:center;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+  }
+
+  .axis-label-y span{
+    writing-mode:vertical-rl;
+    transform:rotate(180deg);
+    padding:4px 0;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    grid-template-rows:1fr 1fr;
+    gap:16px;
+    min-height:560px;
+  }
+
+  .quadrant{
+    border-radius:16px;
+    padding:18px 18px 14px;
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+    border:1px solid transparent;
+  }
+
+  .quadrant[data-q="q1"]{background:var(--do-soft); border-color:#dcbdb5;}
+  .quadrant[data-q="q2"]{background:var(--schedule-soft); border-color:#b9cbc9;}
+  .quadrant[data-q="q3"]{background:var(--delegate-soft); border-color:#e0c58f;}
+  .quadrant[data-q="q4"]{background:var(--eliminate-soft); border-color:#d2cdc0;}
+
+  .q-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:12px;
+  }
+
+  .q-title{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:19px;
+  }
+  .quadrant[data-q="q1"] .q-title{color:var(--do);}
+  .quadrant[data-q="q2"] .q-title{color:var(--schedule);}
+  .quadrant[data-q="q3"] .q-title{color:var(--delegate);}
+  .quadrant[data-q="q4"] .q-title{color:var(--eliminate);}
+
+  .q-count{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+
+  .q-sub{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin:-8px 0 12px;
+  }
+
+  .task-list{
+    list-style:none;
+    margin:0;
+    padding:0;
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+    overflow-y:auto;
+    flex:1;
+  }
+
+  .task{
+    display:flex;
+    align-items:flex-start;
+    gap:9px;
+    background:rgba(255,255,255,0.55);
+    border-radius:9px;
+    padding:9px 10px;
+    transition:background .15s ease;
+  }
+  .task:hover{background:rgba(255,255,255,0.8);}
+
+  .task.done{opacity:0.5;}
+  .task.done .task-text{text-decoration:line-through;}
+
+  .check{
+    flex-shrink:0;
+    width:17px;
+    height:17px;
+    border-radius:5px;
+    border:1.5px solid var(--ink-soft);
+    background:#fff;
+    cursor:pointer;
+    margin-top:1px;
+    position:relative;
+    padding:0;
+  }
+  .check:focus-visible{outline:2px solid var(--ink); outline-offset:2px;}
+  .task.done .check{background:var(--ink); border-color:var(--ink);}
+  .task.done .check::after{
+    content:"";
+    position:absolute;
+    left:4px; top:1px;
+    width:5px; height:9px;
+    border-right:2px solid var(--paper-raised);
+    border-bottom:2px solid var(--paper-raised);
+    transform:rotate(40deg);
+  }
+
+  .task-text{
+    flex:1;
+    font-size:14px;
+    line-height:1.4;
+    word-break:break-word;
+    padding-top:1px;
+  }
+
+  .task-actions{
+    display:flex;
+    gap:4px;
+    opacity:0;
+    transition:opacity .12s ease;
+  }
+  .task:hover .task-actions, .task-actions:focus-within{opacity:1;}
+
+  .task-actions button{
+    border:none;
+    background:none;
+    cursor:pointer;
+    color:var(--ink-soft);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    padding:2px 4px;
+    border-radius:4px;
+  }
+  .task-actions button:hover{color:var(--ink); background:rgba(0,0,0,0.06);}
+  .task-actions button:focus-visible{outline:2px solid var(--ink); outline-offset:1px; opacity:1;}
+
+  .empty-hint{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    opacity:0.65;
+    padding:6px 2px;
+  }
+
+  /* ---------- Footer stats ---------- */
+  .footer{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:26px;
+    padding-top:16px;
+    border-top:1px solid var(--line);
+    flex-wrap:wrap;
+    gap:12px;
+  }
+
+  .stats{
+    display:flex;
+    gap:18px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+  .stats b{color:var(--ink); font-weight:600;}
+
+  .carry-btn{
+    font-family:'Inter',sans-serif;
+    font-size:12.5px;
+    font-weight:600;
+    padding:8px 14px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:var(--paper-raised);
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .carry-btn:hover{background:#eee9db;}
+  .carry-btn:disabled{opacity:0.4; cursor:not-allowed;}
+  .carry-btn:focus-visible{outline:2px solid var(--ink); outline-offset:2px;}
+
+  .toast{
+    position:fixed;
+    bottom:22px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--ink);
+    color:var(--paper-raised);
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    padding:10px 18px;
+    border-radius:9px;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s ease, transform .2s ease;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  @media (max-width:680px){
+    .grid{grid-template-columns:1fr; grid-template-rows:none; min-height:0;}
+    .axis-wrap{padding-left:0;}
+    .axis-label-y{display:none;}
+    .axis-label-x{position:static; margin-bottom:14px;}
+    .quadrant{min-height:180px;}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none !important;}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="header">
+    <div class="title-block">
+      <h1>Daily Matrix</h1>
+      <div class="sub" id="dateSub">â loading â</div>
+    </div>
+    <div class="day-nav">
+      <div class="day-nav-row">
+        <button class="day-nav-arrow" id="prevDay" aria-label="Previous day">â¹</button>
+        <div class="day-label" id="dayLabel">â</div>
+        <button class="day-nav-arrow" id="nextDay" aria-label="Next day">âº</button>
+      </div>
+      <button class="today-btn" id="gotoToday">jump to today</button>
+    </div>
+  </div>
+
+  <div class="intake">
+    <div class="intake-row">
+      <input type="text" id="taskInput" placeholder="What needs doing?" maxlength="140">
+      <div class="toggle-group">
+        <button class="toggle" id="urgentToggle" type="button" aria-pressed="false">URGENT?</button>
+        <button class="toggle" id="importantToggle" type="button" aria-pressed="false">IMPORTANT?</button>
+      </div>
+      <button class="add-btn" id="addBtn" disabled>Add to matrix</button>
+    </div>
+    <div class="intake-hint" id="intakeHint">Answer both, then add â it'll land in the right quadrant automatically.</div>
+  </div>
+
+  <div class="axis-wrap">
+    <div class="axis-label-x"><span>â urgent</span><span>not urgent â</span></div>
+    <div class="axis-label-y"><span>important â</span><span>â not important</span></div>
+
+    <div class="grid">
+      <div class="quadrant" data-q="q1">
+        <div class="q-head">
+          <span class="q-title">Quad 1</span>
+          <span class="q-count" data-count="q1">0</span>
+        </div>
+        <div class="q-sub">Important and urgent</div>
+        <ul class="task-list" data-list="q1"></ul>
+      </div>
+
+      <div class="quadrant" data-q="q2">
+        <div class="q-head">
+          <span class="q-title">Quad 2</span>
+          <span class="q-count" data-count="q2">0</span>
+        </div>
+        <div class="q-sub">Important, not urgent</div>
+        <ul class="task-list" data-list="q2"></ul>
+      </div>
+
+      <div class="quadrant" data-q="q3">
+        <div class="q-head">
+          <span class="q-title">Quad 3</span>
+          <span class="q-count" data-count="q3">0</span>
+        </div>
+        <div class="q-sub">Not important, urgent</div>
+        <ul class="task-list" data-list="q3"></ul>
+      </div>
+
+      <div class="quadrant" data-q="q4">
+        <div class="q-head">
+          <span class="q-title">Quad 4</span>
+          <span class="q-count" data-count="q4">0</span>
+        </div>
+        <div class="q-sub">Not important, not urgent</div>
+        <ul class="task-list" data-list="q4"></ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="stats">
+      <span><b id="statTotal">0</b> total</span>
+      <span><b id="statDone">0</b> done</span>
+      <span><b id="statOpen">0</b> open</span>
+    </div>
+    <button class="carry-btn" id="carryBtn">Carry open tasks to tomorrow â</button>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const SB = "https://vqfvklqdexakwjjyvwod.supabase.co";
+  const KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxZnZrbHFkZXhha3dqanl2d29kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAwNjQsImV4cCI6MjA5MTMxNjA2NH0.JETvur4VrrIWPCwK3MbQ4zzmOiX1Tc7F_xFWC2OR93M";
+  const QUADRANTS = ['q1','q2','q3','q4'];
+
+  function sbHeaders(extra){
+    return Object.assign({ apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, extra || {});
+  }
+
+  function fmtKey(d){
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+  function fmtLabel(d){
+    return d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' });
+  }
+
+  let current = new Date();
+  let tasks = []; // {id, text, done, quadrant}
+  let urgentOn = false;
+  let importantOn = false;
+
+  const el = {
+    dateSub: document.getElementById('dateSub'),
+    dayLabel: document.getElementById('dayLabel'),
+    prevDay: document.getElementById('prevDay'),
+    nextDay: document.getElementById('nextDay'),
+    gotoToday: document.getElementById('gotoToday'),
+    taskInput: document.getElementById('taskInput'),
+    urgentToggle: document.getElementById('urgentToggle'),
+    importantToggle: document.getElementById('importantToggle'),
+    addBtn: document.getElementById('addBtn'),
+    intakeHint: document.getElementById('intakeHint'),
+    carryBtn: document.getElementById('carryBtn'),
+    toast: document.getElementById('toast'),
+    statTotal: document.getElementById('statTotal'),
+    statDone: document.getElementById('statDone'),
+    statOpen: document.getElementById('statOpen'),
+  };
+
+  function quadrantFor(u,i){
+    if(u && i) return 'q1';
+    if(!u && i) return 'q2';
+    if(u && !i) return 'q3';
+    return 'q4';
+  }
+
+  function showToast(msg){
+    el.toast.textContent = msg;
+    el.toast.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=> el.toast.classList.remove('show'), 2400);
+  }
+
+  async function loadDay(d){
+    const dateKey = fmtKey(d);
+    try{
+      const res = await fetch(SB + '/rest/v1/eisenhower_tasks?task_date=eq.' + dateKey + '&removed=eq.false&order=id.asc', {
+        headers: sbHeaders()
+      });
+      if(!res.ok) throw new Error('load failed');
+      const rows = await res.json();
+      tasks = rows.map(r => ({ id: r.id, text: r.task_text, quadrant: r.quadrant, done: r.done }));
+    }catch(e){
+      tasks = [];
+      showToast('Could not load â check connection');
+    }
+    render();
+  }
+
+  function render(){
+    const todayKey = fmtKey(new Date());
+    const key = fmtKey(current);
+    el.dateSub.textContent = key === todayKey ? "Today's matrix â live sync on" : "Viewing " + fmtLabel(current);
+    el.dayLabel.textContent = fmtLabel(current);
+    el.dayLabel.classList.toggle('is-today', key === todayKey);
+
+    QUADRANTS.forEach(q=>{
+      const list = document.querySelector('[data-list="'+q+'"]');
+      const items = tasks.filter(t=>t.quadrant===q);
+      document.querySelector('[data-count="'+q+'"]').textContent = items.length;
+      list.innerHTML = '';
+      if(items.length === 0){
+        const li = document.createElement('li');
+        li.className = 'empty-hint';
+        li.textContent = 'Nothing here yet';
+        list.appendChild(li);
+        return;
+      }
+      items.forEach(t=>{
+        const li = document.createElement('li');
+        li.className = 'task' + (t.done ? ' done' : '');
+
+        const check = document.createElement('button');
+        check.className = 'check';
+        check.setAttribute('aria-label', t.done ? 'Mark not done' : 'Mark done');
+        check.onclick = async ()=>{
+          const newDone = !t.done;
+          check.disabled = true;
+          try{
+            const res = await fetch(SB + '/rest/v1/eisenhower_tasks?id=eq.' + t.id, {
+              method:'PATCH', headers: sbHeaders(), body: JSON.stringify({ done: newDone })
+            });
+            if(!res.ok) throw new Error('update failed');
+            t.done = newDone;
+            render();
+          }catch(e){
+            showToast('Could not update â try again');
+            check.disabled = false;
+          }
+        };
+
+        const text = document.createElement('span');
+        text.className = 'task-text';
+        text.textContent = t.text;
+
+        const actions = document.createElement('div');
+        actions.className = 'task-actions';
+        const del = document.createElement('button');
+        del.textContent = 'remove';
+        del.setAttribute('aria-label', 'Remove task');
+        del.onclick = async ()=>{
+          del.disabled = true;
+          try{
+            const res = await fetch(SB + '/rest/v1/eisenhower_tasks?id=eq.' + t.id, {
+              method:'PATCH', headers: sbHeaders(), body: JSON.stringify({ removed: true })
+            });
+            if(!res.ok) throw new Error('remove failed');
+            tasks = tasks.filter(x=>x.id!==t.id);
+            render();
+          }catch(e){
+            showToast('Could not remove â try again');
+            del.disabled = false;
+          }
+        };
+        actions.appendChild(del);
+
+        li.appendChild(check);
+        li.appendChild(text);
+        li.appendChild(actions);
+        list.appendChild(li);
+      });
+    });
+
+    const done = tasks.filter(t=>t.done).length;
+    el.statTotal.textContent = tasks.length;
+    el.statDone.textContent = done;
+    el.statOpen.textContent = tasks.length - done;
+    el.carryBtn.disabled = (tasks.length - done) === 0;
+  }
+
+  function updateAddState(){
+    const ready = el.taskInput.value.trim().length > 0;
+    el.addBtn.disabled = !ready;
+    if(!ready){
+      el.intakeHint.textContent = "Answer both, then add â it'll land in the right quadrant automatically.";
+    } else {
+      const q = quadrantFor(urgentOn, importantOn);
+      const names = {q1:'Quad 1', q2:'Quad 2', q3:'Quad 3', q4:'Quad 4'};
+      el.intakeHint.textContent = 'Will go to: ' + names[q];
+    }
+  }
+
+  el.taskInput.addEventListener('input', updateAddState);
+  el.taskInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' && !el.addBtn.disabled) addTask(); });
+
+  el.urgentToggle.addEventListener('click', ()=>{
+    urgentOn = !urgentOn;
+    el.urgentToggle.setAttribute('aria-pressed', urgentOn);
+    updateAddState();
+  });
+  el.importantToggle.addEventListener('click', ()=>{
+    importantOn = !importantOn;
+    el.importantToggle.setAttribute('aria-pressed', importantOn);
+    updateAddState();
+  });
+
+  async function addTask(){
+    const text = el.taskInput.value.trim();
+    if(!text) return;
+    const q = quadrantFor(urgentOn, importantOn);
+    el.addBtn.disabled = true;
+    try{
+      const res = await fetch(SB + '/rest/v1/eisenhower_tasks', {
+        method:'POST',
+        headers: sbHeaders({ Prefer:'return=representation' }),
+        body: JSON.stringify({ task_date: fmtKey(current), quadrant:q, task_text:text, done:false })
+      });
+      if(!res.ok) throw new Error('insert failed');
+      const rows = await res.json();
+      const row = rows[0];
+      tasks.push({ id: row.id, text: row.task_text, quadrant: row.quadrant, done: row.done });
+      el.taskInput.value = '';
+      urgentOn = false; importantOn = false;
+      el.urgentToggle.setAttribute('aria-pressed','false');
+      el.importantToggle.setAttribute('aria-pressed','false');
+      updateAddState();
+      render();
+    }catch(e){
+      showToast('Could not add â try again');
+      updateAddState();
+    }
+  }
+  el.addBtn.addEventListener('click', addTask);
+
+  el.prevDay.addEventListener('click', ()=>{
+    current = new Date(current);
+    current.setDate(current.getDate()-1);
+    loadDay(current);
+  });
+  el.nextDay.addEventListener('click', ()=>{
+    current = new Date(current);
+    current.setDate(current.getDate()+1);
+    loadDay(current);
+  });
+  el.gotoToday.addEventListener('click', ()=>{
+    current = new Date();
+    loadDay(current);
+  });
+
+  el.carryBtn.addEventListener('click', async ()=>{
+    const open = tasks.filter(t=>!t.done);
+    if(open.length === 0) return;
+    const tomorrow = new Date(current);
+    tomorrow.setDate(tomorrow.getDate()+1);
+    const dateKey = fmtKey(tomorrow);
+    el.carryBtn.disabled = true;
+    try{
+      const payload = open.map(t=>({ task_date: dateKey, quadrant: t.quadrant, task_text: t.text, done:false }));
+      const res = await fetch(SB + '/rest/v1/eisenhower_tasks', {
+        method:'POST',
+        headers: sbHeaders({ Prefer:'return=minimal' }),
+        body: JSON.stringify(payload)
+      });
+      if(!res.ok) throw new Error('carry failed');
+      showToast('Carried ' + open.length + ' open task' + (open.length===1?'':'s') + ' to tomorrow');
+    }catch(e){
+      showToast('Could not carry tasks â try again');
+    }
+    el.carryBtn.disabled = (tasks.filter(t=>!t.done).length === 0);
+  });
+
+  loadDay(current);
+})();
+</script>
+
+</body>
+</html>
+
