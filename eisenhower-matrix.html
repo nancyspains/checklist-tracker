@@ -603,7 +603,7 @@
       });
       if(!res.ok) throw new Error('load failed');
       const rows = await res.json();
-      tasks = rows.map(r => ({ id: r.id, text: r.task_text, quadrant: r.quadrant, done: r.done }));
+      tasks = rows.map(r => ({ id: r.id, text: r.task_text, quadrant: r.quadrant, done: r.done, mondayItemId: r.monday_item_id }));
     }catch(e){
       tasks = [];
       showToast('Could not load â check connection');
@@ -769,7 +769,7 @@
     const dateKey = fmtKey(tomorrow);
     el.carryBtn.disabled = true;
     try{
-      const payload = open.map(t=>({ task_date: dateKey, quadrant: t.quadrant, task_text: t.text, done:false }));
+      const payload = open.map(t=>({ task_date: dateKey, quadrant: t.quadrant, task_text: t.text, done:false, monday_item_id: t.mondayItemId || null }));
       const res = await fetch(SB + '/rest/v1/eisenhower_tasks', {
         method:'POST',
         headers: sbHeaders({ Prefer:'return=minimal' }),
@@ -789,4 +789,3 @@
 
 </body>
 </html>
-
