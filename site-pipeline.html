@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Site Pipeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,500&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#23241e;
+    --ink-soft:#5c5a4e;
+    --paper:#ede7da;
+    --paper-raised:#f7f4ea;
+    --line:#c9c0a8;
+
+    --s1:#b8aa82;   /* enquiry */
+    --s1-soft:#f1ecdd;
+    --s2:#9c8b4e;   /* viewed */
+    --s2-soft:#ece5cd;
+    --s3:#a9782f;   /* offer */
+    --s3-soft:#f0e2c9;
+    --s4:#7c5a2e;   /* heads of terms */
+    --s4-soft:#e9dcc6;
+    --s5:#2f3b2e;   /* legals */
+    --s5-soft:#dde3d9;
+
+    --drop:#8a3324;
+  }
+
+  *{box-sizing:border-box;}
+
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .wrap{
+    max-width:960px;
+    margin:0 auto;
+    padding:40px 24px 70px;
+  }
+
+  /* ---------- Header ---------- */
+  .header{
+    margin-bottom:30px;
+  }
+
+  .header h1{
+    font-family:'Newsreader',serif;
+    font-weight:600;
+    font-size:clamp(30px,4vw,42px);
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+
+  .header .sub{
+    font-family:'Space Mono',monospace;
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+
+  /* ---------- Stage rail ---------- */
+  .rail{
+    display:flex;
+    align-items:stretch;
+    gap:0;
+    margin:28px 0 36px;
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+    background:var(--paper-raised);
+  }
+
+  .rail-stage{
+    flex:1;
+    padding:14px 14px 12px;
+    border-right:1px solid var(--line);
+    position:relative;
+  }
+  .rail-stage:last-child{border-right:none;}
+
+  .rail-num{
+    font-family:'Space Mono',monospace;
+    font-size:11px;
+    color:var(--ink-soft);
+  }
+
+  .rail-name{
+    font-family:'Newsreader',serif;
+    font-weight:600;
+    font-size:15px;
+    margin-top:2px;
+    line-height:1.25;
+  }
+
+  .rail-count{
+    font-family:'Space Mono',monospace;
+    font-size:20px;
+    margin-top:8px;
+  }
+
+  .rail-stage[data-s="1"] .rail-count{color:var(--s1);}
+  .rail-stage[data-s="2"] .rail-count{color:var(--s2);}
+  .rail-stage[data-s="3"] .rail-count{color:var(--s3);}
+  .rail-stage[data-s="4"] .rail-count{color:var(--s4);}
+  .rail-stage[data-s="5"] .rail-count{color:var(--s5);}
+
+  .rail-bar{
+    position:absolute;
+    left:0; right:0; bottom:0;
+    height:3px;
+  }
+  .rail-stage[data-s="1"] .rail-bar{background:var(--s1);}
+  .rail-stage[data-s="2"] .rail-bar{background:var(--s2);}
+  .rail-stage[data-s="3"] .rail-bar{background:var(--s3);}
+  .rail-stage[data-s="4"] .rail-bar{background:var(--s4);}
+  .rail-stage[data-s="5"] .rail-bar{background:var(--s5);}
+
+  @media (max-width:640px){
+    .rail{flex-wrap:wrap;}
+    .rail-stage{flex:1 1 50%; border-bottom:1px solid var(--line);}
+  }
+
+  /* ---------- Intake ---------- */
+  .intake{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:20px 22px;
+    margin-bottom:40px;
+  }
+
+  .intake-title{
+    font-family:'Newsreader',serif;
+    font-style:italic;
+    font-weight:500;
+    font-size:17px;
+    margin:0 0 14px;
+  }
+
+  .intake-grid{
+    display:grid;
+    grid-template-columns:1.4fr 1.4fr 1.2fr 0.8fr 0.8fr;
+    gap:10px;
+  }
+
+  .intake-grid input, .intake textarea{
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    padding:9px 11px;
+    border-radius:7px;
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--ink);
+    width:100%;
+  }
+
+  .intake textarea{
+    margin-top:10px;
+    resize:vertical;
+    min-height:44px;
+  }
+
+  .intake label{
+    display:block;
+    font-family:'Space Mono',monospace;
+    font-size:10.5px;
+    color:var(--ink-soft);
+    margin-bottom:4px;
+  }
+
+  .intake-footer{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:14px;
+  }
+
+  .intake-hint{
+    font-family:'Space Mono',monospace;
+    font-size:11.5px;
+    color:var(--ink-soft);
+  }
+
+  .add-btn{
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    padding:10px 20px;
+    border-radius:7px;
+    border:none;
+    background:var(--ink);
+    color:var(--paper-raised);
+    cursor:pointer;
+  }
+  .add-btn:hover{opacity:0.88;}
+  .add-btn:disabled{opacity:0.35; cursor:not-allowed;}
+  .add-btn:focus-visible{outline:2px solid var(--ink); outline-offset:2px;}
+
+  @media (max-width:760px){
+    .intake-grid{grid-template-columns:1fr 1fr;}
+  }
+
+  /* ---------- Stage sections ---------- */
+  .stage-section{
+    margin-bottom:30px;
+  }
+
+  .stage-head{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    padding-bottom:8px;
+    border-bottom:2px solid var(--line);
+    margin-bottom:14px;
+  }
+
+  .stage-head .name{
+    font-family:'Newsreader',serif;
+    font-weight:600;
+    font-size:20px;
+  }
+  .stage-section[data-s="1"] .stage-head{border-color:var(--s1);}
+  .stage-section[data-s="2"] .stage-head{border-color:var(--s2);}
+  .stage-section[data-s="3"] .stage-head{border-color:var(--s3);}
+  .stage-section[data-s="4"] .stage-head{border-color:var(--s4);}
+  .stage-section[data-s="5"] .stage-head{border-color:var(--s5);}
+
+  .stage-head .count{
+    font-family:'Space Mono',monospace;
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+
+  .site-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+
+  .empty-hint{
+    font-family:'Space Mono',monospace;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    opacity:0.7;
+    padding:4px 0 2px;
+  }
+
+  /* ---------- Site card ---------- */
+  .card{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:16px 18px;
+    border-left:4px solid transparent;
+  }
+  .stage-section[data-s="1"] .card{border-left-color:var(--s1);}
+  .stage-section[data-s="2"] .card{border-left-color:var(--s2);}
+  .stage-section[data-s="3"] .card{border-left-color:var(--s3);}
+  .stage-section[data-s="4"] .card{border-left-color:var(--s4);}
+  .stage-section[data-s="5"] .card{border-left-color:var(--s5);}
+
+  .card-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+
+  .card-name{
+    font-family:'Newsreader',serif;
+    font-weight:600;
+    font-size:18px;
+  }
+
+  .card-address{
+    font-size:13.5px;
+    color:var(--ink-soft);
+    margin-top:2px;
+  }
+
+  .card-specs{
+    display:flex;
+    gap:16px;
+    flex-wrap:wrap;
+    margin-top:10px;
+    font-family:'Space Mono',monospace;
+    font-size:12px;
+  }
+
+  .card-specs span b{
+    color:var(--ink-soft);
+    font-weight:400;
+    margin-right:4px;
+  }
+
+  .card-contact{
+    font-size:13px;
+    margin-top:8px;
+    color:var(--ink);
+  }
+  .card-contact b{
+    font-weight:600;
+    color:var(--ink-soft);
+    font-size:11px;
+    font-family:'Space Mono',monospace;
+    margin-right:6px;
+  }
+
+  .card-notes{
+    font-size:13.5px;
+    margin-top:8px;
+    color:var(--ink-soft);
+    line-height:1.45;
+    white-space:pre-wrap;
+  }
+
+  .card-actions{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    margin-top:14px;
+    flex-wrap:wrap;
+  }
+
+  .advance-btn{
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:13px;
+    padding:8px 16px;
+    border-radius:7px;
+    border:none;
+    background:var(--ink);
+    color:var(--paper-raised);
+    cursor:pointer;
+  }
+  .advance-btn:hover{opacity:0.88;}
+  .advance-btn:disabled{opacity:0.4; cursor:not-allowed;}
+  .advance-btn:focus-visible{outline:2px solid var(--ink); outline-offset:2px;}
+
+  .drop-link{
+    font-family:'Inter',sans-serif;
+    font-size:12.5px;
+    color:var(--drop);
+    background:none;
+    border:none;
+    cursor:pointer;
+    text-decoration:underline;
+    text-underline-offset:3px;
+    padding:0;
+  }
+  .drop-link:hover{opacity:0.75;}
+  .drop-link:focus-visible{outline:2px solid var(--drop); outline-offset:2px;}
+
+  /* ---------- Archive ---------- */
+  .archive-toggle{
+    font-family:'Space Mono',monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    background:none;
+    border:1px solid var(--line);
+    border-radius:7px;
+    padding:8px 14px;
+    cursor:pointer;
+    margin-top:10px;
+  }
+  .archive-toggle:hover{background:var(--paper-raised);}
+
+  .archive-list{
+    margin-top:16px;
+    display:none;
+    flex-direction:column;
+    gap:8px;
+  }
+  .archive-list.open{display:flex;}
+
+  .archive-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:9px 14px;
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:7px;
+    font-size:13px;
+  }
+  .archive-row .outcome{
+    font-family:'Space Mono',monospace;
+    font-size:11px;
+    color:var(--ink-soft);
+  }
+
+  /* ---------- Toast ---------- */
+  .toast{
+    position:fixed;
+    bottom:22px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--ink);
+    color:var(--paper-raised);
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    padding:10px 18px;
+    border-radius:9px;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s ease, transform .2s ease;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none !important;}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="header">
+    <h1>Site Pipeline</h1>
+    <div class="sub" id="headerSub">â loading â</div>
+  </div>
+
+  <div class="rail" id="rail"></div>
+
+  <div class="intake">
+    <p class="intake-title">Log a new enquiry</p>
+    <div class="intake-grid">
+      <div>
+        <label for="fSiteName">Site name</label>
+        <input type="text" id="fSiteName" placeholder="e.g. The Anchor, Bristol">
+      </div>
+      <div>
+        <label for="fAddress">Address</label>
+        <input type="text" id="fAddress" placeholder="Street, town, postcode">
+      </div>
+      <div>
+        <label for="fContact">Landlord / agent contact</label>
+        <input type="text" id="fContact" placeholder="Name, agency, phone or email">
+      </div>
+      <div>
+        <label for="fRent">Rent</label>
+        <input type="text" id="fRent" placeholder="Â£45,000 pa">
+      </div>
+      <div>
+        <label for="fSize">Size</label>
+        <input type="text" id="fSize" placeholder="2,400 sq ft">
+      </div>
+    </div>
+    <textarea id="fNotes" placeholder="Notes (optional)"></textarea>
+    <div class="intake-footer">
+      <div class="intake-hint">New entries start at Enquiry</div>
+      <button class="add-btn" id="addBtn" disabled>Add site</button>
+    </div>
+  </div>
+
+  <div id="stages"></div>
+
+  <button class="archive-toggle" id="archiveToggle">Show completed / dropped sites</button>
+  <div class="archive-list" id="archiveList"></div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const SB = "https://vqfvklqdexakwjjyvwod.supabase.co";
+  const KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxZnZrbHFkZXhha3dqanl2d29kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAwNjQsImV4cCI6MjA5MTMxNjA2NH0.JETvur4VrrIWPCwK3MbQ4zzmOiX1Tc7F_xFWC2OR93M";
+
+  const STAGES = [
+    { key:'enquiry',        label:'Enquiry',           num:1 },
+    { key:'viewed',         label:'Site Viewed',       num:2 },
+    { key:'offer',          label:'Offer Made',        num:3 },
+    { key:'heads_of_terms', label:'Heads of Terms',    num:4 },
+    { key:'legals',         label:'In Legals',         num:5 },
+  ];
+  const STAGE_INDEX = Object.fromEntries(STAGES.map((s,i)=>[s.key,i]));
+
+  let sites = [];
+
+  const el = {
+    headerSub: document.getElementById('headerSub'),
+    rail: document.getElementById('rail'),
+    stages: document.getElementById('stages'),
+    fSiteName: document.getElementById('fSiteName'),
+    fAddress: document.getElementById('fAddress'),
+    fContact: document.getElementById('fContact'),
+    fRent: document.getElementById('fRent'),
+    fSize: document.getElementById('fSize'),
+    fNotes: document.getElementById('fNotes'),
+    addBtn: document.getElementById('addBtn'),
+    archiveToggle: document.getElementById('archiveToggle'),
+    archiveList: document.getElementById('archiveList'),
+    toast: document.getElementById('toast'),
+  };
+
+  function sbHeaders(extra){
+    return Object.assign({ apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, extra || {});
+  }
+
+  function showToast(msg){
+    el.toast.textContent = msg;
+    el.toast.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=> el.toast.classList.remove('show'), 2400);
+  }
+
+  async function loadSites(){
+    try{
+      const res = await fetch(SB + '/rest/v1/site_pipeline?select=*&order=created_at.asc', { headers: sbHeaders() });
+      if(!res.ok) throw new Error('load failed');
+      sites = await res.json();
+    }catch(e){
+      sites = [];
+      showToast('Could not load â check connection');
+    }
+    render();
+  }
+
+  function esc(s){
+    const d = document.createElement('div');
+    d.textContent = s || '';
+    return d.innerHTML;
+  }
+
+  function render(){
+    const active = sites.filter(s => !s.archived);
+    const archived = sites.filter(s => s.archived);
+
+    el.headerSub.textContent = active.length + ' site' + (active.length===1?'':'s') + ' in the pipeline â live sync on';
+
+    // Rail
+    el.rail.innerHTML = STAGES.map(st => {
+      const count = active.filter(s => s.stage === st.key).length;
+      return `<div class="rail-stage" data-s="${st.num}">
+        <div class="rail-num">${String(st.num).padStart(2,'0')}</div>
+        <div class="rail-name">${st.label}</div>
+        <div class="rail-count">${count}</div>
+        <div class="rail-bar"></div>
+      </div>`;
+    }).join('');
+
+    // Stage sections
+    el.stages.innerHTML = '';
+    STAGES.forEach(st => {
+      const items = active.filter(s => s.stage === st.key);
+      const section = document.createElement('div');
+      section.className = 'stage-section';
+      section.dataset.s = st.num;
+
+      const head = document.createElement('div');
+      head.className = 'stage-head';
+      head.innerHTML = `<span class="name">${st.label}</span><span class="count">${items.length}</span>`;
+      section.appendChild(head);
+
+      const list = document.createElement('div');
+      list.className = 'site-list';
+
+      if(items.length === 0){
+        const hint = document.createElement('div');
+        hint.className = 'empty-hint';
+        hint.textContent = 'Nothing at this stage';
+        list.appendChild(hint);
+      } else {
+        items.forEach(site => list.appendChild(buildCard(site, st)));
+      }
+
+      section.appendChild(list);
+      el.stages.appendChild(section);
+    });
+
+    // Archive
+    el.archiveList.innerHTML = archived.length === 0
+      ? '<div class="empty-hint">Nothing archived yet</div>'
+      : archived.map(s => `<div class="archive-row">
+          <span>${esc(s.site_name)}</span>
+          <span class="outcome">${s.outcome === 'completed' ? 'Completed' : 'Dropped'}</span>
+        </div>`).join('');
+  }
+
+  function buildCard(site, stageDef){
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const specs = [];
+    if(site.rent) specs.push(`<span><b>Rent</b>${esc(site.rent)}</span>`);
+    if(site.size_sqft) specs.push(`<span><b>Size</b>${esc(site.size_sqft)}</span>`);
+
+    card.innerHTML = `
+      <div class="card-top">
+        <div>
+          <div class="card-name">${esc(site.site_name)}</div>
+          ${site.address ? `<div class="card-address">${esc(site.address)}</div>` : ''}
+        </div>
+      </div>
+      ${specs.length ? `<div class="card-specs">${specs.join('')}</div>` : ''}
+      ${site.contact ? `<div class="card-contact"><b>Contact</b>${esc(site.contact)}</div>` : ''}
+      ${site.notes ? `<div class="card-notes">${esc(site.notes)}</div>` : ''}
+      <div class="card-actions"></div>
+    `;
+
+    const actions = card.querySelector('.card-actions');
+    const isLast = STAGE_INDEX[site.stage] === STAGES.length - 1;
+
+    const advanceBtn = document.createElement('button');
+    advanceBtn.className = 'advance-btn';
+    advanceBtn.textContent = isLast ? 'Mark completed' : 'Move to ' + STAGES[STAGE_INDEX[site.stage] + 1].label;
+    advanceBtn.onclick = async () => {
+      advanceBtn.disabled = true;
+      try{
+        const fields = isLast
+          ? { archived: true, outcome: 'completed', updated_at: new Date().toISOString() }
+          : { stage: STAGES[STAGE_INDEX[site.stage] + 1].key, updated_at: new Date().toISOString() };
+        const res = await fetch(SB + '/rest/v1/site_pipeline?id=eq.' + site.id, {
+          method:'PATCH', headers: sbHeaders(), body: JSON.stringify(fields)
+        });
+        if(!res.ok) throw new Error('update failed');
+        Object.assign(site, fields);
+        render();
+      }catch(e){
+        showToast('Could not update â try again');
+        advanceBtn.disabled = false;
+      }
+    };
+
+    const dropBtn = document.createElement('button');
+    dropBtn.className = 'drop-link';
+    dropBtn.textContent = 'Drop';
+    dropBtn.onclick = async () => {
+      if(!confirm(`Drop "${site.site_name}" from the pipeline?`)) return;
+      dropBtn.disabled = true;
+      try{
+        const fields = { archived: true, outcome: 'dropped', updated_at: new Date().toISOString() };
+        const res = await fetch(SB + '/rest/v1/site_pipeline?id=eq.' + site.id, {
+          method:'PATCH', headers: sbHeaders(), body: JSON.stringify(fields)
+        });
+        if(!res.ok) throw new Error('drop failed');
+        Object.assign(site, fields);
+        render();
+      }catch(e){
+        showToast('Could not drop â try again');
+        dropBtn.disabled = false;
+      }
+    };
+
+    actions.appendChild(advanceBtn);
+    actions.appendChild(dropBtn);
+    return card;
+  }
+
+  function updateAddState(){
+    el.addBtn.disabled = el.fSiteName.value.trim().length === 0;
+  }
+  el.fSiteName.addEventListener('input', updateAddState);
+
+  el.addBtn.addEventListener('click', async () => {
+    const site_name = el.fSiteName.value.trim();
+    if(!site_name) return;
+    el.addBtn.disabled = true;
+    try{
+      const payload = {
+        site_name,
+        address: el.fAddress.value.trim() || null,
+        contact: el.fContact.value.trim() || null,
+        rent: el.fRent.value.trim() || null,
+        size_sqft: el.fSize.value.trim() || null,
+        notes: el.fNotes.value.trim() || null,
+        stage: 'enquiry',
+      };
+      const res = await fetch(SB + '/rest/v1/site_pipeline', {
+        method:'POST',
+        headers: sbHeaders({ Prefer:'return=representation' }),
+        body: JSON.stringify(payload)
+      });
+      if(!res.ok) throw new Error('insert failed');
+      const rows = await res.json();
+      sites.push(rows[0]);
+      el.fSiteName.value = '';
+      el.fAddress.value = '';
+      el.fContact.value = '';
+      el.fRent.value = '';
+      el.fSize.value = '';
+      el.fNotes.value = '';
+      updateAddState();
+      render();
+    }catch(e){
+      showToast('Could not add â try again');
+      updateAddState();
+    }
+  });
+
+  el.archiveToggle.addEventListener('click', () => {
+    const open = el.archiveList.classList.toggle('open');
+    el.archiveToggle.textContent = open ? 'Hide completed / dropped sites' : 'Show completed / dropped sites';
+  });
+
+  loadSites();
+})();
+</script>
+
+</body>
+</html>
