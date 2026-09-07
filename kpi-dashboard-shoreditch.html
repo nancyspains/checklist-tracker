@@ -183,3 +183,436 @@ function si(val,tgt,lb){
   if(diff<=0) return{bg:"#EAF3DE",col:"#3B6D11",label:"On target"};
   if(diff<=3) return{bg:"#FAEEDA",col:"#854F0B",label:"Near target"};
   return{bg:"#FCEBEB",col:"#A32D2D",label:"Off target"};
+
+function barColor(val,tgt,lb){
+  const diff=lb?val-tgt:tgt-val;
+  return diff<=0?"#639922":diff<=3?"#BA7517":"#E24B4A";
+}
+function avg(arr,key){ return arr.length?arr.reduce((s,p)=>s+(p[key]||0),0)/arr.length:0; }
+
+function h(tag,attrs,children){
+  const el=document.createElement(tag);
+  if(attrs) Object.keys(attrs).forEach(k=>{
+    if(k==="style"&&typeof attrs[k]==="object") Object.assign(el.style,attrs[k]);
+    else if(k.startsWith("on")) el.addEventListener(k.slice(2).toLowerCase(),attrs[k]);
+    else el.setAttribute(k,attrs[k]);
+  });
+  if(children){
+    if(!Array.isArray(children)) children=[children];
+    children.forEach(c=>{
+      if(c==null) return;
+      if(typeof c==="string"||typeof c==="number") el.appendChild(document.createTextNode(c));
+      else el.appendChild(c);
+    });
+  }
+  return el;
+}
+function div(a,c){return h("div",a,c);}
+function span(a,c){return h("span",a,c);}
+function btn(l,a){return h("button",Object.assign({class:"btn"},a||{}),[l]);}
+
+function render(){
+  const app=document.getElementById("app");
+  app.innerHTML="";
+  if(state.loading){app.appendChild(div({class:"loading"},"Connecting to live database..."));return;}
+  app.appendChild(renderTopBar());
+  const sb=div({class:"sync-bar sync-"+state.syncStatus});
+  if(state.syncStatus==="saving") sb.textContent="Saving to database...";
+  if(state.syncStatus==="saved")  sb.textContent="✓ Saved — all users will see the update instantly";
+  if(state.syncStatus==="error")  sb.textContent="Error saving — please try again";
+  app.appendChild(sb);
+  if(state.view!=="history") app.appendChild(renderWeekNav());
+  if(state.view==="dashboard")   app.appendChild(renderDashboard());
+  if(state.view==="entry")       app.appendChild(renderEntry());
+  if(state.view==="history")     app.appendChild(renderHistory());
+}
+
+function renderTopBar(){
+  const wrap=div({class:"topbar"});
+  const left=div({});
+  left.appendChild(h("h1",{},"Nancy Spain's — KPI Manager"));
+  left.appendChild(h("p",{class:"sub"},"Live dashboard · updates instantly for everyone"));
+  wrap.appendChild(left);
+  const right=div({class:"tabs"});
+  [["dashboard","Dashboard"],["entry","Enter figures"],["history","History"]].forEach(t=>{
+    const b=btn(t[1],{class:"btn"+(state.view===t[0]?" active":"")});
+    b.addEventListener("click",()=>{state.view=t[0];render();});
+    right.appendChild(b);
+  });
+  const ex=btn("Export CSV ↓",{class:"btn"});
+  ex.addEventListener("click",()=>exportCSV(state.activeWeek,state.allData[state.activeWeek]||state.draft));
+  right.appendChild(ex);
+  wrap.appendChild(right);
+  return wrap;
+}
+
+function renderWeekNav(){
+  const cur=currentWeekEnding();
+  const isCur=state.activeWeek===cur;
+  const saved=!!state.allData[state.activeWeek];
+  const wrap=div({class:"week-nav"});
+  const prev=h("button",{class:"arrow"},"‹");
+  prev.addEventListener("click",async()=>{
+    state.activeWeek=shiftWeek(state.activeWeek,-1);
+    state.draft=await loadWeekFromDB(state.activeWeek);
+    listenToWeek(state.activeWeek); render();
+  });
+  const center=div({class:"center"});
+  center.appendChild(span({class:"wlabel"},"Week ending "+fmtWeek(state.activeWeek)));
+  if(isCur)      center.appendChild(span({class:"pill pill-purple"},"Current week"));
+  else if(saved) center.appendChild(span({class:"pill pill-green"},"Saved"));
+  else           center.appendChild(span({class:"pill pill-gray"},"No data"));
+  const next=h("button",{class:"arrow"},"›");
+  if(state.activeWeek>=cur) next.disabled=true;
+  next.addEventListener("click",async()=>{
+    const n=shiftWeek(state.activeWeek,1);
+    if(n<=cur){state.activeWeek=n;state.draft=await loadWeekFromDB(n);listenToWeek(n);render();}
+  });
+  wrap.appendChild(prev);wrap.appendChild(center);wrap.appendChild(next);
+  return wrap;
+}
+
+function renderDashboard(){
+  const data=state.allData[state.activeWeek]||state.draft;
+  const prevW=shiftWeek(state.activeWeek,-1);
+  const prevData=state.allData[prevW]||null;
+  // Always just this one pub - no filter/switcher needed on a single-venue page.
+  const filtered=[{name:MY_PUB,...(data[MY_PUB]||BLANK)}];
+  const frag=document.createDocumentFragment();
+
+  const fr=div({class:"filter-row"});
+  const fd=div({style:{fontSize:"13px",color:"#5f5e5a"}});
+  fd.textContent="Week ending ";
+  fd.appendChild(span({style:{fontWeight:"500",color:"#1a1a18"}},fmtWeek(state.activeWeek)));
+  fr.appendChild(fd); frag.appendChild(fr);
+
+  const labour=avg(filtered,"labour"),gp=avg(filtered,"gp"),tasks=avg(filtered,"tasks");
+  const audit=avg(filtered,"audit"),mystery=avg(filtered,"mystery");
+  const stock=avg(filtered,"stockVar"),rev=avg(filtered,"reviews"),newRev=avg(filtered,"newReviews");
+  const kpis=[
+    {label:"Labour %",       val:labour,  tgt:18,  lb:true,  disp:labour.toFixed(1)+"%",   tgtL:"Target: 18%",  badge:labour<=18?"On target":"Over target"},
+    {label:"GP %",           val:gp,      tgt:80,  lb:false, disp:gp.toFixed(1)+"%",       tgtL:"Target: 80%",  badge:gp>=80?"On target":"Below target"},
+    {label:"Tasks completed",val:tasks,   tgt:90,  lb:false, disp:tasks.toFixed(0)+"%",    tgtL:"Target: 90%",  badge:tasks>=90?"On target":"Below target"},
+    {label:"Audit score",    val:audit,   tgt:85,  lb:false, disp:audit.toFixed(0)+"%",    tgtL:"Target: 85%",  badge:audit>=85?"Passing":"Needs work"},
+    {label:"Mystery shopper",val:mystery, tgt:90,  lb:false, disp:mystery.toFixed(0)+"%",  tgtL:"Target: 90%",  badge:mystery>=90?"Passing":"Needs work"},
+    {label:"Avg review",     val:rev,     tgt:4.8, lb:false, disp:rev.toFixed(1)+" ★",     tgtL:"Target: 4.8",  badge:rev>=4.8?"Excellent":"Improving"},
+    {label:"New reviews",    val:newRev,  tgt:4,   lb:false, disp:newRev.toFixed(0),        tgtL:"Target: 4/wk", badge:newRev>=4?"On target":"Below target"},
+    {label:"Stock variance", val:stock,   tgt:1,   lb:true,  disp:stock.toFixed(1)+"%",    tgtL:"Target: <1%",  badge:stock<=1?"In range":"High variance"},
+  ];
+  const kg=div({class:"kpi-grid"});
+  kpis.forEach(k=>{
+    const s=si(k.val,k.tgt,k.lb);
+    const card=div({class:"kpi-card"});
+    card.appendChild(div({class:"klabel"},k.label));
+    card.appendChild(div({class:"kval"},k.disp));
+    card.appendChild(div({class:"ktgt"},k.tgtL));
+    const badge=span({class:"kbadge"});badge.style.background=s.bg;badge.style.color=s.col;badge.textContent=k.badge;
+    card.appendChild(badge); kg.appendChild(card);
+  });
+  frag.appendChild(kg);
+
+  function makeBarRow(lbl,val,tgt,maxV,lb,suffix){
+    const row=div({class:"bar-row"});
+    const l=div({class:"bar-lbl"},lbl); l.title=lbl;
+    const track=div({class:"bar-track"});
+    const fill=div({class:"bar-fill"});
+    fill.style.width=Math.min(100,(val/maxV)*100).toFixed(1)+"%";
+    fill.style.background=barColor(val,tgt,lb);
+    const tline=div({class:"bar-tgt"});
+    tline.style.left=Math.min(100,(tgt/maxV)*100).toFixed(1)+"%";
+    track.appendChild(fill); track.appendChild(tline);
+    row.appendChild(l); row.appendChild(track);
+    row.appendChild(div({class:"bar-val"},val+suffix));
+    return row;
+  }
+  function makeChart(title,rows){
+    const c=div({class:"ccart"}); c.appendChild(div({class:"ctitle"},title));
+    rows.forEach(r=>c.appendChild(r)); return c;
+  }
+
+  const r1=div({class:"grid2"});
+  r1.appendChild(makeChart("Labour % of GP",filtered.map(p=>makeBarRow(SHORT[p.name],p.labour,18,45,true,"%"))));
+  r1.appendChild(makeChart("GP% by pub",filtered.map(p=>makeBarRow(SHORT[p.name],p.gp,80,100,false,"%"))));
+  frag.appendChild(r1);
+
+  const r2=div({class:"grid2"});
+  r2.appendChild(makeChart("Tasks & duties",filtered.map(p=>makeBarRow(SHORT[p.name],p.tasks,90,100,false,"%"))));
+  r2.appendChild(makeChart("Stock variance",filtered.map(p=>makeBarRow(SHORT[p.name],p.stockVar,1,4,true,"%"))));
+  frag.appendChild(r2);
+
+  const r3=div({class:"grid2"});
+  r3.appendChild(makeChart("Audit score",filtered.map(p=>makeBarRow(SHORT[p.name],p.audit,85,100,false,"%"))));
+  r3.appendChild(makeChart("Mystery shopper",filtered.map(p=>makeBarRow(SHORT[p.name],p.mystery,90,100,false,"%"))));
+  frag.appendChild(r3);
+
+  const r4=div({class:"grid2"});
+  const revCard=div({class:"ccart"}); revCard.appendChild(div({class:"ctitle"},"Online reviews"));
+  const tbl=h("table",{});
+  const thead=h("thead",{}); const hrow=h("tr",{});
+  ["Pub","Rating","Total","New this week","vs prev"].forEach(hd=>hrow.appendChild(h("th",{},hd)));
+  thead.appendChild(hrow); tbl.appendChild(thead);
+  const tbody=h("tbody",{});
+  filtered.forEach(p=>{
+    const tr=h("tr",{});
+    tr.appendChild(h("td",{},SHORT[p.name]));
+    const s=si(p.reviews,4.8,false);
+    const rp=span({class:"score-pill"});rp.style.background=s.bg;rp.style.color=s.col;rp.textContent=(p.reviews||0).toFixed(1);
+    const rtd=h("td",{}); rtd.appendChild(rp); tr.appendChild(rtd);
+    tr.appendChild(h("td",{style:{color:"#5f5e5a"}},(p.reviewCount||0).toLocaleString()));
+    const nr=p.newReviews||0; const nrs=si(nr,4,false);
+    const nrtd=h("td",{}); const nrsp=span({class:"score-pill"});
+    nrsp.style.background=nrs.bg; nrsp.style.color=nrs.col; nrsp.textContent=nr+" / 4";
+    nrtd.appendChild(nrsp); tr.appendChild(nrtd);
+    const prev=prevData?prevData[p.name]:null;
+    const trendTd=h("td",{});
+    if(prev){
+      const diff=(p.reviews||0)-(prev.reviews||0);
+      trendTd.textContent=Math.abs(diff)<0.05?"→":diff>0?"+"+diff.toFixed(1):diff.toFixed(1);
+      trendTd.style.color=diff>0?"#3B6D11":diff<0?"#A32D2D":"#888780";
+      trendTd.style.fontSize="12px";
+    }else{trendTd.textContent="—";trendTd.style.color="#888780";}
+    tr.appendChild(trendTd); tbody.appendChild(tr);
+  });
+  tbl.appendChild(tbody); revCard.appendChild(tbl);
+  r4.appendChild(revCard); r4.appendChild(div({class:"ccart"}));
+  frag.appendChild(r4);
+
+  // ── Avg spend per head line chart ──
+  const spendWeeks = Object.keys(state.allData).sort();
+  const spendCard = div({class:"ccart",style:{marginTop:"0"}});
+  spendCard.appendChild(div({class:"ctitle"},"Avg spend per head — weekly trend (£)"));
+
+  if(spendWeeks.length < 2){
+    const msg = div({style:{fontSize:"13px",color:"#888780",padding:"1rem 0"}},
+      "Enter figures for at least 2 weeks to see the trend chart.");
+    spendCard.appendChild(msg);
+  } else {
+    const PUB_COLORS = {
+      "Nancy Spains Shoreditch":"#534AB7",
+      "Nancy Spains Monument":  "#BA7517",
+      "Nancy Spains Manchester":"#3B6D11",
+    };
+    const W=700, H=220, PAD={t:20,r:20,b:50,l:50};
+    const plotW=W-PAD.l-PAD.r, plotH=H-PAD.t-PAD.b;
+
+    // gather data (this pub only)
+    const series = [MY_PUB].map(pub=>({
+      pub,
+      vals: spendWeeks.map(w=>((state.allData[w]||{})[pub]||BLANK).avgSpend||0),
+    }));
+    const allVals = series.flatMap(s=>s.vals).filter(v=>v>0);
+    const minV = allVals.length ? Math.max(0, Math.floor(Math.min(...allVals)*0.9)) : 0;
+    const maxV = allVals.length ? Math.ceil(Math.max(...allVals)*1.1) : 50;
+
+    const xScale = i => PAD.l + (i/(spendWeeks.length-1))*plotW;
+    const yScale = v => PAD.t + plotH - ((v-minV)/(maxV-minV||1))*plotH;
+    const svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
+    svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+    svg.setAttribute("style","width:100%;height:auto;overflow:visible;");
+
+    // grid lines
+    [0,0.25,0.5,0.75,1].forEach(t=>{
+      const y=PAD.t+plotH*(1-t);
+      const val=(minV+(maxV-minV)*t).toFixed(0);
+      const line=document.createElementNS("http://www.w3.org/2000/svg","line");
+      line.setAttribute("x1",PAD.l);line.setAttribute("x2",PAD.l+plotW);
+      line.setAttribute("y1",y);line.setAttribute("y2",y);
+      line.setAttribute("stroke","rgba(0,0,0,0.07)");line.setAttribute("stroke-width","1");
+      svg.appendChild(line);
+      const txt=document.createElementNS("http://www.w3.org/2000/svg","text");
+      txt.setAttribute("x",PAD.l-6);txt.setAttribute("y",y+4);
+      txt.setAttribute("text-anchor","end");txt.setAttribute("font-size","10");
+      txt.setAttribute("fill","#888780");txt.textContent="£"+val;
+      svg.appendChild(txt);
+    });
+
+    // x axis labels
+    spendWeeks.forEach((w,i)=>{
+      const x=xScale(i);
+      const d=new Date(w+"T12:00:00");
+      const lbl=d.toLocaleDateString("en-GB",{day:"numeric",month:"short"});
+      const txt=document.createElementNS("http://www.w3.org/2000/svg","text");
+      txt.setAttribute("x",x);txt.setAttribute("y",H-PAD.b+16);
+      txt.setAttribute("text-anchor","middle");txt.setAttribute("font-size","9");
+      txt.setAttribute("fill","#888780");txt.textContent=lbl;
+      svg.appendChild(txt);
+    });
+
+    // lines & dots
+    series.forEach(s=>{
+      const color=PUB_COLORS[s.pub]||"#534AB7";
+      const hasData=s.vals.some(v=>v>0);
+      if(!hasData) return;
+      const pts=s.vals.map((v,i)=>`${xScale(i).toFixed(1)},${yScale(v).toFixed(1)}`).join(" ");
+      const poly=document.createElementNS("http://www.w3.org/2000/svg","polyline");
+      poly.setAttribute("points",pts);poly.setAttribute("fill","none");
+      poly.setAttribute("stroke",color);poly.setAttribute("stroke-width","2");
+      poly.setAttribute("stroke-linejoin","round");poly.setAttribute("stroke-linecap","round");
+      svg.appendChild(poly);
+      s.vals.forEach((v,i)=>{
+        if(!v) return;
+        const c=document.createElementNS("http://www.w3.org/2000/svg","circle");
+        c.setAttribute("cx",xScale(i).toFixed(1));c.setAttribute("cy",yScale(v).toFixed(1));
+        c.setAttribute("r","3.5");c.setAttribute("fill",color);
+        svg.appendChild(c);
+      });
+    });
+
+    // legend
+    let lx=PAD.l;
+    series.forEach(s=>{
+      const color=PUB_COLORS[s.pub]||"#534AB7";
+      const rect=document.createElementNS("http://www.w3.org/2000/svg","rect");
+      rect.setAttribute("x",lx);rect.setAttribute("y",H-14);
+      rect.setAttribute("width","10");rect.setAttribute("height","10");
+      rect.setAttribute("fill",color);rect.setAttribute("rx","2");
+      svg.appendChild(rect);
+      const txt=document.createElementNS("http://www.w3.org/2000/svg","text");
+      txt.setAttribute("x",lx+13);txt.setAttribute("y",H-5);
+      txt.setAttribute("font-size","10");txt.setAttribute("fill","#5f5e5a");
+      txt.textContent=SHORT[s.pub];
+      svg.appendChild(txt);
+      lx+=SHORT[s.pub].length*6+22;
+    });
+
+    spendCard.appendChild(svg);
+  }
+  frag.appendChild(spendCard);
+  return frag;
+}
+
+function renderEntry(){
+  if(!state.unlocked){
+    const gate=div({style:{background:"#fff",border:"0.5px solid rgba(0,0,0,0.12)",borderRadius:"12px",padding:"2rem",maxWidth:"340px",margin:"2rem auto",textAlign:"center"}});
+    gate.appendChild(div({style:{fontSize:"32px",marginBottom:"12px"}},"🔒"));
+    gate.appendChild(h("p",{style:{fontWeight:"500",fontSize:"15px",color:"#1a1a18",marginBottom:"6px"}},"Admin access required"));
+    gate.appendChild(h("p",{style:{fontSize:"13px",color:"#5f5e5a",marginBottom:"20px"}},"Enter the password to edit figures."));
+    const pinInput=h("input",{type:"password",placeholder:"Enter password"});
+    pinInput.style.cssText="width:100%;font-size:14px;padding:8px 12px;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;margin-bottom:12px;text-align:center;font-family:inherit;background:#fff;color:#1a1a18;";
+    const errMsg=h("p",{style:{fontSize:"12px",color:"#A32D2D",marginBottom:"10px",minHeight:"16px"}},"");
+    const unlockBtn=btn("Unlock",{class:"btn"});
+    unlockBtn.style.cssText="width:100%;background:#f1efe8;font-weight:500;color:#1a1a18;";
+    function tryUnlock(){
+      if(pinInput.value===ADMIN_PASSWORD){state.unlocked=true;render();}
+      else{errMsg.textContent="Incorrect password. Please try again.";pinInput.value="";}
+    }
+    unlockBtn.addEventListener("click",tryUnlock);
+    pinInput.addEventListener("keydown",e=>{if(e.key==="Enter")tryUnlock();});
+    gate.appendChild(pinInput); gate.appendChild(errMsg); gate.appendChild(unlockBtn);
+    return gate;
+  }
+
+  const frag=document.createDocumentFragment();
+
+  const pub=MY_PUB;
+  if(!state.draft[pub]) state.draft[pub]={...BLANK};
+  const pd=state.draft[pub];
+  const initials=pub.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+  const card=div({class:"entry-card"});
+  const ehead=div({class:"entry-head"});
+  const av=div({class:"avatar"},initials);
+  const einfo=div({});
+  einfo.appendChild(h("p",{style:{fontWeight:"500",fontSize:"14px",color:"#1a1a18",margin:"0"}},pub));
+  einfo.appendChild(h("p",{style:{fontSize:"12px",color:"#5f5e5a",margin:"0"}},"Week ending "+fmtWeek(state.activeWeek)));
+  ehead.appendChild(av); ehead.appendChild(einfo); card.appendChild(ehead);
+  FIELDS.forEach(f=>{
+    const val=pd[f.key]!=null?pd[f.key]:0;
+    const tgt=TARGETS[f.key]||0;
+    const s=f.noTarget?{bg:"#f1efe8",col:"#5f5e5a",label:"Tracking"}:si(val,tgt,f.lb);
+    const pct=((val-f.min)/(f.max-f.min))*100;
+    const tpct=f.noTarget?0:((tgt-f.min)/(f.max-f.min))*100;
+    const row=div({class:"field-row"});
+    const top=div({class:"field-top"});
+    const right=div({class:"field-right"});
+    const sp=span({class:"status-pill"});sp.style.background=s.bg;sp.style.color=s.col;sp.textContent=s.label;
+    const sv=span({class:"field-val"});sv.textContent=val.toFixed(f.step<1?1:0)+f.suffix;
+    right.appendChild(sp); right.appendChild(sv);
+    top.appendChild(span({class:"field-label"},f.label)); top.appendChild(right); row.appendChild(top);
+    const bwrap=div({class:"field-bar-wrap"});
+    const track=div({class:"mini-track"});
+    const fill=div({class:"mini-fill"});    fill.style.width=Math.min(100,pct).toFixed(1)+"%";fill.style.background=s.col;
+    const tline=div({class:"mini-tgt"});tline.style.left=tpct.toFixed(1)+"%";
+    track.appendChild(fill); if(!f.noTarget) track.appendChild(tline);
+    const inp=h("input",{type:"number",min:f.min,max:f.max,step:f.step,class:"num-input"});
+    inp.value=val;
+    inp.addEventListener("input",function(){state.draft[pub][f.key]=parseFloat(this.value)||0;state.saved=false;render();});
+    bwrap.appendChild(track); bwrap.appendChild(inp); row.appendChild(bwrap);
+    row.appendChild(div({class:"field-tgt"},f.noTarget?"Tracking only — no target set":"Target: "+tgt+f.suffix));
+    card.appendChild(row);
+  });
+  frag.appendChild(card);
+
+  const srow=div({class:"save-row"});
+  const lockBtn=btn("🔒 Lock",{class:"btn"});
+  lockBtn.style.color="#5f5e5a";
+  lockBtn.addEventListener("click",()=>{state.unlocked=false;state.view="dashboard";render();});
+  srow.appendChild(lockBtn);
+  const sb=btn("Save & publish live",{class:"btn"});
+  sb.style.cssText="background:#f1efe8;font-weight:500;color:#1a1a18;";
+  sb.addEventListener("click",async()=>{
+    state.syncStatus="saving"; render();
+    try{
+      await savePubWeekToDB(state.activeWeek,state.draft[MY_PUB]);
+      if(!state.allData[state.activeWeek]) state.allData[state.activeWeek]={};
+      state.allData[state.activeWeek][MY_PUB]=JSON.parse(JSON.stringify(state.draft[MY_PUB]));
+      state.syncStatus="saved"; render();
+      setTimeout(()=>{state.syncStatus="";render();},3000);
+    }catch(e){state.syncStatus="error";render();}
+  });
+  srow.appendChild(sb); frag.appendChild(srow);
+  return frag;
+}
+
+function renderHistory(){
+  const weeks=Object.keys(state.allData).sort((a,b)=>b.localeCompare(a));
+  const frag=document.createDocumentFragment();
+  const topRow=div({style:{display:"flex",justifyContent:"flex-end",marginBottom:"12px"}});
+  const allEx=btn("Export all weeks CSV ↓",{class:"btn"});
+  allEx.addEventListener("click",()=>exportAllCSV(state.allData));
+  topRow.appendChild(allEx); frag.appendChild(topRow);
+  if(!weeks.length){
+    frag.appendChild(div({style:{padding:"2rem",textAlign:"center",color:"#5f5e5a",fontSize:"14px"}},"No saved weeks yet."));
+    return frag;
+  }
+  weeks.forEach(w=>{
+    const d=state.allData[w];
+    const pd=d[MY_PUB]||BLANK;
+    const item=div({class:"history-item"});
+    const left=div({});
+    left.appendChild(div({style:{fontSize:"14px",fontWeight:"500",color:"#1a1a18"}},"Week ending "+fmtWeek(w)));
+    left.appendChild(div({style:{fontSize:"12px",color:"#5f5e5a",marginTop:"3px"}},
+      "Labour "+pd.labour.toFixed(1)+"% · GP "+pd.gp.toFixed(1)+"% · Tasks "+pd.tasks.toFixed(0)+"%"));
+    const right=div({style:{display:"flex",gap:"6px"}});
+    const vb=btn("View",{class:"btn small"});
+    vb.addEventListener("click",async()=>{state.activeWeek=w;state.view="dashboard";listenToWeek(w);render();});
+    const eb=btn("CSV ↓",{class:"btn small"});
+    eb.addEventListener("click",()=>exportCSV(w,d));
+    right.appendChild(vb); right.appendChild(eb);
+    item.appendChild(left); item.appendChild(right); frag.appendChild(item);
+  });
+  return frag;
+}
+
+function exportCSV(week,data){
+  const rows=[["Pub","Week ending","Labour %","GP %","Tasks %","Audit %","Mystery %","Avg Review","Total Reviews","New Reviews","Stock Variance %","Avg Spend Per Head (£)"]];
+  const d=(data&&data[MY_PUB])||BLANK;
+  rows.push([MY_PUB,week,d.labour,d.gp,d.tasks,d.audit,d.mystery,d.reviews,d.reviewCount,d.newReviews,d.stockVar,d.avgSpend||0]);
+  const csv=rows.map(r=>r.map(v=>`"${v}"`).join(",")).join("\n");
+  const a=document.createElement("a"); a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);
+  a.download="nancy-spains-kpi-"+SHORT[MY_PUB].toLowerCase()+"-"+week+".csv"; a.click();
+}
+function exportAllCSV(allData){
+  const rows2=[["Pub","Week ending","Labour %","GP %","Tasks %","Audit %","Mystery %","Avg Review","Total Reviews","New Reviews","Stock Variance %","Avg Spend Per Head (£)"]];
+  Object.keys(allData).sort().forEach(week=>{
+    const d=(allData[week]&&allData[week][MY_PUB])||BLANK;
+    rows2.push([MY_PUB,week,d.labour,d.gp,d.tasks,d.audit,d.mystery,d.reviews,d.reviewCount,d.newReviews,d.stockVar,d.avgSpend||0]);
+  });
+  const csv2=rows2.map(r=>r.map(v=>`"${v}"`).join(",")).join("\n");
+  const a2=document.createElement("a"); a2.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv2);
+  a2.download="nancy-spains-kpi-"+SHORT[MY_PUB].toLowerCase()+"-all-weeks.csv"; a2.click();
+}
+
+init();
+</script>
+</body>
+</html>
