@@ -11,7 +11,7 @@
 // secrets are needed for this workflow.
 
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
+import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
 
 const SUPABASE_URL = "https://vqfvklqdexakwjjyvwod.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxZnZrbHFkZXhha3dqanl2d29kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAwNjQsImV4cCI6MjA5MTMxNjA2NH0.JETvur4VrrIWPCwK3MbQ4zzmOiX1Tc7F_xFWC2OR93M";
@@ -107,6 +107,20 @@ async function main() {
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
+  const weekRef = doc(db, STORE_KEY, sunday);
+
+  // BLANK matches the same default shape used throughout the KPI dashboard
+  // itself (labour/gp/tasks/audit/mystery/reviews/stockVar/reviewCount/
+  // newReviews/trend/avgSpend). If a pub has no entry at all yet for this
+  // week (no GM has saved anything), a merge-write of {tasks: pct} alone
+  // would create a pub object with every OTHER field left as undefined,
+  // which breaks the dashboard's rendering (it only falls back to BLANK
+  // when the whole pub key is missing, not when individual fields are
+  // missing within it). So: check first, and only add the full BLANK
+  // shape on top of tasks when this pub genuinely has nothing yet.
+  const BLANK = { labour: 0, gp: 0, tasks: 0, audit: 0, mystery: 0, reviews: 0, stockVar: 0, reviewCount: 0, newReviews: 0, trend: "", avgSpend: 0 };
+  const existingSnap = await getDoc(weekRef);
+  const existingData = existingSnap.exists() ? existingSnap.data() : {};
 
   for (const [siteId, pubName] of Object.entries(SITE_TO_PUB)) {
     let totalPossible = 0;
@@ -129,8 +143,12 @@ async function main() {
     // the week's document. Confirmed via a live test (2026-09-07) that
     // Firestore's setDoc(..., {merge:true}) recursively merges nested
     // objects, so labour/gp/mystery/etc. already entered by the GM for
-    // this week are left completely untouched.
-    await setDoc(doc(db, STORE_KEY, sunday), { [pubName]: { tasks: pct } }, { merge: true });
+    // this week are left completely untouched. If this pub has no entry
+    // at all yet this week, fill in the full BLANK shape alongside tasks
+    // so the dashboard does not render "undefined" for the other fields.
+    const pubHasExistingEntry = Object.prototype.hasOwnProperty.call(existingData, pubName);
+    const payload = pubHasExistingEntry ? { tasks: pct } : { ...BLANK, tasks: pct };
+    await setDoc(weekRef, { [pubName]: payload }, { merge: true });
     console.log(`[info] Wrote tasks=${pct} for ${pubName} into week ${sunday}`);
   }
 
