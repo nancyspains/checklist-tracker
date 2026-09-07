@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nancy Spain's — Monument KPI Manager</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f5f4f0;color:#1a1a18;min-height:100vh;}
+.wrap{max-width:820px;margin:0 auto;padding:1.5rem 1rem;}
+h1{font-size:19px;font-weight:500;}
+p.sub{font-size:12px;color:#5f5e5a;margin-top:2px;}
+.topbar{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:1.25rem;}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;}
+.btn{font-family:inherit;font-size:13px;padding:6px 14px;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;background:transparent;color:#5f5e5a;cursor:pointer;}
+.btn.active{background:#f1efe8;color:#1a1a18;font-weight:500;border-color:rgba(0,0,0,0.35);}
+.btn.small{font-size:12px;padding:5px 10px;}
+.btn:disabled{opacity:0.35;cursor:default;}
+.week-nav{display:flex;align-items:center;gap:8px;background:#fff;border:0.5px solid rgba(0,0,0,0.12);border-radius:12px;padding:0.7rem 1rem;margin-bottom:1.25rem;}
+.arrow{font-size:18px;border:none;background:transparent;color:#5f5e5a;cursor:pointer;padding:0 4px;line-height:1;}
+.week-nav .center{flex:1;text-align:center;}
+.wlabel{font-size:14px;font-weight:500;}
+.pill{display:inline-block;font-size:11px;padding:2px 7px;border-radius:20px;font-weight:500;margin-left:6px;}
+.pill-purple{background:#EEEDFE;color:#534AB7;}
+.pill-green{background:#EAF3DE;color:#3B6D11;}
+.pill-gray{background:#f1efe8;color:#888780;}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:1.25rem;}
+.kpi-card{background:#f1efe8;border-radius:8px;padding:0.85rem;}
+.klabel{font-size:11px;color:#5f5e5a;margin-bottom:5px;}
+.kval{font-size:22px;font-weight:500;line-height:1;}
+.ktgt{font-size:11px;color:#888780;margin-top:3px;}
+.kbadge{display:inline-block;font-size:11px;padding:2px 7px;border-radius:20px;margin-top:5px;font-weight:500;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.ccart{background:#fff;border:0.5px solid rgba(0,0,0,0.12);border-radius:12px;padding:1rem;}
+.ctitle{font-size:13px;font-weight:500;margin-bottom:10px;}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.bar-row:last-child{margin-bottom:0;}
+.bar-lbl{font-size:11px;color:#5f5e5a;width:90px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bar-track{flex:1;background:#f1efe8;border-radius:4px;height:16px;position:relative;overflow:hidden;}
+.bar-fill{height:100%;border-radius:4px;transition:width 0.3s;}
+.bar-tgt{position:absolute;top:0;height:100%;width:1.5px;background:rgba(180,80,50,0.45);}
+.bar-val{font-size:11px;color:#5f5e5a;width:38px;text-align:right;flex-shrink:0;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;color:#5f5e5a;font-weight:400;padding:4px 6px 8px;border-bottom:0.5px solid rgba(0,0,0,0.1);}
+td{padding:7px 6px;border-bottom:0.5px solid rgba(0,0,0,0.08);color:#1a1a18;}
+tr:last-child td{border-bottom:none;}
+.score-pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:12px;font-weight:500;}
+.entry-card{background:#fff;border:0.5px solid rgba(0,0,0,0.12);border-radius:12px;padding:1.25rem;margin-bottom:1rem;}
+.entry-head{display:flex;align-items:center;gap:12px;margin-bottom:1.25rem;}
+.avatar{width:40px;height:40px;border-radius:50%;background:#EEEDFE;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:#534AB7;flex-shrink:0;}
+.field-row{margin-bottom:14px;}
+.field-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.field-label{font-size:13px;color:#5f5e5a;}
+.field-right{display:flex;align-items:center;gap:8px;}
+.status-pill{font-size:11px;padding:2px 7px;border-radius:20px;font-weight:500;}
+.field-val{font-size:15px;font-weight:500;min-width:50px;text-align:right;}
+.field-bar-wrap{display:flex;align-items:center;gap:10px;}
+.mini-track{flex:1;position:relative;height:6px;background:#f1efe8;border-radius:4px;}
+.mini-fill{position:absolute;left:0;top:0;height:100%;border-radius:4px;transition:width 0.2s;}
+.mini-tgt{position:absolute;top:-3px;width:2px;height:12px;background:rgba(150,100,50,0.4);border-radius:1px;}
+.field-tgt{font-size:11px;color:#888780;margin-top:3px;}
+.num-input{width:70px;font-size:13px;padding:4px 8px;text-align:right;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;background:#fff;color:#1a1a18;font-family:inherit;}
+.save-row{display:flex;gap:8px;justify-content:flex-end;}
+.history-item{background:#fff;border:0.5px solid rgba(0,0,0,0.12);border-radius:12px;padding:0.85rem 1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
+.loading{text-align:center;padding:3rem;color:#5f5e5a;font-size:14px;}
+.sync-bar{font-size:12px;padding:6px 12px;border-radius:8px;margin-bottom:1rem;display:none;}
+.sync-saving{background:#FAEEDA;color:#854F0B;display:block;}
+.sync-saved{background:#EAF3DE;color:#3B6D11;display:block;}
+.sync-error{background:#FCEBEB;color:#A32D2D;display:block;}
+.pub-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem;}
+.filter-row{display:flex;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap;align-items:center;justify-content:space-between;}
+@media(max-width:600px){.grid2{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><div class="loading">Connecting to database...</div></div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCp4Kb2mh_RC80TE8WcGjLZX2Of4huqt5E",
+  authDomain: "nancy-spains-kpi.firebaseapp.com",
+  projectId: "nancy-spains-kpi",
+  storageBucket: "nancy-spains-kpi.firebasestorage.app",
+  messagingSenderId: "1042191730060",
+  appId: "1:1042191730060:web:8819d9840616dceb7382a9"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp);
+
+const PUBS = ["Nancy Spains Shoreditch","Nancy Spains Monument","Nancy Spains Manchester"];
+const SHORT = {"Nancy Spains Shoreditch":"Shoreditch","Nancy Spains Monument":"Monument","Nancy Spains Manchester":"Manchester"};
+// This page is scoped to one venue only - unlike the main combined dashboard,
+// there's no pub-switcher anywhere here. PUBS/SHORT are kept as full triplets
+// purely so shared helper logic (BLANK templates, existing doc structure)
+// still lines up with what the main dashboard and Firestore already expect.
+const MY_PUB = "Nancy Spains Monument";
+const TARGETS = {labour:18,gp:80,tasks:90,audit:85,mystery:90,reviews:4.8,reviewCount:0,newReviews:4,stockVar:1};
+const FIELDS = [
+  {key:"labour",      label:"Labour %",             suffix:"%",    min:0, max:60,   step:0.1, lb:true},
+  {key:"gp",          label:"GP %",                 suffix:"%",    min:0, max:100,  step:0.1, lb:false},
+  {key:"tasks",       label:"Tasks completed %",    suffix:"%",    min:0, max:100,  step:1,   lb:false},
+  {key:"audit",       label:"Audit score %",        suffix:"%",    min:0, max:100,  step:1,   lb:false},
+  {key:"mystery",     label:"Mystery shopper %",    suffix:"%",    min:0, max:100,  step:1,   lb:false},
+  {key:"reviews",     label:"Avg review score",     suffix:" / 5", min:1, max:5,    step:0.1, lb:false},
+  {key:"reviewCount", label:"Total Google reviews", suffix:"",     min:0, max:9999, step:1,   lb:false},
+  {key:"newReviews",  label:"New reviews this week",suffix:"",     min:0, max:999,  step:1,   lb:false},
+  {key:"stockVar",    label:"Stock variance %",     suffix:"%",    min:0, max:10,   step:0.1, lb:true},
+  {key:"avgSpend",    label:"Avg spend per head (£)",suffix:"",    min:0, max:200,  step:0.01,lb:false, noTarget:true},
+];
+const BLANK = {labour:0,gp:0,tasks:0,audit:0,mystery:0,reviews:0,stockVar:0,reviewCount:0,newReviews:0,trend:"",avgSpend:0};
+const SAMPLE = {
+  "Nancy Spains Shoreditch":{labour:28,gp:71,tasks:88,audit:82,mystery:79,reviews:4.3,stockVar:1.2,reviewCount:142,newReviews:3,trend:"+0.2",avgSpend:0},
+  "Nancy Spains Monument":  {labour:31,gp:68,tasks:73,audit:91,mystery:88,reviews:4.6,stockVar:0.6,reviewCount:210,newReviews:5,trend:"+0.1",avgSpend:0},
+  "Nancy Spains Manchester":{labour:25,gp:72,tasks:95,audit:95,mystery:93,reviews:4.8,stockVar:0.3,reviewCount:97, newReviews:4,trend:"+0.3",avgSpend:0},
+};
+const ADMIN_PASSWORD = "nancys2026";
+const STORE_KEY = "ns_kpi_weeks";
+
+const state = {
+  view:"dashboard", activeWeek:currentWeekEnding(),
+  allData:{}, draft:{}, saved:false, unlocked:false,
+  loading:true, syncStatus:""
+};
+
+function currentWeekEnding(){
+  const t=new Date(); const day=t.getDay();
+  const diff=t.getDate()-day+(day===0?0:7);
+  const s=new Date(t); s.setDate(diff);
+  return s.toISOString().split("T")[0];
+}
+function shiftWeek(w,n){
+  const d=new Date(w+"T12:00:00"); d.setDate(d.getDate()+n*7);
+  return d.toISOString().split("T")[0];
+}
+function fmtWeek(w){
+  return new Date(w+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
+}
+
+async function loadWeekFromDB(week){
+  const snap=await getDoc(doc(db,STORE_KEY,week));
+  if(snap.exists()) return snap.data();
+  if(week===currentWeekEnding()) return JSON.parse(JSON.stringify(SAMPLE));
+  const d={}; PUBS.forEach(p=>{d[p]={...BLANK};}); return d;
+}
+// SAFETY: unlike the original saveWeekToDB (full setDoc, overwrites the whole
+// week's document), this only ever touches this page's own pub field via
+// {merge:true} - so it's safe for three GMs to be saving on three separate
+// pages at the same time without any risk of one overwriting another's
+// figures, or overwriting with a stale local copy of the other two pubs.
+async function savePubWeekToDB(week,pubData){
+  await setDoc(doc(db,STORE_KEY,week),{[MY_PUB]:pubData},{merge:true});
+}
+async function loadAllWeeks(){
+  const snap=await getDocs(collection(db,STORE_KEY));
+  const all={}; snap.forEach(d=>{all[d.id]=d.data();}); return all;
+}
+
+let unsubscribe=null;
+function listenToWeek(week){
+  if(unsubscribe) unsubscribe();
+  unsubscribe=onSnapshot(doc(db,STORE_KEY,week),(snap)=>{
+    if(snap.exists()){
+      state.allData[week]=snap.data();
+      if(!state.unlocked) state.draft=JSON.parse(JSON.stringify(snap.data()));
+      render();
+    }
+  });
+}
+
+async function init(){
+  state.allData=await loadAllWeeks();
+  state.draft=await loadWeekFromDB(state.activeWeek);
+  state.loading=false;
+  listenToWeek(state.activeWeek);
+  render();
+}
+
+function si(val,tgt,lb){
+  const diff=lb?val-tgt:tgt-val;
+  if(diff<=0) return{bg:"#EAF3DE",col:"#3B6D11",label:"On target"};
+  if(diff<=3) return{bg:"#FAEEDA",col:"#854F0B",label:"Near target"};
+  return{bg:"#FCEBEB",col:"#A32D2D",label:"Off target"};
+}
+function barColor(val,tgt,lb){
+  const diff=lb?val-tgt:tgt-val;
+  return diff<=0?"#639922":diff<=3?"#BA7517":"#E24B4A";
+}
+function avg(arr,key){ return arr.length?arr.reduce((s,p)=>s+(p[key]||0),0)/arr.length:0; }
+
+function h(tag,attrs,children){
+  const el=document.createElement(tag);
+  if(attrs) Object.keys(attrs).forEach(k=>{
+    if(k==="style"&&typeof attrs[k]==="object") Object.assign(el.style,attrs[k]);
+    else if(k.startsWith("on")) el.addEventListener(k.slice(2).toLowerCase(),attrs[k]);
+    else el.setAttribute(k,attrs[k]);
+  });
+  if(children){
+    if(!Array.isArray(children)) children=[children];
+    children.forEach(c=>{
+      if(c==null) return;
+      if(typeof c==="string"||typeof c==="number") el.appendChild(document.createTextNode(c));
+      else el.appendChild(c);
+    });
+  }
+  return el;
+}
+function div(a,c){return h("div",a,c);}
+function span(a,c){return h("span",a,c);}
+function btn(l,a){return h("button",Object.assign({class:"btn"},a||{}),[l]);}
+
+function render(){
+  const app=document.getElementById("app");
+  app.innerHTML="";
+  if(state.loading){app.appendChild(div({class:"loading"},"Connecting to live database..."));return;}
+  app.appendChild(renderTopBar());
+  const sb=div({class:"sync-bar sync-"+state.syncStatus});
+  if(state.syncStatus==="saving") sb.textContent="Saving to database...";
+  if(state.syncStatus==="saved")  sb.textContent="✓ Saved — all users will see the update instantly";
+  if(state.syncStatus==="error")  sb.textContent="Error saving — please try again";
+  app.appendChild(sb);
+  if(state.view!=="history") app.appendChild(renderWeekNav());
+  if(state.view==="dashboard")   app.appendChild(renderDashboard());
+  if(state.view==="entry")       app.appendChild(renderEntry());
+  if(state.view==="history")     app.appendChild(renderHistory());
+}
+
+function renderTopBar(){
+  const wrap=div({class:"topbar"});
+  const left=div({});
+  left.appendChild(h("h1",{},"Nancy Spain's — KPI Manager"));
+  left.appendChild(h("p",{class:"sub"},"Live dashboard · updates instantly for everyone"));
+  wrap.appendChild(left);
+  const right=div({class:"tabs"});
+  [["dashboard","Dashboard"],["entry","Enter figures"],["history","History"]].forEach(t=>{
+    const b=btn(t[1],{class:"btn"+(state.view===t[0]?" active":"")});
+    b.addEventListener("click",()=>{state.view=t[0];render();});
+    right.appendChild(b);
+  });
+  const ex=btn("Export CSV ↓",{class:"btn"});
+  ex.addEventListener("click",()=>exportCSV(state.activeWeek,state.allData[state.activeWeek]||state.draft));
+  right.appendChild(ex);
+  wrap.appendChild(right);
+  return wrap;
+}
+
+function renderWeekNav(){
+  const cur=currentWeekEnding();
+  const isCur=state.activeWeek===cur;
+  const saved=!!state.allData[state.activeWeek];
+  const wrap=div({class:"week-nav"});
+  const prev=h("button",{class:"arrow"},"‹");
+  prev.addEventListener("click",async()=>{
+    state.activeWeek=shiftWeek(state.activeWeek,-1);
+    state.draft=await loadWeekFromDB(state.activeWeek);
+    listenToWeek(state.activeWeek); render();
+  });
+  const center=div({class:"center"});
+  center.appendChild(span({class:"wlabel"},"Week ending "+fmtWeek(state.activeWeek)));
+  if(isCur)      center.appendChild(span({class:"pill pill-purple"},"Current week"));
+  else if(saved) center.appendChild(span({class:"pill pill-green"},"Saved"));
+  else           center.appendChild(span({class:"pill pill-gray"},"No data"));
+  const next=h("button",{class:"arrow"},"›");
+  if(state.activeWeek>=cur) next.disabled=true;
+  next.addEventListener("click",async()=>{
+    const n=shiftWeek(state.activeWeek,1);
+    if(n<=cur){state.activeWeek=n;state.draft=await loadWeekFromDB(n);listenToWeek(n);render();}
+  });
+  wrap.appendChild(prev);wrap.appendChild(center);wrap.appendChild(next);
+  return wrap;
+}
+
+function renderDashboard(){
+  const data=state.allData[state.activeWeek]||state.draft;
+  const prevW=shiftWeek(state.activeWeek,-1);
+  const prevData=state.allData[prevW]||null;
+  // Always just this one pub - no filter/switcher needed on a single-venue page.
+  const filtered=[{name:MY_PUB,...(data[MY_PUB]||BLANK)}];
+  const frag=document.createDocumentFragment();
+
+  const fr=div({class:"filter-row"});
+  const fd=div({style:{fontSize:"13px",color:"#5f5e5a"}});
+  fd.textContent="Week ending ";
+  fd.appendChild(span({style:{fontWeight:"500",color:"#1a1a18"}},fmtWeek(state.activeWeek)));
+  fr.appendChild(fd); frag.appendChild(fr);
+
+  const labour=avg(filtered,"labour"),gp=avg(filtered,"gp"),tasks=avg(filtered,"tasks");
+  const audit=avg(filtered,"audit"),mystery=avg(filtered,"mystery");
+  const stock=avg(filtered,"stockVar"),rev=avg(filtered,"reviews"),newRev=avg(filtered,"newReviews");
+  const kpis=[
+    {label:"Labour %",       val:labour,  tgt:18,  lb:true,  disp:labour.toFixed(1)+"%",   tgtL:"Target: 18%",  badge:labour<=18?"On target":"Over target"},
+    {label:"GP %",           val:gp,      tgt:80,  lb:false, disp:gp.toFixed(1)+"%",       tgtL:"Target: 80%",  badge:gp>=80?"On target":"Below target"},
+    {label:"Tasks completed",val:tasks,   tgt:90,  lb:false, disp:tasks.toFixed(0)+"%",    tgtL:"Target: 90%",  badge:tasks>=90?"On target":"Below target"},
+    {label:"Audit score",    val:audit,   tgt:85,  lb:false, disp:audit.toFixed(0)+"%",    tgtL:"Target: 85%",  badge:audit>=85?"Passing":"Needs work"},
+    {label:"Mystery shopper",val:mystery, tgt:90,  lb:false, disp:mystery.toFixed(0)+"%",  tgtL:"Target: 90%",  badge:mystery>=90?"Passing":"Needs work"},
+    {label:"Avg review",     val:rev,     tgt:4.8, lb:false, disp:rev.toFixed(1)+" ★",     tgtL:"Target: 4.8",  badge:rev>=4.8?"Excellent":"Improving"},
+    {label:"New reviews",    val:newRev,  tgt:4,   lb:false, disp:newRev.toFixed(0),        tgtL:"Target: 4/wk", badge:newRev>=4?"On target":"Below target"},
+    {label:"Stock variance", val:stock,   tgt:1,   lb:true,  disp:stock.toFixed(1)+"%",    tgtL:"Target: <1%",  badge:stock<=1?"In range":"High variance"},
+  ];
+  const kg=div({class:"kpi-grid"});
+  kpis.forEach(k=>{
+    const s=si(k.val,k.tgt,k.lb);
+    const card=div({class:"kpi-card"});
+    card.appendChild(div({class:"klabel"},k.label));
+    card.appendChild(div({class:"kval"},k.disp));
+    card.appendChild(div({class:"ktgt"},k.tgtL));
+    const badge=span({class:"kbadge"});badge.style.background=s.bg;badge.style.color=s.col;badge.textContent=k.badge;
+    card.appendChild(badge); kg.appendChild(card);
+  });
+  frag.appendChild(kg);
+
+  function makeBarRow(lbl,val,tgt,maxV,lb,suffix){
+    const row=div({class:"bar-row"});
+    const l=div({class:"bar-lbl"},lbl); l.title=lbl;
+    const track=div({class:"bar-track"});
+    const fill=div({class:"bar-fill"});
+    fill.style.width=Math.min(100,(val/maxV)*100).toFixed(1)+"%";
+    fill.style.background=barColor(val,tgt,lb);
+    const tline=div({class:"bar-tgt"});
+    tline.style.left=Math.min(100,(tgt/maxV)*100).toFixed(1)+"%";
+    track.appendChild(fill); track.appendChild(tline);
+    row.appendChild(l); row.appendChild(track);
+    row.appendChild(div({class:"bar-val"},val+suffix));
+    return row;
+  }
+  function makeChart(title,rows){
+    const c=div({class:"ccart"}); c.appendChild(div({class:"ctitle"},title));
+    rows.forEach(r=>c.appendChild(r)); return c;
+  }
+
+  const r1=div({class:"grid2"});
+  r1.appendChild(makeChart("Labour % of GP",filtered.map(p=>makeBarRow(SHORT[p.name],p.labour,18,45,true,"%"))));
+  r1.appendChild(makeChart("GP% by pub",filtered.map(p=>makeBarRow(SHORT[p.name],p.gp,80,100,false,"%"))));
+  frag.appendChild(r1);
+
+  const r2=div({class:"grid2"});
+  r2.appendChild(makeChart("Tasks & duties",filtered.map(p=>makeBarRow(SHORT[p.name],p.tasks,90,100,false,"%"))));
+  r2.appendChild(makeChart("Stock variance",filtered.map(p=>makeBarRow(SHORT[p.name],p.stockVar,1,4,true,"%"))));
+  frag.appendChild(r2);
+
+  const r3=div({class:"grid2"});
+  r3.appendChild(makeChart("Audit score",filtered.map(p=>makeBarRow(SHORT[p.name],p.audit,85,100,false,"%"))));
+  r3.appendChild(makeChart("Mystery shopper",filtered.map(p=>makeBarRow(SHORT[p.name],p.mystery,90,100,false,"%"))));
+  frag.appendChild(r3);
+
+  const r4=div({class:"grid2"});
+  const revCard=div({class:"ccart"}); revCard.appendChild(div({class:"ctitle"},"Online reviews"));
+  const tbl=h("table",{});
+  const thead=h("thead",{}); const hrow=h("tr",{});
+  ["Pub","Rating","Total","New this week","vs prev"].forEach(hd=>hrow.appendChild(h("th",{},hd)));
+  thead.appendChild(hrow); tbl.appendChild(thead);
+  const tbody=h("tbody",{});
+  filtered.forEach(p=>{
+    const tr=h("tr",{});
+    tr.appendChild(h("td",{},SHORT[p.name]));
+    const s=si(p.reviews,4.8,false);
+    const rp=span({class:"score-pill"});rp.style.background=s.bg;rp.style.color=s.col;rp.textContent=(p.reviews||0).toFixed(1);
+    const rtd=h("td",{}); rtd.appendChild(rp); tr.appendChild(rtd);
+    tr.appendChild(h("td",{style:{color:"#5f5e5a"}},(p.reviewCount||0).toLocaleString()));
+    const nr=p.newReviews||0; const nrs=si(nr,4,false);
+    const nrtd=h("td",{}); const nrsp=span({class:"score-pill"});
+    nrsp.style.background=nrs.bg; nrsp.style.color=nrs.col; nrsp.textContent=nr+" / 4";
+    nrtd.appendChild(nrsp); tr.appendChild(nrtd);
+    const prev=prevData?prevData[p.name]:null;
+    const trendTd=h("td",{});
+    if(prev){
+      const diff=(p.reviews||0)-(prev.reviews||0);
+      trendTd.textContent=Math.abs(diff)<0.05?"→":diff>0?"+"+diff.toFixed(1):diff.toFixed(1);
+      trendTd.style.color=diff>0?"#3B6D11":diff<0?"#A32D2D":"#888780";
+      trendTd.style.fontSize="12px";
+    }else{trendTd.textContent="—";trendTd.style.color="#888780";}
+    tr.appendChild(trendTd); tbody.appendChild(tr);
+  });
+  tbl.appendChild(tbody); revCard.appendChild(tbl);
+  r4.appendChild(revCard); r4.appendChild(div({class:"ccart"}));
+  frag.appendChild(r4);
+
+  // ── Avg spend per head line chart ──
+  const spendWeeks = Object.keys(state.allData).sort();
+  const spendCard = div({class:"ccart",style:{marginTop:"0"}});
+  spendCard.appendChild(div({class:"ctitle"},"Avg spend per head — weekly trend (£)"));
+
+  if(spendWeeks.length < 2){
+    const msg = div({style:{fontSize:"13px",color:"#888780",padding:"1rem 0"}},
+      "Enter figures for at least 2 weeks to see the trend chart.");
+    spendCard.appendChild(msg);
+  } else {
+    const PUB_COLORS = {
+      "Nancy Spains Shoreditch":"#534AB7",
+      "Nancy Spains Monument":  "#BA7517",
+      "Nancy Spains Manchester":"#3B6D11",
+    };
+    const W=700, H=220, PAD={t:20,r:20,b:50,l:50};
+    const plotW=W-PAD.l-PAD.r, plotH=H-PAD.t-PAD.b;
+
+    // gather data (this pub only)
+    const series = [MY_PUB].map(pub=>({
+      pub,
+      vals: spendWeeks.map(w=>((state.allData[w]||{})[pub]||BLANK).avgSpend||0),
+    }));
+    const allVals = series.flatMap(s=>s.vals).filter(v=>v>0);
+    const minV = allVals.length ? Math.max(0, Math.floor(Math.min(...allVals)*0.9)) : 0;
+    const maxV = allVals.length ? Math.ceil(Math.max(...allVals)*1.1) : 50;
+
+    const xScale = i => PAD.l + (i/(spendWeeks.length-1))*plotW;
+    const yScale = v => PAD.t + plotH - ((v-minV)/(maxV-minV||1))*plotH;
+
+    const svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
+    svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+    svg.setAttribute("style","width:100%;height:auto;overflow:visible;");
+
+    // grid lines
+    [0,0.25,0.5,0.75,1].forEach(t=>{
+      const y=PAD.t+plotH*(1-t);
+      const val=(minV+(maxV-minV)*t).toFixed(0);
+      const line=document.createElementNS("http://www.w3.org/2000/svg","line");
+      line.setAttribute("x1",PAD.l);line.setAttribute("x2",PAD.l+plotW);
+      line.setAttribute("y1",y);line.setAttribute("y2",y);
+      line.setAttribute("stroke","rgba(0,0,0,0.07)");line.setAttribute("stroke-width","1");
+      svg.appendChild(line);
+      const txt=document.createElementNS("http://www.w3.org/2000/svg","text");
+      txt.setAttribute("x",PAD.l-6);txt.setAttribute("y",y+4);
+      txt.setAttribute("text-anchor","end");txt.setAttribute("font-size","10");
+      txt.setAttribute("fill","#888780");txt.textContent="£"+val;
+      svg.appendChild(txt);
+    });
+
+    // x axis labels
+    spendWeeks.forEach((w,i)=>{
+      const x=xScale(i);
+      const d=new Date(w+"T12:00:00");
+      const lbl=d.toLocaleDateString("en-GB",{day:"numeric",month:"short"});
+      const txt=document.createElementNS("http://www.w3.org/2000/svg","text");
+      txt.setAttribute("x",x);txt.setAttribute("y",H-PAD.b+16);
+      txt.setAttribute("text-anchor","middle");txt.setAttribute("font-size","9");
+      txt.setAttribute("fill","#888780");txt.textContent=lbl;
+      svg.appendChild(txt);
+    });
+
+    // lines & dots
+    series.forEach(s=>{
+      const color=PUB_COLORS[s.pub]||"#534AB7";
+      const hasData=s.vals.some(v=>v>0);
+      if(!hasData) return;
+      const pts=s.vals.map((v,i)=>`${xScale(i).toFixed(1)},${yScale(v).toFixed(1)}`).join(" ");
+      const poly=document.createElementNS("http://www.w3.org/2000/svg","polyline");
+      poly.setAttribute("points",pts);poly.setAttribute("fill","none");
+      poly.setAttribute("stroke",color);poly.setAttribute("stroke-width","2");
+      poly.setAttribute("stroke-linejoin","round");poly.setAttribute("stroke-linecap","round");
+      svg.appendChild(poly);
+      s.vals.forEach((v,i)=>{
+        if(!v) return;
+        const c=document.createElementNS("http://www.w3.org/2000/svg","circle");
+        c.setAttribute("cx",xScale(i).toFixed(1));c.setAttribute("cy",yScale(v).toFixed(1));
+        c.setAttribute("r","3.5");c.setAttribute("fill",color);
+        svg.appendChild(c);
+      });
+    });
+
+    // legend
+    let lx=PAD.l;
+    series.forEach(s=>{
+      const color=PUB_COLORS[s.pub]||"#534AB7";
+      const rect=document.createElementNS("http://www.w3.org/2000/svg","rect");
+      rect.setAttribute("x",lx);rect.setAttribute("y",H-14);
+      rect.setAttribute("width","10");rect.setAttribute("height","10");
+      rect.setAttribute("fill",color);rect.setAttribute("rx","2");
+      svg.appendChild(rect);
+      const txt=document.createElementNS("http://www.w3.org/2000/svg","text");
+      txt.setAttribute("x",lx+13);txt.setAttribute("y",H-5);
+      txt.setAttribute("font-size","10");txt.setAttribute("fill","#5f5e5a");
+      txt.textContent=SHORT[s.pub];
+      svg.appendChild(txt);
+      lx+=SHORT[s.pub].length*6+22;
+    });
+
+    spendCard.appendChild(svg);
+  }
+  frag.appendChild(spendCard);
+  return frag;
+}
+
+function renderEntry(){
+  if(!state.unlocked){
+    const gate=div({style:{background:"#fff",border:"0.5px solid rgba(0,0,0,0.12)",borderRadius:"12px",padding:"2rem",maxWidth:"340px",margin:"2rem auto",textAlign:"center"}});
+    gate.appendChild(div({style:{fontSize:"32px",marginBottom:"12px"}},"🔒"));
+    gate.appendChild(h("p",{style:{fontWeight:"500",fontSize:"15px",color:"#1a1a18",marginBottom:"6px"}},"Admin access required"));
+    gate.appendChild(h("p",{style:{fontSize:"13px",color:"#5f5e5a",marginBottom:"20px"}},"Enter the password to edit figures."));
+    const pinInput=h("input",{type:"password",placeholder:"Enter password"});
+    pinInput.style.cssText="width:100%;font-size:14px;padding:8px 12px;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;margin-bottom:12px;text-align:center;font-family:inherit;background:#fff;color:#1a1a18;";
+    const errMsg=h("p",{style:{fontSize:"12px",color:"#A32D2D",marginBottom:"10px",minHeight:"16px"}},"");
+    const unlockBtn=btn("Unlock",{class:"btn"});
+    unlockBtn.style.cssText="width:100%;background:#f1efe8;font-weight:500;color:#1a1a18;";
+    function tryUnlock(){
+      if(pinInput.value===ADMIN_PASSWORD){state.unlocked=true;render();}
+      else{errMsg.textContent="Incorrect password. Please try again.";pinInput.value="";}
+    }
+    unlockBtn.addEventListener("click",tryUnlock);
+    pinInput.addEventListener("keydown",e=>{if(e.key==="Enter")tryUnlock();});
+    gate.appendChild(pinInput); gate.appendChild(errMsg); gate.appendChild(unlockBtn);
+    return gate;
+  }
+
+  const frag=document.createDocumentFragment();
+
+  const pub=MY_PUB;
+  if(!state.draft[pub]) state.draft[pub]={...BLANK};
+  const pd=state.draft[pub];
+  const initials=pub.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+  const card=div({class:"entry-card"});
+  const ehead=div({class:"entry-head"});
+  const av=div({class:"avatar"},initials);
+  const einfo=div({});
+  einfo.appendChild(h("p",{style:{fontWeight:"500",fontSize:"14px",color:"#1a1a18",margin:"0"}},pub));
+  einfo.appendChild(h("p",{style:{fontSize:"12px",color:"#5f5e5a",margin:"0"}},"Week ending "+fmtWeek(state.activeWeek)));
+  ehead.appendChild(av); ehead.appendChild(einfo); card.appendChild(ehead);
+
+  FIELDS.forEach(f=>{
+    const val=pd[f.key]!=null?pd[f.key]:0;
+    const tgt=TARGETS[f.key]||0;
+    const s=f.noTarget?{bg:"#f1efe8",col:"#5f5e5a",label:"Tracking"}:si(val,tgt,f.lb);
+    const pct=((val-f.min)/(f.max-f.min))*100;
+    const tpct=f.noTarget?0:((tgt-f.min)/(f.max-f.min))*100;
+    const row=div({class:"field-row"});
+    const top=div({class:"field-top"});
+    const right=div({class:"field-right"});
+    const sp=span({class:"status-pill"});sp.style.background=s.bg;sp.style.color=s.col;sp.textContent=s.label;
+    const sv=span({class:"field-val"});sv.textContent=val.toFixed(f.step<1?1:0)+f.suffix;
+    right.appendChild(sp); right.appendChild(sv);
+    top.appendChild(span({class:"field-label"},f.label)); top.appendChild(right); row.appendChild(top);
+    const bwrap=div({class:"field-bar-wrap"});
+    const track=div({class:"mini-track"});
+    const fill=div({class:"mini-fill"});    fill.style.width=Math.min(100,pct).toFixed(1)+"%";fill.style.background=s.col;
+    const tline=div({class:"mini-tgt"});tline.style.left=tpct.toFixed(1)+"%";
+    track.appendChild(fill); if(!f.noTarget) track.appendChild(tline);
+    const inp=h("input",{type:"number",min:f.min,max:f.max,step:f.step,class:"num-input"});
+    inp.value=val;
+    inp.addEventListener("input",function(){state.draft[pub][f.key]=parseFloat(this.value)||0;state.saved=false;render();});
+    bwrap.appendChild(track); bwrap.appendChild(inp); row.appendChild(bwrap);
+    row.appendChild(div({class:"field-tgt"},f.noTarget?"Tracking only — no target set":"Target: "+tgt+f.suffix));
+    card.appendChild(row);
+  });
+  frag.appendChild(card);
+
+  const srow=div({class:"save-row"});
+  const lockBtn=btn("🔒 Lock",{class:"btn"});
+  lockBtn.style.color="#5f5e5a";
+  lockBtn.addEventListener("click",()=>{state.unlocked=false;state.view="dashboard";render();});
+  srow.appendChild(lockBtn);
+  const sb=btn("Save & publish live",{class:"btn"});
+  sb.style.cssText="background:#f1efe8;font-weight:500;color:#1a1a18;";
+  sb.addEventListener("click",async()=>{
+    state.syncStatus="saving"; render();
+    try{
+      await savePubWeekToDB(state.activeWeek,state.draft[MY_PUB]);
+      if(!state.allData[state.activeWeek]) state.allData[state.activeWeek]={};
+      state.allData[state.activeWeek][MY_PUB]=JSON.parse(JSON.stringify(state.draft[MY_PUB]));
+      state.syncStatus="saved"; render();
+      setTimeout(()=>{state.syncStatus="";render();},3000);
+    }catch(e){state.syncStatus="error";render();}
+  });
+  srow.appendChild(sb); frag.appendChild(srow);
+  return frag;
+}
+
+function renderHistory(){
+  const weeks=Object.keys(state.allData).sort((a,b)=>b.localeCompare(a));
+  const frag=document.createDocumentFragment();
+  const topRow=div({style:{display:"flex",justifyContent:"flex-end",marginBottom:"12px"}});
+  const allEx=btn("Export all weeks CSV ↓",{class:"btn"});
+  allEx.addEventListener("click",()=>exportAllCSV(state.allData));
+  topRow.appendChild(allEx); frag.appendChild(topRow);
+  if(!weeks.length){
+    frag.appendChild(div({style:{padding:"2rem",textAlign:"center",color:"#5f5e5a",fontSize:"14px"}},"No saved weeks yet."));
+    return frag;
+  }
+  weeks.forEach(w=>{
+    const d=state.allData[w];
+    const pd=d[MY_PUB]||BLANK;
+    const item=div({class:"history-item"});
+    const left=div({});
+    left.appendChild(div({style:{fontSize:"14px",fontWeight:"500",color:"#1a1a18"}},"Week ending "+fmtWeek(w)));
+    left.appendChild(div({style:{fontSize:"12px",color:"#5f5e5a",marginTop:"3px"}},
+      "Labour "+pd.labour.toFixed(1)+"% · GP "+pd.gp.toFixed(1)+"% · Tasks "+pd.tasks.toFixed(0)+"%"));
+    const right=div({style:{display:"flex",gap:"6px"}});
+    const vb=btn("View",{class:"btn small"});
+    vb.addEventListener("click",async()=>{state.activeWeek=w;state.view="dashboard";listenToWeek(w);render();});
+    const eb=btn("CSV ↓",{class:"btn small"});
+    eb.addEventListener("click",()=>exportCSV(w,d));
+    right.appendChild(vb); right.appendChild(eb);
+    item.appendChild(left); item.appendChild(right); frag.appendChild(item);
+  });
+  return frag;
+}
+
+function exportCSV(week,data){
+  const rows=[["Pub","Week ending","Labour %","GP %","Tasks %","Audit %","Mystery %","Avg Review","Total Reviews","New Reviews","Stock Variance %","Avg Spend Per Head (£)"]];
+  const d=(data&&data[MY_PUB])||BLANK;
+  rows.push([MY_PUB,week,d.labour,d.gp,d.tasks,d.audit,d.mystery,d.reviews,d.reviewCount,d.newReviews,d.stockVar,d.avgSpend||0]);
+  const csv=rows.map(r=>r.map(v=>`"${v}"`).join(",")).join("\n");
+  const a=document.createElement("a"); a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);
+  a.download="nancy-spains-kpi-"+SHORT[MY_PUB].toLowerCase()+"-"+week+".csv"; a.click();
+}
+function exportAllCSV(allData){
+  const rows2=[["Pub","Week ending","Labour %","GP %","Tasks %","Audit %","Mystery %","Avg Review","Total Reviews","New Reviews","Stock Variance %","Avg Spend Per Head (£)"]];
+  Object.keys(allData).sort().forEach(week=>{
+    const d=(allData[week]&&allData[week][MY_PUB])||BLANK;
+    rows2.push([MY_PUB,week,d.labour,d.gp,d.tasks,d.audit,d.mystery,d.reviews,d.reviewCount,d.newReviews,d.stockVar,d.avgSpend||0]);
+  });
+  const csv2=rows2.map(r=>r.map(v=>`"${v}"`).join(",")).join("\n");
+  const a2=document.createElement("a"); a2.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv2);
+  a2.download="nancy-spains-kpi-"+SHORT[MY_PUB].toLowerCase()+"-all-weeks.csv"; a2.click();
+}
+
+init();
+</script>
+</body>
+</html>
