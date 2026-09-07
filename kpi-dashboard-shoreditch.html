@@ -183,7 +183,7 @@ function si(val,tgt,lb){
   if(diff<=0) return{bg:"#EAF3DE",col:"#3B6D11",label:"On target"};
   if(diff<=3) return{bg:"#FAEEDA",col:"#854F0B",label:"Near target"};
   return{bg:"#FCEBEB",col:"#A32D2D",label:"Off target"};
-
+}
 function barColor(val,tgt,lb){
   const diff=lb?val-tgt:tgt-val;
   return diff<=0?"#639922":diff<=3?"#BA7517":"#E24B4A";
@@ -406,6 +406,7 @@ function renderDashboard(){
 
     const xScale = i => PAD.l + (i/(spendWeeks.length-1))*plotW;
     const yScale = v => PAD.t + plotH - ((v-minV)/(maxV-minV||1))*plotH;
+
     const svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
     svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
     svg.setAttribute("style","width:100%;height:auto;overflow:visible;");
@@ -515,6 +516,7 @@ function renderEntry(){
   einfo.appendChild(h("p",{style:{fontWeight:"500",fontSize:"14px",color:"#1a1a18",margin:"0"}},pub));
   einfo.appendChild(h("p",{style:{fontSize:"12px",color:"#5f5e5a",margin:"0"}},"Week ending "+fmtWeek(state.activeWeek)));
   ehead.appendChild(av); ehead.appendChild(einfo); card.appendChild(ehead);
+
   FIELDS.forEach(f=>{
     const val=pd[f.key]!=null?pd[f.key]:0;
     const tgt=TARGETS[f.key]||0;
