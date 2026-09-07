@@ -98,7 +98,24 @@ async function fetchCompletions(monday, sunday) {
   return resp.json();
 }
 
+// GitHub Actions cron is always UTC with no daylight-saving awareness, so
+// to actually fire at 12pm on the UK clock year-round, the workflow
+// schedules TWO triggers each Tuesday (11:00 and 12:00 UTC) and this
+// function decides which one is the "real" one for the current season -
+// the other is a no-op. Verified against both GMT and BST via manual
+// date simulation before relying on it (2026-09-07).
+function isActualUKNoon(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", hour: "numeric", hour12: false }).formatToParts(now);
+  const ukHour = parseInt(parts.find((p) => p.type === "hour").value, 10);
+  return ukHour === 12;
+}
+
 async function main() {
+  if (!isActualUKNoon()) {
+    console.log("[info] Not actually 12pm UK time right now (this is the other seasons's trigger) - skipping.");
+    return;
+  }
+
   const { monday, sunday, dates } = previousWeekRange();
   console.log(`[info] Computing task completion for week ${monday} to ${sunday}`);
 
