@@ -37,20 +37,16 @@ const SITE_TO_PUB = {
 // Ported directly from checklist-tracker/index.html so the "total possible"
 // count for each day/site matches exactly what the tracker itself uses.
 const DAY_CHECKLISTS = {
-  1: ["eon", "opening", "closing", "timesheets", "audit", "maintenance"],
-  2: ["eon", "opening", "closing", "inventory"],
-  3: ["eon", "opening", "closing"],
-  4: ["eon", "opening", "closing", "deepclean", "eow"],
+  1: ["eon", "opening", "closing", "maintenance"],
+  2: ["eon", "opening", "closing"],
+  3: ["eon", "opening", "closing", "audit", "timesheets", "inventory", "eow", "kpi", "musician"],
+  4: ["eon", "opening", "closing", "deepclean"],
   5: ["eon", "opening", "closing", "cellar", "orders"],
   6: ["eon", "opening", "closing"],
   0: ["eon", "opening", "closing"],
 };
 const SITE_OVERRIDES = {
   s2: {
-    1: ["timesheets", "audit", "maintenance"],
-    2: ["eon", "opening", "closing", "inventory"],
-    3: ["eon", "opening", "closing"],
-    4: ["eon", "opening", "closing", "deepclean", "eow"],
     5: ["eon", "opening", "closing", "orders"],
     6: ["eon", "opening", "closing", "cellar"],
     0: ["eon", "opening", "closing"],
@@ -131,7 +127,7 @@ async function main() {
   // newReviews/trend/avgSpend). If a pub has no entry at all yet for this
   // week (no GM has saved anything), a merge-write of {tasks: pct} alone
   // would create a pub object with every OTHER field left as undefined,
-  // which breaks the dashboard's rendering (it only falls back to BLANK
+  // which breaks the dashboard's rendering (it only falls back to BLANK,
   // when the whole pub key is missing, not when individual fields are
   // missing within it). So: check first, and only add the full BLANK
   // shape on top of tasks when this pub genuinely has nothing yet.
