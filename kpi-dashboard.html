@@ -76,7 +76,7 @@ tr:last-child td{border-bottom:none;}
 <div class="wrap" id="app"><div class="loading">Connecting to database...</div></div>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, getDoc, collection, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, collection, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCp4Kb2mh_RC80TE8WcGjLZX2Of4huqt5E",
@@ -112,6 +112,11 @@ const SAMPLE = {
   "Nancy Spains Manchester":{labour:25,gp:72,tasks:95,audit:95,mystery:93,reviews:4.8,stockVar:0.3,reviewCount:97, newReviews:4,trend:"+0.3",avgSpend:0},
 };
 const STORE_KEY = "ns_kpi_weeks";
+// Admin password for this central dashboard specifically (separate from
+// each pub's own dashboard password) - re-added 2026-09-07 at Nicky's
+// request, as a fallback so Harry can enter figures for any pub here if
+// needed, alongside the GMs' own individual dashboards.
+const ADMIN_PASSWORD = "nancys2026";
 
 const state = {
   view:"dashboard", activeWeek:currentWeekEnding(), filter:"all",
@@ -209,6 +214,7 @@ function render(){
   app.appendChild(sb);
   if(state.view!=="history") app.appendChild(renderWeekNav());
   if(state.view==="dashboard")   app.appendChild(renderDashboard());
+  if(state.view==="entry")       app.appendChild(renderEntry());
   if(state.view==="history")     app.appendChild(renderHistory());
 }
 
@@ -219,7 +225,7 @@ function renderTopBar(){
   left.appendChild(h("p",{class:"sub"},"Live dashboard · updates instantly for everyone"));
   wrap.appendChild(left);
   const right=div({class:"tabs"});
-  [["dashboard","Dashboard"],["history","History"]].forEach(t=>{
+  [["dashboard","Dashboard"],["entry","Enter figures"],["history","History"]].forEach(t=>{
     const b=btn(t[1],{class:"btn"+(state.view===t[0]?" active":"")});
     b.addEventListener("click",()=>{state.view=t[0];render();});
     right.appendChild(b);
@@ -470,6 +476,104 @@ function renderDashboard(){
     spendCard.appendChild(svg);
   }
   frag.appendChild(spendCard);
+  return frag;
+}
+
+async function savePubWeekToDB(week,pubName,pubData){
+  // Safe write: only ever touches this ONE pub's full data within the
+  // week's document (merge:true), never the whole document - so this
+  // never conflicts with what a GM has already saved for the other two
+  // pubs on their own dashboards.
+  await setDoc(doc(db,STORE_KEY,week),{[pubName]:pubData},{merge:true});
+}
+
+function renderEntry(){
+  if(!state.unlocked){
+    const gate=div({style:{background:"#fff",border:"0.5px solid rgba(0,0,0,0.12)",borderRadius:"12px",padding:"2rem",maxWidth:"340px",margin:"2rem auto",textAlign:"center"}});
+    gate.appendChild(div({style:{fontSize:"32px",marginBottom:"12px"}},"\uD83D\uDD12"));
+    gate.appendChild(h("p",{style:{fontWeight:"500",fontSize:"15px",color:"#1a1a18",marginBottom:"6px"}},"Admin access required"));
+    gate.appendChild(h("p",{style:{fontSize:"13px",color:"#5f5e5a",marginBottom:"20px"}},"Enter the password to edit figures."));
+    const pinInput=h("input",{type:"password",placeholder:"Enter password"});
+    pinInput.style.cssText="width:100%;font-size:14px;padding:8px 12px;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;margin-bottom:12px;text-align:center;font-family:inherit;background:#fff;color:#1a1a18;";
+    const errMsg=h("p",{style:{fontSize:"12px",color:"#A32D2D",marginBottom:"10px",minHeight:"16px"}},"");
+    const unlockBtn=btn("Unlock",{class:"btn"});
+    unlockBtn.style.cssText="width:100%;background:#f1efe8;font-weight:500;color:#1a1a18;";
+    function tryUnlock(){
+      if(pinInput.value===ADMIN_PASSWORD){state.unlocked=true;render();}
+      else{errMsg.textContent="Incorrect password. Please try again.";pinInput.value="";}
+    }
+    unlockBtn.addEventListener("click",tryUnlock);
+    pinInput.addEventListener("keydown",e=>{if(e.key==="Enter")tryUnlock();});
+    gate.appendChild(pinInput); gate.appendChild(errMsg); gate.appendChild(unlockBtn);
+    return gate;
+  }
+
+  const frag=document.createDocumentFragment();
+  const pt=div({class:"pub-tabs"});
+  PUBS.forEach(pub=>{
+    const b=btn(SHORT[pub],{class:"btn small"+(state.entryPub===pub?" active":"")});
+    b.addEventListener("click",()=>{state.entryPub=pub;render();});
+    pt.appendChild(b);
+  });
+  frag.appendChild(pt);
+
+  const pub=state.entryPub;
+  if(!state.draft[pub]) state.draft[pub]={...BLANK};
+  const pd=state.draft[pub];
+  const initials=pub.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+  const card=div({class:"entry-card"});
+  const ehead=div({class:"entry-head"});
+  const av=div({class:"avatar"},initials);
+  const einfo=div({});
+  einfo.appendChild(h("p",{style:{fontWeight:"500",fontSize:"14px",color:"#1a1a18",margin:"0"}},pub));
+  einfo.appendChild(h("p",{style:{fontSize:"12px",color:"#5f5e5a",margin:"0"}},"Week ending "+fmtWeek(state.activeWeek)));
+  ehead.appendChild(av); ehead.appendChild(einfo); card.appendChild(ehead);
+
+  FIELDS.forEach(f=>{
+    const val=pd[f.key]!=null?pd[f.key]:0;
+    const tgt=TARGETS[f.key]||0;
+    const s=f.noTarget?{bg:"#f1efe8",col:"#5f5e5a",label:"Tracking"}:si(val,tgt,f.lb);
+    const pct=((val-f.min)/(f.max-f.min))*100;
+    const tpct=f.noTarget?0:((tgt-f.min)/(f.max-f.min))*100;
+    const row=div({class:"field-row"});
+    const top=div({class:"field-top"});
+    const right=div({class:"field-right"});
+    const sp=span({class:"status-pill"});sp.style.background=s.bg;sp.style.color=s.col;sp.textContent=s.label;
+    const sv=span({class:"field-val"});sv.textContent=val.toFixed(f.step<1?1:0)+f.suffix;
+    right.appendChild(sp); right.appendChild(sv);
+    top.appendChild(span({class:"field-label"},f.label)); top.appendChild(right); row.appendChild(top);
+    const bwrap=div({class:"field-bar-wrap"});
+    const track=div({class:"mini-track"});
+    const fill=div({class:"mini-fill"});    fill.style.width=Math.min(100,pct).toFixed(1)+"%";fill.style.background=s.col;
+    const tline=div({class:"mini-tgt"});tline.style.left=tpct.toFixed(1)+"%";
+    track.appendChild(fill); if(!f.noTarget) track.appendChild(tline);
+    const inp=h("input",{type:"number",min:f.min,max:f.max,step:f.step,class:"num-input"});
+    inp.value=val;
+    inp.addEventListener("input",function(){state.draft[pub][f.key]=parseFloat(this.value)||0;state.saved=false;render();});
+    bwrap.appendChild(track); bwrap.appendChild(inp); row.appendChild(bwrap);
+    row.appendChild(div({class:"field-tgt"},f.noTarget?"Tracking only — no target set":"Target: "+tgt+f.suffix));
+    card.appendChild(row);
+  });
+  frag.appendChild(card);
+
+  const srow=div({class:"save-row"});
+  const lockBtn=btn("\uD83D\uDD12 Lock",{class:"btn"});
+  lockBtn.style.color="#5f5e5a";
+  lockBtn.addEventListener("click",()=>{state.unlocked=false;state.view="dashboard";render();});
+  srow.appendChild(lockBtn);
+  const sb=btn("Save & publish live",{class:"btn"});
+  sb.style.cssText="background:#f1efe8;font-weight:500;color:#1a1a18;";
+  sb.addEventListener("click",async()=>{
+    state.syncStatus="saving"; render();
+    try{
+      await savePubWeekToDB(state.activeWeek,pub,state.draft[pub]);
+      if(!state.allData[state.activeWeek]) state.allData[state.activeWeek]={};
+      state.allData[state.activeWeek][pub]=JSON.parse(JSON.stringify(state.draft[pub]));
+      state.syncStatus="saved"; render();
+      setTimeout(()=>{state.syncStatus="";render();},3000);
+    }catch(e){state.syncStatus="error";render();}
+  });
+  srow.appendChild(sb); frag.appendChild(srow);
   return frag;
 }
 
