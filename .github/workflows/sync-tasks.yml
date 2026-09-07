@@ -1,0 +1,25 @@
+name: Weekly Task Completion Sync
+
+# Pulls last week's checklist completion data from the Daily Checklist
+# Tracker (Supabase) and writes the "Tasks completed %" figure into each
+# pub's KPI dashboard (Firestore) - see sync-tasks.mjs for the full
+# explanation. Both APIs are accessed with the same public, client-side
+# keys already embedded in the tracker/dashboard pages, so no secrets
+# are needed here.
+on:
+  schedule:
+    # 10:00 UTC every Tuesday - 11am BST / 10am GMT, comfortably ahead
+    # of the 12pm deadline regardless of daylight saving.
+    - cron: "0 10 * * 2"
+  workflow_dispatch: {}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install
+      - run: node sync-tasks.mjs
