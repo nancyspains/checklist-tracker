@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nancy Spain's — Shoreditch KPI Manager</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f5f4f0;color:#1a1a18;min-height:100vh;}
+.wrap{max-width:820px;margin:0 auto;padding:1.5rem 1rem;}
+h1{font-size:19px;font-weight:500;}
+p.sub{font-size:12px;color:#5f5e5a;margin-top:2px;}
+.topbar{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:1.25rem;}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;}
+.btn{font-family:inherit;font-size:13px;padding:6px 14px;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;background:transparent;color:#5f5e5a;cursor:pointer;}
+.btn.active{background:#f1efe8;color:#1a1a18;font-weight:500;border-color:rgba(0,0,0,0.35);}
+.btn.small{font-size:12px;padding:5px 10px;}
+.btn:disabled{opacity:0.35;cursor:default;}
+.week-nav{display:flex;align-items:center;gap:8px;background:#fff;border:0.5px solid rgba(0,0,0,0.12);border-radius:12px;padding:0.7rem 1rem;margin-bottom:1.25rem;}
+.arrow{font-size:18px;border:none;background:transparent;color:#5f5e5a;cursor:pointer;padding:0 4px;line-height:1;}
+.week-nav .center{flex:1;text-align:center;}
+.wlabel{font-size:14px;font-weight:500;}
+.pill{display:inline-block;font-size:11px;padding:2px 7px;border-radius:20px;font-weight:500;margin-left:6px;}
+.pill-purple{background:#EEEDFE;color:#534AB7;}
+.pill-green{background:#EAF3DE;color:#3B6D11;}
+.pill-gray{background:#f1efe8;color:#888780;}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:1.25rem;}
+.kpi-card{background:#f1efe8;border-radius:8px;padding:0.85rem;}
+.klabel{font-size:11px;color:#5f5e5a;margin-bottom:5px;}
+.kval{font-size:22px;font-weight:500;line-height:1;}
+.ktgt{font-size:11px;color:#888780;margin-top:3px;}
+.kbadge{display:inline-block;font-size:11px;padding:2px 7px;border-radius:20px;margin-top:5px;font-weight:500;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.ccart{background:#fff;border:0.5px solid rgba(0,0,0,0.12);border-radius:12px;padding:1rem;}
+.ctitle{font-size:13px;font-weight:500;margin-bottom:10px;}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.bar-row:last-child{margin-bottom:0;}
+.bar-lbl{font-size:11px;color:#5f5e5a;width:90px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bar-track{flex:1;background:#f1efe8;border-radius:4px;height:16px;position:relative;overflow:hidden;}
+.bar-fill{height:100%;border-radius:4px;transition:width 0.3s;}
+.bar-tgt{position:absolute;top:0;height:100%;width:1.5px;background:rgba(180,80,50,0.45);}
+.bar-val{font-size:11px;color:#5f5e5a;width:38px;text-align:right;flex-shrink:0;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;color:#5f5e5a;font-weight:400;padding:4px 6px 8px;border-bottom:0.5px solid rgba(0,0,0,0.1);}
+td{padding:7px 6px;border-bottom:0.5px solid rgba(0,0,0,0.08);color:#1a1a18;}
+tr:last-child td{border-bottom:none;}
+.score-pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:12px;font-weight:500;}
+.entry-card{background:#fff;border:0.5px solid rgba(0,0,0,0.12);border-radius:12px;padding:1.25rem;margin-bottom:1rem;}
+.entry-head{display:flex;align-items:center;gap:12px;margin-bottom:1.25rem;}
+.avatar{width:40px;height:40px;border-radius:50%;background:#EEEDFE;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:#534AB7;flex-shrink:0;}
+.field-row{margin-bottom:14px;}
+.field-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.field-label{font-size:13px;color:#5f5e5a;}
+.field-right{display:flex;align-items:center;gap:8px;}
+.status-pill{font-size:11px;padding:2px 7px;border-radius:20px;font-weight:500;}
+.field-val{font-size:15px;font-weight:500;min-width:50px;text-align:right;}
+.field-bar-wrap{display:flex;align-items:center;gap:10px;}
+.mini-track{flex:1;position:relative;height:6px;background:#f1efe8;border-radius:4px;}
+.mini-fill{position:absolute;left:0;top:0;height:100%;border-radius:4px;transition:width 0.2s;}
+.mini-tgt{position:absolute;top:-3px;width:2px;height:12px;background:rgba(150,100,50,0.4);border-radius:1px;}
+.field-tgt{font-size:11px;color:#888780;margin-top:3px;}
+.num-input{width:70px;font-size:13px;padding:4px 8px;text-align:right;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;background:#fff;color:#1a1a18;font-family:inherit;}
+.save-row{display:flex;gap:8px;justify-content:flex-end;}
+.history-item{background:#fff;border:0.5px solid rgba(0,0,0,0.12);border-radius:12px;padding:0.85rem 1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
+.loading{text-align:center;padding:3rem;color:#5f5e5a;font-size:14px;}
+.sync-bar{font-size:12px;padding:6px 12px;border-radius:8px;margin-bottom:1rem;display:none;}
+.sync-saving{background:#FAEEDA;color:#854F0B;display:block;}
+.sync-saved{background:#EAF3DE;color:#3B6D11;display:block;}
+.sync-error{background:#FCEBEB;color:#A32D2D;display:block;}
+.pub-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem;}
+.filter-row{display:flex;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap;align-items:center;justify-content:space-between;}
+@media(max-width:600px){.grid2{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><div class="loading">Connecting to database...</div></div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCp4Kb2mh_RC80TE8WcGjLZX2Of4huqt5E",
+  authDomain: "nancy-spains-kpi.firebaseapp.com",
+  projectId: "nancy-spains-kpi",
+  storageBucket: "nancy-spains-kpi.firebasestorage.app",
+  messagingSenderId: "1042191730060",
+  appId: "1:1042191730060:web:8819d9840616dceb7382a9"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp);
+
+const PUBS = ["Nancy Spains Shoreditch","Nancy Spains Monument","Nancy Spains Manchester"];
+const SHORT = {"Nancy Spains Shoreditch":"Shoreditch","Nancy Spains Monument":"Monument","Nancy Spains Manchester":"Manchester"};
+// This page is scoped to one venue only - unlike the main combined dashboard,
+// there's no pub-switcher anywhere here. PUBS/SHORT are kept as full triplets
+// purely so shared helper logic (BLANK templates, existing doc structure)
+// still lines up with what the main dashboard and Firestore already expect.
+const MY_PUB = "Nancy Spains Shoreditch";
+const TARGETS = {labour:18,gp:80,tasks:90,audit:85,mystery:90,reviews:4.8,reviewCount:0,newReviews:4,stockVar:1};
+const FIELDS = [
+  {key:"labour",      label:"Labour %",             suffix:"%",    min:0, max:60,   step:0.1, lb:true},
+  {key:"gp",          label:"GP %",                 suffix:"%",    min:0, max:100,  step:0.1, lb:false},
+  {key:"tasks",       label:"Tasks completed %",    suffix:"%",    min:0, max:100,  step:1,   lb:false},
+  {key:"audit",       label:"Audit score %",        suffix:"%",    min:0, max:100,  step:1,   lb:false},
+  {key:"mystery",     label:"Mystery shopper %",    suffix:"%",    min:0, max:100,  step:1,   lb:false},
+  {key:"reviews",     label:"Avg review score",     suffix:" / 5", min:1, max:5,    step:0.1, lb:false},
+  {key:"reviewCount", label:"Total Google reviews", suffix:"",     min:0, max:9999, step:1,   lb:false},
+  {key:"newReviews",  label:"New reviews this week",suffix:"",     min:0, max:999,  step:1,   lb:false},
+  {key:"stockVar",    label:"Stock variance %",     suffix:"%",    min:0, max:10,   step:0.1, lb:true},
+  {key:"avgSpend",    label:"Avg spend per head (£)",suffix:"",    min:0, max:200,  step:0.01,lb:false, noTarget:true},
+];
+const BLANK = {labour:0,gp:0,tasks:0,audit:0,mystery:0,reviews:0,stockVar:0,reviewCount:0,newReviews:0,trend:"",avgSpend:0};
+const SAMPLE = {
+  "Nancy Spains Shoreditch":{labour:28,gp:71,tasks:88,audit:82,mystery:79,reviews:4.3,stockVar:1.2,reviewCount:142,newReviews:3,trend:"+0.2",avgSpend:0},
+  "Nancy Spains Monument":  {labour:31,gp:68,tasks:73,audit:91,mystery:88,reviews:4.6,stockVar:0.6,reviewCount:210,newReviews:5,trend:"+0.1",avgSpend:0},
+  "Nancy Spains Manchester":{labour:25,gp:72,tasks:95,audit:95,mystery:93,reviews:4.8,stockVar:0.3,reviewCount:97, newReviews:4,trend:"+0.3",avgSpend:0},
+};
+const ADMIN_PASSWORD = "nancys2026";
+const STORE_KEY = "ns_kpi_weeks";
+
+const state = {
+  view:"dashboard", activeWeek:currentWeekEnding(),
+  allData:{}, draft:{}, saved:false, unlocked:false,
+  loading:true, syncStatus:""
+};
+
+function currentWeekEnding(){
+  const t=new Date(); const day=t.getDay();
+  const diff=t.getDate()-day+(day===0?0:7);
+  const s=new Date(t); s.setDate(diff);
+  return s.toISOString().split("T")[0];
+}
+function shiftWeek(w,n){
+  const d=new Date(w+"T12:00:00"); d.setDate(d.getDate()+n*7);
+  return d.toISOString().split("T")[0];
+}
+function fmtWeek(w){
+  return new Date(w+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
+}
+
+async function loadWeekFromDB(week){
+  const snap=await getDoc(doc(db,STORE_KEY,week));
+  if(snap.exists()) return snap.data();
+  if(week===currentWeekEnding()) return JSON.parse(JSON.stringify(SAMPLE));
+  const d={}; PUBS.forEach(p=>{d[p]={...BLANK};}); return d;
+}
+// SAFETY: unlike the original saveWeekToDB (full setDoc, overwrites the whole
+// week's document), this only ever touches this page's own pub field via
+// {merge:true} - so it's safe for three GMs to be saving on three separate
+// pages at the same time without any risk of one overwriting another's
+// figures, or overwriting with a stale local copy of the other two pubs.
+async function savePubWeekToDB(week,pubData){
+  await setDoc(doc(db,STORE_KEY,week),{[MY_PUB]:pubData},{merge:true});
+}
+async function loadAllWeeks(){
+  const snap=await getDocs(collection(db,STORE_KEY));
+  const all={}; snap.forEach(d=>{all[d.id]=d.data();}); return all;
+}
+
+let unsubscribe=null;
+function listenToWeek(week){
+  if(unsubscribe) unsubscribe();
+  unsubscribe=onSnapshot(doc(db,STORE_KEY,week),(snap)=>{
+    if(snap.exists()){
+      state.allData[week]=snap.data();
+      if(!state.unlocked) state.draft=JSON.parse(JSON.stringify(snap.data()));
+      render();
+    }
+  });
+}
+
+async function init(){
+  state.allData=await loadAllWeeks();
+  state.draft=await loadWeekFromDB(state.activeWeek);
+  state.loading=false;
+  listenToWeek(state.activeWeek);
+  render();
+}
+
+function si(val,tgt,lb){
+  const diff=lb?val-tgt:tgt-val;
+  if(diff<=0) return{bg:"#EAF3DE",col:"#3B6D11",label:"On target"};
+  if(diff<=3) return{bg:"#FAEEDA",col:"#854F0B",label:"Near target"};
+  return{bg:"#FCEBEB",col:"#A32D2D",label:"Off target"};
