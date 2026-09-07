@@ -47,6 +47,7 @@ const DAY_CHECKLISTS = {
 };
 const SITE_OVERRIDES = {
   s2: {
+    1: [],
     5: ["eon", "opening", "closing", "orders"],
     6: ["eon", "opening", "closing", "cellar"],
     0: ["eon", "opening", "closing"],
