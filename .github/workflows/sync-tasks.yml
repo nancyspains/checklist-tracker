@@ -8,9 +8,14 @@ name: Weekly Task Completion Sync
 # are needed here.
 on:
   schedule:
-    # 12:00 UTC every Tuesday = 12:00 GMT. Note GitHub Actions cron is
-    # always UTC (no daylight-saving awareness), so during BST (UK
-    # Summer Time) this will actually fire at 1pm UK clock time.
+    # GitHub Actions cron is always UTC with no daylight-saving
+    # awareness. To actually run at 12pm on the UK clock year-round,
+    # both possible UTC times are scheduled every Tuesday - 11:00 (the
+    # right one during BST) and 12:00 (the right one during GMT). The
+    # script itself checks the real UK-local time and skips whichever
+    # of the two isn't actually noon that week, so this only ever does
+    # real work once per week.
+    - cron: "0 11 * * 2"
     - cron: "0 12 * * 2"
   workflow_dispatch: {}
 
