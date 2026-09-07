@@ -98,6 +98,7 @@ const DAY_CHECKLISTS = {
 
 const SITE_OVERRIDES = {
   "s2": {
+    1: [],
     5: [{id:"eon",name:"EON complete"},{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"orders",name:"Acquire orders accepted"}],
     6: [{id:"eon",name:"EON complete"},{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"},{id:"cellar",name:"Cellar checklist"}],
     0: [{id:"eon",name:"EON complete"},{id:"opening",name:"Opening checklist"},{id:"closing",name:"Closing checklist"}]
@@ -116,7 +117,8 @@ const defaultSites = [
 const state = {
   sites: defaultSites, completions: {}, role: "staff", editMode: false,
   activeView: "overview", historyWeekOffset: 0, dashWeekOffset: 0,
-  historyDay: null, historyData: {}, dashData: {}, saving: false, lastSaved: null
+  historyDay: null, historyData: {}, dashData: {}, saving: false, lastSaved: null,
+  siteNotes: {}
 };
 
 const today = () => {
@@ -168,6 +170,27 @@ async function saveConfig() {
       await sbFetch("config", {method:"POST", body:JSON.stringify({config_key:"sites_v2", config_value:val})});
     }
   } catch(e) { console.error("Config save failed", e); }
+}
+
+function noteKey(siteId, date) { return `note-${siteId}-${date}`; }
+
+async function loadNote(siteId, date) {
+  try {
+    const rows = await sbFetch(`config?config_key=eq.${noteKey(siteId,date)}&select=config_value`);
+    return (rows && rows.length) ? rows[0].config_value : "";
+  } catch(e) { console.error("Load note failed", e); return ""; }
+}
+
+async function saveNote(siteId, date, text) {
+  const key = noteKey(siteId, date);
+  try {
+    const existing = await sbFetch(`config?config_key=eq.${key}&select=id`);
+    if (existing && existing.length) {
+      await sbFetch(`config?config_key=eq.${key}`, {method:"PATCH", body:JSON.stringify({config_value:text})});
+    } else {
+      await sbFetch("config", {method:"POST", body:JSON.stringify({config_key:key, config_value:text})});
+    }
+  } catch(e) { console.error("Save note failed", e); }
 }
 
 async function loadCompletions(date) {
@@ -315,6 +338,13 @@ async function setView(id) {
   renderTabs();
   if(id==="history"){document.getElementById("main-content").innerHTML=`<div class="loading-screen"><div class="spinner"></div><p>Loading history...</p></div>`;await loadHistoryWeek();}
   if(id==="dashboard"){document.getElementById("main-content").innerHTML=`<div class="loading-screen"><div class="spinner"></div><p>Loading dashboard...</p></div>`;await loadDashWeek();}
+  const isSite = state.sites.some(s=>s.id===id);
+  if(isSite){
+    const key = noteKey(id, today());
+    if(state.siteNotes[key]===undefined){
+      state.siteNotes[key] = await loadNote(id, today());
+    }
+  }
   renderCurrentView();
 }
 
@@ -351,8 +381,34 @@ function renderSite(site) {
     </div>`;
   }).join("");
   const staffNote = state.role==="staff"?`<p style="font-size:12px;color:#999;text-align:center;margin-top:8px;">Updates sync live to all users every 15 seconds.</p>`:"";
+  const noteVal = state.siteNotes[noteKey(site.id,today())] || "";
+  const notesHtml = `<div class="card">
+    <h2 style="font-size:15px;margin-bottom:8px;">Notes</h2>
+    <textarea id="note-input-${site.id}" class="input" style="width:100%;min-height:80px;resize:vertical;font-family:inherit;" placeholder="Any notes for today...">${noteVal}</textarea>
+    <div class="row" style="justify-content:flex-end;margin-top:8px;">
+      <button class="btn" onclick="saveSiteNote('${site.id}')">Save note</button>
+      <span id="note-saved-${site.id}" style="font-size:12px;color:#999;margin-left:8px;"></span>
+    </div>
+  </div>`;
   const el = document.getElementById("main-content");
-  if(el) el.innerHTML=`<div class="row" style="justify-content:space-between;margin-bottom:1rem;">${nameHtml}<span class="spacer"></span>${badge(pct,pct+"%")}</div><div class="card">${rows}</div>${staffNote}`;
+  if(el) el.innerHTML=`<div class="row" style="justify-content:space-between;margin-bottom:1rem;">${nameHtml}<span class="spacer"></span>${badge(pct,pct+"%")}</div><div class="card">${rows}</div>${notesHtml}${staffNote}`;
+}
+
+async function saveSiteNote(siteId) {
+  const inp = document.getElementById("note-input-"+siteId);
+  if(!inp) return;
+  const val = inp.value;
+  const key = noteKey(siteId, today());
+  state.siteNotes[key] = val;
+  const savedEl = document.getElementById("note-saved-"+siteId);
+  if(savedEl) savedEl.textContent = "Saving...";
+  try {
+    await saveNote(siteId, today(), val);
+    if(savedEl) savedEl.textContent = "Saved";
+    setTimeout(()=>{ if(savedEl) savedEl.textContent=""; }, 2000);
+  } catch(e) {
+    if(savedEl) savedEl.textContent = "Error saving";
+  }
 }
 
 async function saveSiteName(siteId) {
