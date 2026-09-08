@@ -118,7 +118,7 @@ const state = {
   sites: defaultSites, completions: {}, role: "staff", editMode: false,
   activeView: "overview", historyWeekOffset: 0, dashWeekOffset: 0,
   historyDay: null, historyData: {}, dashData: {}, saving: false, lastSaved: null,
-  siteNotes: {}
+  siteNotes: {}, closedDays: {}
 };
 
 const today = () => {
@@ -126,7 +126,9 @@ const today = () => {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 };
 const todayDow = () => new Date().getDay();
+const closedKey = (siteId, date) => `closed-${siteId}-${date}`;
 const getChecklists = (dateStr, siteId) => {
+  if (siteId && state.closedDays[closedKey(siteId, dateStr)]) return [];
   const dow = new Date(dateStr + "T12:00:00").getDay();
   if (siteId && SITE_OVERRIDES[siteId] && SITE_OVERRIDES[siteId][dow]) {
     return SITE_OVERRIDES[siteId][dow];
@@ -191,6 +193,35 @@ async function saveNote(siteId, date, text) {
       await sbFetch("config", {method:"POST", body:JSON.stringify({config_key:key, config_value:text})});
     }
   } catch(e) { console.error("Save note failed", e); }
+}
+
+// One fetch covers every marked-closed day for every site, since the set is
+// always small (only actual closures exist as rows) - simpler than querying
+// per date/site, and it's re-run whenever closures might have changed
+// (init, toggling, and entering History/Dashboard) so other users' closures
+// show up too.
+async function loadAllClosedDays() {
+  try {
+    const rows = await sbFetch(`config?config_key=like.closed-*&select=config_key,config_value`);
+    const closed = {};
+    (rows||[]).forEach(r => { if(r.config_value === "true") closed[r.config_key] = true; });
+    state.closedDays = closed;
+  } catch(e) { console.error("Load closed days failed", e); }
+}
+
+async function toggleClosed(siteId, date) {
+  const key = closedKey(siteId, date);
+  const newVal = !state.closedDays[key];
+  try {
+    const existing = await sbFetch(`config?config_key=eq.${key}&select=id`);
+    if (existing && existing.length) {
+      await sbFetch(`config?config_key=eq.${key}`, {method:"PATCH", body:JSON.stringify({config_value:String(newVal)})});
+    } else {
+      await sbFetch("config", {method:"POST", body:JSON.stringify({config_key:key, config_value:String(newVal)})});
+    }
+    if (newVal) state.closedDays[key] = true; else delete state.closedDays[key];
+  } catch(e) { console.error("Toggle closed failed", e); }
+  renderCurrentView();
 }
 
 async function loadCompletions(date) {
@@ -336,10 +367,11 @@ function renderTabs() {
 async function setView(id) {
   state.activeView=id; state.historyDay=null;
   renderTabs();
-  if(id==="history"){document.getElementById("main-content").innerHTML=`<div class="loading-screen"><div class="spinner"></div><p>Loading history...</p></div>`;await loadHistoryWeek();}
-  if(id==="dashboard"){document.getElementById("main-content").innerHTML=`<div class="loading-screen"><div class="spinner"></div><p>Loading dashboard...</p></div>`;await loadDashWeek();}
+  if(id==="history"){document.getElementById("main-content").innerHTML=`<div class="loading-screen"><div class="spinner"></div><p>Loading history...</p></div>`;await loadAllClosedDays();await loadHistoryWeek();}
+  if(id==="dashboard"){document.getElementById("main-content").innerHTML=`<div class="loading-screen"><div class="spinner"></div><p>Loading dashboard...</p></div>`;await loadAllClosedDays();await loadDashWeek();}
   const isSite = state.sites.some(s=>s.id===id);
   if(isSite){
+    await loadAllClosedDays();
     const key = noteKey(id, today());
     if(state.siteNotes[key]===undefined){
       state.siteNotes[key] = await loadNote(id, today());
@@ -358,28 +390,37 @@ function renderOverview() {
     <div class="metric"><div class="lbl">Remaining</div><div class="val">${total-done}</div></div>
   </div>`;
   state.sites.forEach(s => {
+    const isClosed = !!state.closedDays[closedKey(s.id, today())];
     const {done,total,pct} = sitePct(s,state.completions);
+    const statusBadge = isClosed ? `<span class="badge badge-gray">Closed today</span>` : badge(pct,done+"/"+total+" done");
     html += `<div class="card" style="cursor:pointer;" onclick="setView('${s.id}')">
-      <div class="row"><span style="font-weight:500;font-size:15px;">${s.name}</span><span class="spacer"></span>${badge(pct,done+"/"+total+" done")}</div>
-      ${barHtml(pct)}</div>`;
+      <div class="row"><span style="font-weight:500;font-size:15px;">${s.name}</span><span class="spacer"></span>${statusBadge}</div>
+      ${isClosed ? "" : barHtml(pct)}</div>`;
   });
   const el = document.getElementById("main-content"); if(el) el.innerHTML=html;
 }
 
 function renderSite(site) {
   updateOverallBadge();
+  const isClosed = !!state.closedDays[closedKey(site.id, today())];
   const checklists = getChecklists(today(), site.id);
   const {pct} = sitePct(site,state.completions);
   const nameHtml = state.editMode
     ? `<div class="row"><input id="rename-input-${site.id}" class="input" value="${site.name}" style="font-size:15px;width:160px;" onkeydown="if(event.key==='Enter')saveSiteName('${site.id}')"><button class="btn" onclick="saveSiteName('${site.id}')">Save</button><button class="btn" onclick="setView('${site.id}')">Cancel</button></div>`
     : `<h2>${site.name}</h2>`;
-  const rows = checklists.map(c => {
-    const done = !!state.completions[site.id+"-"+c.id];
-    return `<div class="check-row">
-      <input type="checkbox" ${done?"checked":""} onchange="toggleCheck('${site.id}','${c.id}')">
-      <span class="check-label${done?" done":""}" onclick="toggleCheck('${site.id}','${c.id}')">${c.name}</span>
-    </div>`;
-  }).join("");
+  const statusBadge = isClosed ? `<span class="badge badge-gray">Closed today</span>` : badge(pct,pct+"%");
+  const toggleBtn = isClosed
+    ? `<button class="btn" onclick="toggleClosed('${site.id}','${today()}')">Reopen site</button>`
+    : `<button class="btn" onclick="toggleClosed('${site.id}','${today()}')">Mark closed today</button>`;
+  const bodyHtml = isClosed
+    ? `<div class="card"><p style="color:#666;font-size:14px;">This site is marked closed today - no tasks required. Use the notes below to record why, if useful.</p></div>`
+    : `<div class="card">${checklists.map(c => {
+        const done = !!state.completions[site.id+"-"+c.id];
+        return `<div class="check-row">
+          <input type="checkbox" ${done?"checked":""} onchange="toggleCheck('${site.id}','${c.id}')">
+          <span class="check-label${done?" done":""}" onclick="toggleCheck('${site.id}','${c.id}')">${c.name}</span>
+        </div>`;
+      }).join("")}</div>`;
   const staffNote = state.role==="staff"?`<p style="font-size:12px;color:#999;text-align:center;margin-top:8px;">Updates sync live to all users every 15 seconds.</p>`:"";
   const noteVal = state.siteNotes[noteKey(site.id,today())] || "";
   const notesHtml = `<div class="card">
@@ -391,7 +432,7 @@ function renderSite(site) {
     </div>
   </div>`;
   const el = document.getElementById("main-content");
-  if(el) el.innerHTML=`<div class="row" style="justify-content:space-between;margin-bottom:1rem;">${nameHtml}<span class="spacer"></span>${badge(pct,pct+"%")}</div><div class="card">${rows}</div>${notesHtml}${staffNote}`;
+  if(el) el.innerHTML=`<div class="row" style="justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px;">${nameHtml}<span class="spacer"></span>${statusBadge}${toggleBtn}</div>${bodyHtml}${notesHtml}${staffNote}`;
 }
 
 async function saveSiteNote(siteId) {
@@ -558,6 +599,7 @@ async function init(){
   try{
     await loadConfig();
     await loadTodayCompletions();
+    await loadAllClosedDays();
     renderApp();
   } catch(e){
     document.getElementById("loading-screen").innerHTML=`<div style="text-align:center;"><p style="color:#c0392b;font-size:14px;">Failed to connect to database.</p><p style="font-size:12px;color:#999;margin-top:8px;">${e.message}</p><button class="btn" style="margin-top:16px;" onclick="init()">Retry</button></div>`;
