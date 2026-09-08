@@ -373,6 +373,53 @@
   .back-link:disabled{opacity:0.35; cursor:not-allowed;}
   .back-link:focus-visible{outline:2px solid var(--ink); outline-offset:2px;}
 
+  .edit-actions{
+    display:flex;
+    gap:10px;
+    margin-top:14px;
+  }
+  .save-btn{
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:13px;
+    padding:8px 16px;
+    border-radius:7px;
+    border:none;
+    background:var(--ink);
+    color:var(--paper-raised);
+    cursor:pointer;
+  }
+  .save-btn:hover{opacity:0.88;}
+  .save-btn:disabled{opacity:0.4; cursor:not-allowed;}
+  .save-btn:focus-visible{outline:2px solid var(--ink); outline-offset:2px;}
+
+  .cancel-btn{
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    color:var(--ink-soft);
+    background:none;
+    border:1px solid var(--line);
+    border-radius:7px;
+    padding:8px 16px;
+    cursor:pointer;
+  }
+  .cancel-btn:hover{background:var(--paper-raised);}
+  .cancel-btn:focus-visible{outline:2px solid var(--ink); outline-offset:2px;}
+
+  .edit-link{
+    font-family:'Inter',sans-serif;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    background:none;
+    border:none;
+    cursor:pointer;
+    text-decoration:underline;
+    text-underline-offset:3px;
+    padding:0;
+  }
+  .edit-link:hover{opacity:0.75;}
+  .edit-link:focus-visible{outline:2px solid var(--ink); outline-offset:2px;}
+
   /* ---------- Archive ---------- */
   .archive-toggle{
     font-family:'Space Mono',monospace;
@@ -500,6 +547,7 @@
   const STAGE_INDEX = Object.fromEntries(STAGES.map((s,i)=>[s.key,i]));
 
   let sites = [];
+  let editingIds = new Set();
 
   const el = {
     headerSub: document.getElementById('headerSub'),
@@ -602,6 +650,7 @@
   }
 
   function buildCard(site, stageDef){
+    if(editingIds.has(site.id)) return buildEditCard(site);
     const card = document.createElement('div');
     card.className = 'card';
 
@@ -667,6 +716,11 @@
       }
     };
 
+    const editBtn = document.createElement('button');
+    editBtn.className = 'edit-link';
+    editBtn.textContent = 'Edit';
+    editBtn.onclick = () => { editingIds.add(site.id); render(); };
+
     actions.appendChild(advanceBtn);
 
     if(!isFirst){
@@ -692,6 +746,83 @@
     }
 
     actions.appendChild(dropBtn);
+    actions.appendChild(editBtn);
+    return card;
+  }
+
+  function buildEditCard(site){
+    const card = document.createElement('div');
+    card.className = 'card intake';
+
+    const grid = document.createElement('div');
+    grid.className = 'intake-grid';
+
+    function field(labelText, value){
+      const wrap = document.createElement('div');
+      const label = document.createElement('label');
+      label.textContent = labelText;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = value || '';
+      wrap.appendChild(label);
+      wrap.appendChild(input);
+      grid.appendChild(wrap);
+      return input;
+    }
+
+    const nameInput = field('Site name', site.site_name);
+    const addressInput = field('Address', site.address);
+    const contactInput = field('Landlord / agent contact', site.contact);
+    const rentInput = field('Rent', site.rent);
+    const sizeInput = field('Size', site.size_sqft);
+
+    const notesInput = document.createElement('textarea');
+    notesInput.value = site.notes || '';
+
+    const actions = document.createElement('div');
+    actions.className = 'edit-actions';
+
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'save-btn';
+    saveBtn.textContent = 'Save';
+    saveBtn.onclick = async () => {
+      const site_name = nameInput.value.trim();
+      if(!site_name){ showToast('Site name is required'); return; }
+      saveBtn.disabled = true;
+      const fields = {
+        site_name,
+        address: addressInput.value.trim() || null,
+        contact: contactInput.value.trim() || null,
+        rent: rentInput.value.trim() || null,
+        size_sqft: sizeInput.value.trim() || null,
+        notes: notesInput.value.trim() || null,
+        updated_at: new Date().toISOString(),
+      };
+      try{
+        const res = await fetch(SB + '/rest/v1/site_pipeline?id=eq.' + site.id, {
+          method:'PATCH', headers: sbHeaders(), body: JSON.stringify(fields)
+        });
+        if(!res.ok) throw new Error('update failed');
+        Object.assign(site, fields);
+        editingIds.delete(site.id);
+        render();
+      }catch(e){
+        showToast('Could not save — try again');
+        saveBtn.disabled = false;
+      }
+    };
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'cancel-btn';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.onclick = () => { editingIds.delete(site.id); render(); };
+
+    actions.appendChild(saveBtn);
+    actions.appendChild(cancelBtn);
+
+    card.appendChild(grid);
+    card.appendChild(notesInput);
+    card.appendChild(actions);
     return card;
   }
 
@@ -746,4 +877,4 @@
 </script>
 
 </body>
-</html>
+  </html>
