@@ -358,6 +358,21 @@
   .drop-link:hover{opacity:0.75;}
   .drop-link:focus-visible{outline:2px solid var(--drop); outline-offset:2px;}
 
+  .back-link{
+    font-family:'Inter',sans-serif;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    background:none;
+    border:none;
+    cursor:pointer;
+    text-decoration:underline;
+    text-underline-offset:3px;
+    padding:0;
+  }
+  .back-link:hover{opacity:0.75;}
+  .back-link:disabled{opacity:0.35; cursor:not-allowed;}
+  .back-link:focus-visible{outline:2px solid var(--ink); outline-offset:2px;}
+
   /* ---------- Archive ---------- */
   .archive-toggle{
     font-family:'Space Mono',monospace;
@@ -609,6 +624,7 @@
 
     const actions = card.querySelector('.card-actions');
     const isLast = STAGE_INDEX[site.stage] === STAGES.length - 1;
+    const isFirst = STAGE_INDEX[site.stage] === 0;
 
     const advanceBtn = document.createElement('button');
     advanceBtn.className = 'advance-btn';
@@ -652,6 +668,29 @@
     };
 
     actions.appendChild(advanceBtn);
+
+    if(!isFirst){
+      const backBtn = document.createElement('button');
+      backBtn.className = 'back-link';
+      backBtn.textContent = '← Move to ' + STAGES[STAGE_INDEX[site.stage] - 1].label;
+      backBtn.onclick = async () => {
+        backBtn.disabled = true;
+        try{
+          const fields = { stage: STAGES[STAGE_INDEX[site.stage] - 1].key, updated_at: new Date().toISOString() };
+          const res = await fetch(SB + '/rest/v1/site_pipeline?id=eq.' + site.id, {
+            method:'PATCH', headers: sbHeaders(), body: JSON.stringify(fields)
+          });
+          if(!res.ok) throw new Error('update failed');
+          Object.assign(site, fields);
+          render();
+        }catch(e){
+          showToast('Could not update — try again');
+          backBtn.disabled = false;
+        }
+      };
+      actions.appendChild(backBtn);
+    }
+
     actions.appendChild(dropBtn);
     return card;
   }
