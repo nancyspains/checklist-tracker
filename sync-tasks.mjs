@@ -54,12 +54,36 @@ const SITE_OVERRIDES = {
   },
 };
 
-function getChecklistIds(dateStr, siteId) {
+function getChecklistIds(dateStr, siteId, closedSet) {
+  if (closedSet && closedSet.has(`${siteId}|${dateStr}`)) return [];
   const dow = new Date(dateStr + "T12:00:00").getDay();
   if (SITE_OVERRIDES[siteId] && SITE_OVERRIDES[siteId][dow]) {
     return SITE_OVERRIDES[siteId][dow];
   }
   return DAY_CHECKLISTS[dow] || [];
+}
+
+// Mirrors the tracker's own "mark site closed today" feature: those days
+// are stored as config rows keyed "closed-{siteId}-{date}" with value
+// "true". One fetch covers the whole set (it's always small), same
+// approach as the tracker's own loadAllClosedDays().
+async function fetchClosedDays() {
+  const url = `${SUPABASE_URL}/rest/v1/config?config_key=like.closed-*&select=config_key,config_value`;
+  const resp = await fetch(url, {
+    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+  });
+  if (!resp.ok) throw new Error(`Supabase fetch failed: ${resp.status} ${await resp.text()}`);
+  const rows = await resp.json();
+  const closed = new Set();
+  (rows || []).forEach((r) => {
+    if (r.config_value !== "true") return;
+    const rest = r.config_key.replace(/^closed-/, "");
+    const dashIdx = rest.indexOf("-");
+    const siteId = rest.slice(0, dashIdx);
+    const date = rest.slice(dashIdx + 1);
+    closed.add(`${siteId}|${date}`);
+  });
+  return closed;
 }
 
 function fmtDate(d) {
@@ -119,6 +143,9 @@ async function main() {
   const rows = await fetchCompletions(monday, sunday);
   console.log(`[info] Fetched ${rows.length} completion rows from Supabase`);
 
+  const closedSet = await fetchClosedDays();
+  console.log(`[info] Found ${closedSet.size} closed-site-day entries`);
+
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
   const weekRef = doc(db, STORE_KEY, sunday);
@@ -128,7 +155,7 @@ async function main() {
   // newReviews/trend/avgSpend). If a pub has no entry at all yet for this
   // week (no GM has saved anything), a merge-write of {tasks: pct} alone
   // would create a pub object with every OTHER field left as undefined,
-  // which breaks the dashboard's rendering (it only falls back to BLANK,
+  // which breaks the dashboard's rendering (it only falls back to BLANK
   // when the whole pub key is missing, not when individual fields are
   // missing within it). So: check first, and only add the full BLANK
   // shape on top of tasks when this pub genuinely has nothing yet.
@@ -140,7 +167,7 @@ async function main() {
     let totalPossible = 0;
     const scheduledSet = new Set(); // "date|checkId" pairs actually scheduled, for correct filtering
     for (const date of dates) {
-      const ids = getChecklistIds(date, siteId);
+      const ids = getChecklistIds(date, siteId, closedSet);
       totalPossible += ids.length;
       ids.forEach((id) => scheduledSet.add(`${date}|${id}`));
     }
